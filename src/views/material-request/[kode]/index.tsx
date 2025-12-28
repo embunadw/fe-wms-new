@@ -5,7 +5,7 @@ import SectionContainer, {
   SectionHeader,
 } from "@/components/content-container";
 import WithSidebar from "@/components/layout/WithSidebar";
-import type { MR } from "@/types"; // Pastikan path ini benar
+import type {MRReceive } from "@/types"; // Pastikan path ini benar
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { toast } from "sonner"; // Import toast for user feedback
@@ -18,7 +18,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Label } from "@/components/ui/label"; // Import Label
-import { Timestamp } from "firebase/firestore";
 import { formatTanggal } from "@/lib/utils";
 import { parse } from "date-fns";
 import { getMrByKode } from "@/services/material-request";
@@ -27,7 +26,7 @@ import { Printer } from "lucide-react";
 
 export function MaterialRequestDetail() {
   const { kode } = useParams<{ kode: string }>();
-  const [mr, setMr] = useState<MR | null>(null);
+  const [mr, setMr] = useState<MRReceive | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
@@ -103,7 +102,7 @@ export function MaterialRequestDetail() {
     <WithSidebar>
       {/* Detail MR */}
       <SectionContainer span={12}>
-        <SectionHeader>Detail Material Request: {mr.kode}</SectionHeader>
+        <SectionHeader>Detail Material Request: {mr.mr_kode}</SectionHeader>
         <SectionBody className="grid grid-cols-12 gap-6">
           {/* Informasi Umum MR */}
           <div className="col-span-12 space-y-4">
@@ -113,19 +112,19 @@ export function MaterialRequestDetail() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label className="text-sm text-muted-foreground">Kode MR</Label>
-                <p className="font-medium text-base">{mr.kode}</p>
+                <p className="font-medium text-base">{mr.mr_kode}</p>
               </div>
               <div>
                 <Label className="text-sm text-muted-foreground">PIC</Label>
-                <p className="font-medium text-base">{mr.pic}</p>
+                <p className="font-medium text-base">{mr.mr_pic}</p>
               </div>
               <div>
                 <Label className="text-sm text-muted-foreground">Lokasi</Label>
-                <p className="font-medium text-base">{mr.lokasi}</p>
+                <p className="font-medium text-base">{mr.mr_lokasi}</p>
               </div>
               <div>
                 <Label className="text-sm text-muted-foreground">Status</Label>
-                <p className="font-medium text-base">{mr.status}</p>
+                <p className="font-medium text-base">{mr.mr_status}</p>
               </div>
               <div>
                 <Label className="text-sm text-muted-foreground">
@@ -134,7 +133,7 @@ export function MaterialRequestDetail() {
                 {/* Pastikan mr.tanggal_mr adalah Timestamp sebelum memanggil toDate() */}
                 <p className="font-medium text-base">
                   {formatTanggal(
-                    parse(mr.tanggal_mr, "d/M/yyyy", new Date()).getTime()
+                    parse(mr.mr_tanggal, "d/M/yyyy", new Date()).getTime()
                   )}
                 </p>
               </div>
@@ -145,7 +144,7 @@ export function MaterialRequestDetail() {
                 {/* Pastikan mr.tanggal_estimasi adalah Timestamp sebelum memanggil toDate() */}
                 <p className="font-medium text-base">
                   {formatTanggal(
-                    parse(mr.due_date, "d/M/yyyy", new Date()).getTime()
+                    parse(mr.mr_due_date, "d/M/yyyy", new Date()).getTime()
                   )}
                 </p>
               </div>
@@ -154,8 +153,8 @@ export function MaterialRequestDetail() {
                   Diperbarui Pada
                 </Label>
                 <p className="font-medium text-base">
-                  {mr.updated_at instanceof Timestamp
-                    ? formatTanggal(mr.updated_at.toDate().getTime())
+                  {mr.updated_at
+                    ? formatTanggal(new Date(mr.updated_at).getTime())
                     : "N/A"}
                 </p>
               </div>
@@ -194,50 +193,31 @@ export function MaterialRequestDetail() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {mr.barang && mr.barang.length > 0 ? (
-                    mr.barang.map((item, index) => (
+                  {mr.details && mr.details.length > 0 ? (
+                    mr.details.map((item, index) => (
                       <TableRow key={index} className="[&>td]:border">
                         <TableCell className="w-[50px] text-center">
                           {index + 1}
                         </TableCell>
                         <TableCell className="max-w-40 break-words whitespace-normal">
-                          {item.part_number}
+                          {item.dtl_mr_part_number}
                         </TableCell>
                         <TableCell className="max-w-40 break-words whitespace-normal">
-                          {item.part_name}
+                          {item.dtl_mr_part_name}
                         </TableCell>
                         <TableCell className="max-w-40 break-words whitespace-normal">
-                          {item.satuan}
+                          {item.dtl_mr_satuan}
                         </TableCell>
                         <TableCell className="max-w-40 break-words whitespace-normal">
-                          {item.priority}
+                          {item.dtl_mr_prioritas}
                         </TableCell>
                         <TableCell className="max-w-40 break-words whitespace-normal">
-                          {item.qty}
+                          {item.dtl_mr_qty_request}
                         </TableCell>
                         <TableCell className="max-w-40 break-words whitespace-normal">
-                          {item.qty_delivered}
+                          {item.dtl_mr_qty_received}
                         </TableCell>
-                        {/* <TableCell className="flex gap-2 items-center">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              toast.info(`Edit item: ${item.part_number}`);
-                            }}
-                          >
-                            Edit
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => {
-                              toast.error(`Hapus item: ${item.part_number}`);
-                            }}
-                          >
-                            Delete
-                          </Button>
-                        </TableCell> */}
+                      
                       </TableRow>
                     ))
                   ) : (

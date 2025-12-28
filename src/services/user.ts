@@ -26,6 +26,7 @@ export async function getAllUsers({} = {}): Promise<UserDb[]> {
   }
 }
 
+
 export async function updateUser(user: Partial<UserDb>): Promise<boolean> {
   try {
     const docRef = doc(db, "users", user.id!);

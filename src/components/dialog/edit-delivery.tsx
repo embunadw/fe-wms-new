@@ -11,7 +11,7 @@ import {
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
-import type { Delivery } from "@/types";
+import type { DeliveryReceive } from "@/types";
 import { toast } from "sonner";
 import { type Dispatch, type SetStateAction } from "react";
 import {
@@ -23,12 +23,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
-import { updateDelivery } from "@/services/delivery";
+import { update } from "@/services/delivery";
 import { DeliveryEkspedisi } from "@/types/enum";
 
 interface MyDialogProps {
-  onSubmit?: () => void;
-  delivery: Delivery;
+  delivery: DeliveryReceive;
   refresh: Dispatch<SetStateAction<boolean>>;
 }
 
@@ -37,44 +36,41 @@ export function EditDeliveryDialog({ delivery, refresh }: MyDialogProps) {
     event.preventDefault();
 
     const formData = new FormData(event.currentTarget);
-    const ekspedisi = formData.get("ekspedisi") as string;
-    const resi_pengiriman = formData.get("resi_pengiriman") as string;
-    const jumlah_koli = formData.get("jumlah_koli") as string;
 
-    if (!delivery.kode_it) {
-      toast.error("Kode IT tidak ditemukan");
+
+    if (!delivery.dlv_kode) {
+      toast.error("Kode delivery tidak ditemukan");
       return;
     }
 
-    const data: Partial<Delivery> = {
-      kode_mr: delivery.kode_mr,
-      ekspedisi,
-      resi_pengiriman,
-      items: delivery.items,
-      jumlah_koli: parseInt(jumlah_koli),
+    const payload = {
+      dlv_ekspedisi: formData.get("dlv_ekspedisi") as string,
+      dlv_no_resi: formData.get("dlv_no_resi") as string,
+      dlv_jumlah_koli: Number(formData.get("dlv_jumlah_koli")),
+
     };
-    // Update MR
+
     try {
-      const res = await updateDelivery(delivery.kode_it, data);
+      const res = await update(delivery.dlv_kode, payload);
+
       if (res) {
-        toast.success("Data MR berhasil diupdate");
+        toast.success("Delivery berhasil diupdate");
         refresh((prev) => !prev);
       }
     } catch (error) {
-      if (error instanceof Error) {
-        toast.error(`Gagal mengupdate delivery: ${error.message}`);
-      } else {
-        toast.error("Gagal mengupdate delivery");
-      }
+      toast.error("Gagal mengupdate delivery");
     }
   }
+
   return (
     <Dialog>
       <DialogTrigger asChild>
         <Button variant="outline" size={"sm"}>
           Edit Cepat
         </Button>
+        
       </DialogTrigger>
+
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Edit Delivery</DialogTitle>
@@ -82,89 +78,70 @@ export function EditDeliveryDialog({ delivery, refresh }: MyDialogProps) {
             Ubah informasi delivery yang dipilih.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} id="edit-user-form">
+
+        <form onSubmit={handleSubmit} id="edit-delivery-form">
           <div className="grid gap-4">
             <div className="grid gap-3">
               <Label htmlFor="kode">Kode IT</Label>
               <Input
                 id="kode"
                 name="kode"
-                defaultValue={delivery.kode_it}
+                defaultValue={delivery.dlv_kode}
                 disabled
               />
             </div>
+
             <div className="grid gap-3">
-              <Label htmlFor="ekspedisi">Ekspedisi yang digunakan</Label>
+              <Label htmlFor="dlv_ekspedisi">Ekspedisi yang digunakan</Label>
               <Select
-                name="ekspedisi"
-                defaultValue={delivery.ekspedisi}
+                name="dlv_ekspedisi"
+                defaultValue={delivery.dlv_ekspedisi ?? ""}
                 required
               >
-                <SelectTrigger
-                  className="w-full"
-                  name="ekspedisi"
-                  id="ekspedisi"
-                >
-                  <SelectValue placeholder={delivery.ekspedisi} />
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder={delivery.dlv_ekspedisi} />
                 </SelectTrigger>
+
                 <SelectContent>
                   <SelectGroup>
                     <SelectLabel>Ekspedisi</SelectLabel>
-                    {DeliveryEkspedisi.map((status, index) => {
-                      return (
-                        <SelectItem value={status} key={index}>
-                          {status}
-                        </SelectItem>
-                      );
-                    })}
+                    {DeliveryEkspedisi.map((eks, index) => (
+                      <SelectItem value={eks} key={index}>
+                        {eks}
+                      </SelectItem>
+                    ))}
                   </SelectGroup>
                 </SelectContent>
               </Select>
             </div>
+
             <div className="grid gap-3">
-              <Label htmlFor="resi_pengiriman">Nomor resi</Label>
+              <Label htmlFor="dlv_no_resi">Nomor resi</Label>
               <Input
-                id="resi_pengiriman"
-                name="resi_pengiriman"
-                defaultValue={delivery.resi_pengiriman}
+                id="dlv_no_resi"
+                name="dlv_no_resi"
+                defaultValue={delivery.dlv_no_resi ?? ""}
               />
             </div>
+
             <div className="grid gap-3">
-              <Label htmlFor="jumlah_koli">Jumlah Koli</Label>
+              <Label htmlFor="dlv_jumlah_koli">Jumlah Koli</Label>
               <Input
-                id="jumlah_koli"
+                id="dlv_jumlah_koli"
                 type="number"
-                name="jumlah_koli"
-                defaultValue={delivery.jumlah_koli}
+                name="dlv_jumlah_koli"
+                defaultValue={delivery.dlv_jumlah_koli ?? ""}
               />
             </div>
-            {/* <div className="grid gap-3">
-              <Label htmlFor="status">Status</Label>
-              <Select name="status" required>
-                <SelectTrigger className="w-full" name="status" id="status">
-                  <SelectValue placeholder={delivery.status} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectLabel>Status</SelectLabel>
-                    {DeliveryStatus.map((status, index) => {
-                      return (
-                        <SelectItem value={status} key={index}>
-                          {status}
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </div> */}
           </div>
         </form>
+
         <DialogFooter>
           <DialogClose asChild>
             <Button variant="outline">Batalkan</Button>
           </DialogClose>
-          <Button type="submit" form="edit-user-form">
+
+          <Button type="submit" form="edit-delivery-form">
             Edit
           </Button>
         </DialogFooter>

@@ -7,7 +7,7 @@
  */
 
 import { PRCollection } from "@/lib/firebase";
-import type { PR } from "@/types";
+import type { PurchaseRequest, PR } from "@/types";
 import {
   addDoc,
   getDocs,
@@ -16,6 +16,7 @@ import {
   Timestamp,
   where,
 } from "firebase/firestore";
+import api from "@/lib/axios";
 
 export async function getAllPr(): Promise<PR[]> {
   try {
@@ -31,15 +32,16 @@ export async function getAllPr(): Promise<PR[]> {
   }
 }
 
-export async function getPrByKode(kode: string): Promise<PR | null> {
+//edited diyah
+export async function getPrByKode(id: string): Promise<PurchaseRequest | null> {
   try {
-    const q = query(PRCollection, where("kode", "==", kode));
-    const snapshot = await getDocs(q);
-    if (snapshot.empty) return null;
-    const doc = snapshot.docs[0];
-    return { id: doc.id, ...doc.data() } as PR;
+    const res = await api.get(`/pr/${id}`);
+
+    if (!res.data?.data) return null;
+
+    return res.data.data as PurchaseRequest;
   } catch (error) {
-    console.error(`Error fetching PR by kode ${kode}:`, error);
+    console.error(`Error fetching PR by ID ${id}:`, error);
     throw error;
   }
 }

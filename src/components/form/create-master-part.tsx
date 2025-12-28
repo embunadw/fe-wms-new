@@ -45,7 +45,7 @@ export default function CreateMasterPartForm({
     const formData = new FormData(event.currentTarget);
     const partNumber = formData.get("part_number") as string;
     const partName = formData.get("part_name") as string;
-    const satuan = formData.get("satuan") as string;
+    const satuan = formData.get("part_satuan") as string;
     if (!partNumber || !partName || !satuan) {
       toast.warning("Semua field harus diisi!");
       return;
@@ -55,7 +55,7 @@ export default function CreateMasterPartForm({
       const data = {
         part_name: partName,
         part_number: partNumber,
-        satuan,
+        part_satuan: satuan,
         created_at: Timestamp.now(),
         updated_at: Timestamp.now(),
       } satisfies MasterPart;
@@ -111,7 +111,7 @@ export default function CreateMasterPartForm({
         <div className="flex flex-col gap-2">
           <Label>Satuan</Label>
           <div className="flex items-center">
-            <Select name="satuan" required>
+            <Select name="part_satuan" required>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Pilih satuan" />
               </SelectTrigger>

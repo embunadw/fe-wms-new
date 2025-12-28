@@ -31,7 +31,7 @@ import {
 } from "@/components/ui/table";
 import { getCurrentUser } from "@/services/auth";
 import { getAllDelivery } from "@/services/delivery";
-import type { Delivery, UserComplete } from "@/types";
+import type { DeliveryReceive, UserComplete } from "@/types";
 import { PagingSize } from "@/types/enum";
 import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -41,9 +41,9 @@ import { toast } from "sonner";
 export default function DeliveryPage() {
   const [refresh, setRefresh] = useState<boolean>(false);
   const [user, setUser] = useState<UserComplete | null>(null);
-  const [deliveries, setDeliveries] = useState<Delivery[]>([]);
-  const [filteredDeliveries, setFilteredDeliveries] = useState<Delivery[]>([]);
-  const [deliveriesToShow, setDeliveriesToShow] = useState<Delivery[]>([]);
+  const [deliveries, setDeliveries] = useState<DeliveryReceive[]>([]);
+  const [filteredDeliveries, setFilteredDeliveries] = useState<DeliveryReceive[]>([]);
+  const [deliveriesToShow, setDeliveriesToShow] = useState<DeliveryReceive[]>([]);
   const [currentPage, setCurrentPage] = useState<number>(1);
 
   // --- State untuk Filtering ---
@@ -85,30 +85,30 @@ export default function DeliveryPage() {
 
     if (kodeIt) {
       filtered = filtered.filter((d) =>
-        d.kode_it.toLowerCase().includes(kodeIt.toLowerCase())
+        d.dlv_kode.toLowerCase().includes(kodeIt.toLowerCase())
       );
     }
     if (kodeMr) {
       filtered = filtered.filter((d) =>
-        d.kode_mr.toLowerCase().includes(kodeMr.toLowerCase())
+        d.mr?.mr_kode?.toLowerCase().includes(kodeMr.toLowerCase())
       );
     }
     if (status) {
-      filtered = filtered.filter((d) => d.status === status);
+      filtered = filtered.filter((d) => d.dlv_status === status);
     }
     if (dariGudang) {
       filtered = filtered.filter((d) =>
-        d.dari_gudang.toLowerCase().includes(dariGudang.toLowerCase())
+        d.dlv_dari_gudang.toLowerCase().includes(dariGudang.toLowerCase())
       );
     }
     if (keGudang) {
       filtered = filtered.filter((d) =>
-        d.ke_gudang.toLowerCase().includes(keGudang.toLowerCase())
+        d.dlv_ke_gudang.toLowerCase().includes(keGudang.toLowerCase())
       );
     }
     if (resi) {
       filtered = filtered.filter((d) =>
-        d.resi_pengiriman.toLowerCase().includes(resi.toLowerCase())
+        d.dlv_no_resi.toLowerCase().includes(resi.toLowerCase())
       );
     }
 
@@ -260,38 +260,38 @@ export default function DeliveryPage() {
               <TableBody>
                 {deliveriesToShow.length > 0 ? (
                   deliveriesToShow.map((deliv, index) => (
-                    <TableRow key={deliv.id}>
+                    <TableRow 
+                      key={deliv.dlv_id ?? `${deliv.dlv_kode}-${index}`}>
                       <TableCell className="p-2 border">
                         {PagingSize * (currentPage - 1) + (index + 1)}
                       </TableCell>
                       <TableCell className="p-2 border">
-                        {deliv.kode_it}
+                        {deliv.dlv_kode}
                       </TableCell>
                       <TableCell className="p-2 border">
-                        {deliv.kode_mr}
+                        {deliv.mr?.mr_kode}
                       </TableCell>
                       <TableCell className="p-2 border">
-                        {deliv.dari_gudang}
+                        {deliv.dlv_dari_gudang}
                       </TableCell>
                       <TableCell className="p-2 border">
-                        {deliv.ke_gudang}
+                        {deliv.dlv_ke_gudang}
                       </TableCell>
                       <TableCell className="p-2 border">
-                        {deliv.ekspedisi}
+                        {deliv.dlv_ekspedisi}
                       </TableCell>
                       <TableCell className="p-2 border">
-                        {deliv.jumlah_koli}
+                        {deliv.dlv_jumlah_koli}
                       </TableCell>
                       <TableCell className="p-2 border">
-                        {deliv.status}
+                        {deliv.dlv_status}
                       </TableCell>
                       <TableCell className="p-2 border">
                         <Button size="sm" variant="outline" asChild>
                           <Link
-                            to={`/delivery/${encodeURIComponent(
-                              deliv.kode_it
-                            )}`}
-                          >
+                            to={`/deliveries/kode/${encodeURIComponent(
+                              deliv.dlv_kode
+                            )}`}>
                             Detail
                           </Link>
                         </Button>
@@ -339,7 +339,7 @@ export default function DeliveryPage() {
               type="submit"
               form="create-delivery-form"
             >
-              Tambah <Plus />
+              Tambah<Plus />
             </Button>
           </SectionFooter>
         </SectionContainer>

@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
 import { createMR, generateKodeMR } from "@/services/material-request";
-import type { MasterPart, MR, MRItem, UserComplete, UserDb } from "@/types";
+import type { MasterPart, MRDetail, MRReceive, UserComplete, UserDb } from "@/types";
 import { DatePicker } from "../date-picker";
 import {
   Select,
@@ -24,7 +24,6 @@ import {
 } from "../ui/table";
 import { AddItemMRDialog } from "../dialog/add-item-mr";
 import { Button } from "../ui/button";
-import { serverTimestamp } from "firebase/firestore";
 import { LokasiList } from "@/types/enum";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { CheckIcon, ChevronsUpDownIcon } from "lucide-react";
@@ -39,16 +38,21 @@ import {
 import { cn } from "@/lib/utils";
 import { getMasterParts } from "@/services/master-part";
 
+
 interface CreateMRFormProps {
   user: UserComplete | UserDb;
   setRefresh: Dispatch<SetStateAction<boolean>>;
 }
 
+function toMysqlDatetime(date: Date) {
+  return date.toISOString().slice(0, 19).replace("T", " ");
+}
+
 export default function CreateMRForm({ user, setRefresh }: CreateMRFormProps) {
   const [kodeMR, setKodeMR] = useState<string>("Loading...");
-  const [duedate, setDueDate] = useState<Date | undefined>();
+  const [duedate, setDueDate] = useState<Date | undefined>(undefined);
   const [tanggalMR, setTanggalMR] = useState<Date | undefined>(new Date());
-  const [mrItems, setMRItems] = useState<MRItem[]>([]);
+  const [mrItems, setMRItems] = useState<MRDetail[]>([]);
 
   // Pencarian master part
   const [open, setOpen] = useState<boolean>(false);
@@ -79,9 +83,10 @@ export default function CreateMRForm({ user, setRefresh }: CreateMRFormProps) {
   async function fetchKodeMR() {
     toast.info("Menghasilkan Kode MR baru...");
     try {
-      const kode = await generateKodeMR(user);
+      const kode = await generateKodeMR(user.lokasi);
       setKodeMR(kode);
       toast.success("Kode MR sudah terbaru.");
+      console.log("KODE MASUK", kode)
     } catch (error) {
       if (error instanceof Error) {
         toast.error(`Gagal menghasilkan Kode MR: ${error.message}`);
@@ -90,10 +95,33 @@ export default function CreateMRForm({ user, setRefresh }: CreateMRFormProps) {
       }
     }
   }
+  
+  async function fetchKodeMRSilent() {
+  try {
+    const kode = await generateKodeMR(user.lokasi);
+    setKodeMR(kode);
+  } catch (e) {
+    console.error(e);
+  }
+}
 
-  useEffect(() => {
-    fetchKodeMR();
-  }, []);
+async function fetchKodeMRWithToast() {
+  const toastId = toast.loading("Menghasilkan Kode MR baru...");
+
+  try {
+    const kode = await generateKodeMR(user.lokasi);
+    setKodeMR(kode);
+    toast.success("Kode MR sudah terbaru.", { id: toastId });
+  } catch (e) {
+    toast.error("Gagal generate kode MR", { id: toastId });
+  }
+}
+
+useEffect(() => {
+  if (!user?.lokasi) return;
+  fetchKodeMRSilent();
+}, [user?.lokasi]);
+
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -127,16 +155,16 @@ export default function CreateMRForm({ user, setRefresh }: CreateMRFormProps) {
       return;
     }
 
-    const data: MR = {
-      kode: kodeMR,
-      tanggal_mr: tanggalMR.toISOString(),
-      due_date: duedate.toISOString(),
-      lokasi: lokasi,
-      pic: user.nama,
-      status: status,
-      barang: mrItems,
-      created_at: serverTimestamp(),
-      updated_at: serverTimestamp(),
+    const data: MRReceive = {
+      mr_kode: kodeMR,
+      mr_tanggal: toMysqlDatetime(tanggalMR),
+      mr_due_date: toMysqlDatetime(duedate),
+      mr_lokasi: lokasi,
+      mr_pic: user.nama,
+      mr_status: status,
+      details: mrItems,
+      created_at: toMysqlDatetime(new Date()),
+      updated_at: toMysqlDatetime(new Date()),
     };
 
     try {
@@ -161,7 +189,7 @@ export default function CreateMRForm({ user, setRefresh }: CreateMRFormProps) {
     }
   }
 
-  function handleAddItem(part: MasterPart, qty: number, priority: string) {
+  function handleAddItem(part: MasterPart, qty: number, dtl_mr_prioritas: string) {
     if (!part || !qty || qty <= 0) {
       toast.error(
         "Mohon lengkapi semua detail item dan pastikan kuantitas valid."
@@ -169,18 +197,19 @@ export default function CreateMRForm({ user, setRefresh }: CreateMRFormProps) {
       return;
     }
 
-    if (mrItems.some((item) => item.part_number === part.part_number)) {
+    if (mrItems.some((item) => item.dtl_mr_part_number === part.part_number)) {
       toast.warning("Item dengan part number ini sudah ada di daftar.");
       return;
     }
 
-    const newItem: MRItem = {
-      part_name: part.part_name,
-      part_number: part.part_number,
-      satuan: part.satuan,
-      qty: qty,
-      priority,
-      qty_delivered: 0,
+    const newItem: MRDetail = {
+      part_id: part.part_id,
+      dtl_mr_part_name: part.part_name,
+      dtl_mr_part_number: part.part_number,
+      dtl_mr_satuan: part.part_satuan,
+      dtl_mr_qty_request: qty,
+      dtl_mr_prioritas,
+      dtl_mr_qty_received: 0,
     };
 
     setMRItems((prevItems) => [...prevItems, newItem]);
@@ -206,13 +235,13 @@ export default function CreateMRForm({ user, setRefresh }: CreateMRFormProps) {
             <Input
               name="numberMR"
               disabled
-              value={kodeMR}
+              value={kodeMR ?? ""}
               className="lg:tracking-wider"
             />
             <Button
               variant={"outline"}
               type="button"
-              onClick={async () => await fetchKodeMR()}
+              onClick={async () => await fetchKodeMRWithToast()}
             >
               Refresh
             </Button>
@@ -241,7 +270,7 @@ export default function CreateMRForm({ user, setRefresh }: CreateMRFormProps) {
         <div className="flex flex-col gap-2">
           <Label>Tanggal due date</Label>
           <div className="flex items-center">
-            <DatePicker value={duedate} onChange={setDueDate} />
+            <DatePicker value={duedate ?? undefined} onChange={setDueDate} />
           </div>
         </div>
       </div>
@@ -373,12 +402,12 @@ export default function CreateMRForm({ user, setRefresh }: CreateMRFormProps) {
                 <TableRow key={index} className="border [&>*]:border">
                   <TableCell className="w-[50px]">{index + 1}</TableCell>
                   <TableCell className="text-start">
-                    {item.part_number}
+                    {item.dtl_mr_part_number}
                   </TableCell>
-                  <TableCell className="text-start">{item.part_name}</TableCell>
-                  <TableCell>{item.satuan}</TableCell>
-                  <TableCell>{item.qty}</TableCell>
-                  <TableCell>{item.priority}</TableCell>
+                  <TableCell className="text-start">{item.dtl_mr_part_name}</TableCell>
+                  <TableCell>{item.dtl_mr_satuan}</TableCell>
+                  <TableCell>{item.dtl_mr_qty_request}</TableCell>
+                  <TableCell>{item.dtl_mr_prioritas}</TableCell>
                   <TableCell>
                     <Button
                       type="button"

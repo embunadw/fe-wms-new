@@ -23,9 +23,9 @@ import {
 } from "@/components/ui/table";
 import { formatTanggal } from "@/lib/utils";
 import { getCurrentUser } from "@/services/auth";
-import { getPurchasedPO } from "@/services/purchase-order";
+import { getPurchasedPO } from "@/services/receive-item";
 import { getAllRi } from "@/services/receive-item";
-import type { PO, RI, UserComplete } from "@/types";
+import type { POReceive, RI, UserComplete } from "@/types";
 import { PagingSize } from "@/types/enum";
 import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -38,9 +38,9 @@ export default function ReceiveItem() {
   const [refresh, setRefresh] = useState<boolean>(false);
 
   // === Section: State dan Logika untuk Tabel PO ===
-  const [pos, setPos] = useState<PO[]>([]);
-  const [filteredPos, setFilteredPos] = useState<PO[]>([]);
-  const [poToShow, setPoToShow] = useState<PO[]>([]);
+  const [pos, setPos] = useState<POReceive[]>([]);
+  const [filteredPos, setFilteredPos] = useState<POReceive[]>([]);
+  const [poToShow, setPoToShow] = useState<POReceive[]>([]);
   const [currentPagePo, setCurrentPagePo] = useState<number>(1);
   // State Filter PO
   const [kodePo, setKodePo] = useState<string>("");
@@ -92,16 +92,16 @@ export default function ReceiveItem() {
     let filtered = pos;
     if (kodePo) {
       filtered = filtered.filter((p) =>
-        p.kode.toLowerCase().includes(kodePo.toLowerCase())
+        p.po_kode.toLowerCase().includes(kodePo.toLowerCase())
       );
     }
     if (kodePr) {
       filtered = filtered.filter((p) =>
-        p.kode_pr?.toLowerCase().includes(kodePr.toLowerCase())
+        p.purchase_request.pr_kode?.toLowerCase().includes(kodePr.toLowerCase())
       );
     }
     if (statusPo) {
-      filtered = filtered.filter((p) => p.status === statusPo);
+      filtered = filtered.filter((p) => p.po_status === statusPo);
     }
     setFilteredPos(filtered);
     setCurrentPagePo(1);
@@ -111,7 +111,8 @@ export default function ReceiveItem() {
   useEffect(() => {
     const startIndex = (currentPagePo - 1) * PagingSize;
     const endIndex = startIndex + PagingSize;
-    setPoToShow(filteredPos.slice(startIndex, endIndex));
+    setPoToShow(filteredPos?.slice(startIndex, endIndex) ?? []);
+
   }, [filteredPos, currentPagePo]);
 
   // --- useEffect untuk filtering Tabel RI ---
@@ -119,22 +120,22 @@ export default function ReceiveItem() {
     let filtered = ris;
     if (kodeRi) {
       filtered = filtered.filter((r) =>
-        r.kode.toLowerCase().includes(kodeRi.toLowerCase())
+        r.ri_kode.toLowerCase().includes(kodeRi.toLowerCase())
       );
     }
     if (kodePoRi) {
       filtered = filtered.filter((r) =>
-        r.kode_po.toLowerCase().includes(kodePoRi.toLowerCase())
+        r.purchase_order.po_kode.toLowerCase().includes(kodePoRi.toLowerCase())
       );
     }
     if (gudang) {
       filtered = filtered.filter((r) =>
-        r.gudang_penerima.toLowerCase().includes(gudang.toLowerCase())
+        r.ri_lokasi.toLowerCase().includes(gudang.toLowerCase())
       );
     }
     if (picRi) {
       filtered = filtered.filter((r) =>
-        r.pic.toLowerCase().includes(picRi.toLowerCase())
+        r.ri_pic?.toLowerCase().includes(picRi.toLowerCase())
       );
     }
     setFilteredRis(filtered);
@@ -254,24 +255,24 @@ export default function ReceiveItem() {
               <TableBody>
                 {poToShow.length > 0 ? (
                   poToShow.map((po, index) => (
-                    <TableRow key={po.id}>
+                    <TableRow key={po.po_id}>
                       <TableCell className="p-2 border">
                         {PagingSize * (currentPagePo - 1) + (index + 1)}
                       </TableCell>
-                      <TableCell className="p-2 border">{po.kode}</TableCell>
-                      <TableCell className="p-2 border">{po.kode_pr}</TableCell>
+                      <TableCell className="p-2 border">{po.po_kode}</TableCell>
+                      <TableCell className="p-2 border">{po.purchase_request.pr_kode}</TableCell>
                       <TableCell className="p-2 border">
                         {formatTanggal(po.created_at)}
                       </TableCell>
                       <TableCell className="p-2 border">
-                        {formatTanggal(po.tanggal_estimasi)}
+                        {formatTanggal(po.po_estimasi)}
                       </TableCell>
-                      <TableCell className="p-2 border">{po.status}</TableCell>
+                      <TableCell className="p-2 border">{po.po_status}</TableCell>
                       <TableCell className="p-2 border">
                         <Button size="sm" variant="outline" asChild>
                           <Link
                             to={`/purchase-order/${encodeURIComponent(
-                              po.kode
+                              po.po_kode
                             )}`}
                           >
                             Detail
@@ -413,23 +414,23 @@ export default function ReceiveItem() {
               <TableBody>
                 {riToShow.length > 0 ? (
                   riToShow.map((ri, index) => (
-                    <TableRow key={ri.id}>
+                    <TableRow key={ri.ri_id}>
                       <TableCell className="p-2 border">
                         {PagingSize * (currentPageRi - 1) + (index + 1)}
                       </TableCell>
-                      <TableCell className="p-2 border">{ri.kode}</TableCell>
-                      <TableCell className="p-2 border">{ri.kode_po}</TableCell>
+                      <TableCell className="p-2 border">{ri.ri_kode}</TableCell>
+                      <TableCell className="p-2 border">{ri.purchase_order.po_kode}</TableCell>
                       <TableCell className="p-2 border">
                         {formatTanggal(ri.created_at)}
                       </TableCell>
                       <TableCell className="p-2 border">
-                        {ri.gudang_penerima}
+                        {ri.ri_lokasi}
                       </TableCell>
-                      <TableCell className="p-2 border">{ri.pic}</TableCell>
+                      <TableCell className="p-2 border">{ri.ri_pic}</TableCell>
                       <TableCell className="p-2 border">
                         <Button size="sm" variant="outline" asChild>
                           <Link
-                            to={`/receive-item/${encodeURIComponent(ri.kode)}`}
+                            to={`/receive/kode/${encodeURIComponent(ri.ri_kode)}`}
                           >
                             Detail
                           </Link>

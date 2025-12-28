@@ -6,7 +6,7 @@
  * 4. Get PO by id : All
  */
 import { POCollection } from "@/lib/firebase"; // Assuming you have a POCollection similar to PRCollection
-import type { PO } from "@/types"; // Assuming your types are in "@/types"
+import type { PO, POReceive } from "@/types"; // Assuming your types are in "@/types"
 import {
   addDoc,
   getDocs,
@@ -16,15 +16,13 @@ import {
   where,
   updateDoc,
 } from "firebase/firestore";
+import api from "@/lib/axios";
 
-export async function getAllPo(): Promise<PO[]> {
+//edited diyah
+export async function getAllPo(): Promise<POReceive[]> {
   try {
-    const q = query(POCollection, orderBy("kode", "desc"));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    })) as PO[];
+    const res = await api.get("/pr");
+    return res.data.data as POReceive[];
   } catch (error) {
     console.error("Error fetching all PO:", error);
     throw error;

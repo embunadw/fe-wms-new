@@ -6,7 +6,7 @@ import SectionContainer, {
 import WithSidebar from "@/components/layout/WithSidebar";
 import { Button } from "@/components/ui/button";
 import { getCurrentUser } from "@/services/auth";
-import type { MR, UserComplete } from "@/types";
+import type {MRReceive, UserComplete } from "@/types";
 import { ClipboardPlus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -34,9 +34,9 @@ import { PagingSize } from "@/types/enum";
 
 export default function MaterialRequest() {
   const [user, setUser] = useState<UserComplete | null>(null);
-  const [mrs, setMrs] = useState<MR[]>([]);
-  const [filteredMrs, setFilteredMrs] = useState<MR[]>([]);
-  const [mrToShow, setMrToShow] = useState<MR[]>([]);
+  const [mrs, setMrs] = useState<MRReceive[]>([]);
+  const [filteredMrs, setFilteredMrs] = useState<MRReceive[]>([]);
+  const [mrToShow, setMrToShow] = useState<MRReceive[]>([]);
   const [refresh, setRefresh] = useState<boolean>(false);
 
   // Filtering
@@ -85,33 +85,33 @@ export default function MaterialRequest() {
     if (tanggalMr) {
       filtered = filtered.filter(
         (mr) =>
-          new Date(mr.tanggal_mr).toDateString() === tanggalMr.toDateString()
+          new Date(mr.mr_tanggal).toDateString() === tanggalMr.toDateString()
       );
     }
     if (dueDate) {
       filtered = filtered.filter(
-        (mr) => new Date(mr.due_date).toDateString() === dueDate.toDateString()
+        (mr) => new Date(mr.mr_due_date).toDateString() === dueDate.toDateString()
       );
     }
     if (lokasi) {
       filtered = filtered.filter((mr) =>
-        mr.lokasi.toLowerCase().includes(lokasi.toLowerCase())
+        mr.mr_lokasi.toLowerCase().includes(lokasi.toLowerCase())
       );
     }
     if (pic) {
       filtered = filtered.filter((mr) =>
-        mr.pic.toLowerCase().includes(pic.toLowerCase())
+        mr.mr_pic.toLowerCase().includes(pic.toLowerCase())
       );
     }
     if (status) {
       filtered = filtered.filter((mr) =>
-        mr.status.toLowerCase().includes(status.toLowerCase())
+        mr.mr_status.toLowerCase().includes(status.toLowerCase())
       );
     }
 
     if (kode) {
       filtered = filtered.filter((mr) =>
-        mr.kode.toLowerCase().includes(kode.toLowerCase())
+        mr.mr_kode.toLowerCase().includes(kode.toLowerCase())
       );
     }
     if (dariTanggal && sampaiTanggal) {
@@ -119,7 +119,7 @@ export default function MaterialRequest() {
       const sampai = new Date(sampaiTanggal);
       filtered = filtered.filter(
         (mr) =>
-          new Date(mr.tanggal_mr) >= dari && new Date(mr.tanggal_mr) <= sampai
+          new Date(mr.mr_tanggal) >= dari && new Date(mr.mr_tanggal) <= sampai
       );
     }
 
@@ -288,22 +288,22 @@ export default function MaterialRequest() {
               <TableBody>
                 {mrToShow.length > 0 ? (
                   mrToShow.map((mr, index) => (
-                    <TableRow key={mr.id}>
+                    <TableRow key={mr.mr_id}>
                       <TableCell className="border p-2">
                         {PagingSize * (currentPage - 1) + (index + 1)}
                       </TableCell>
-                      <TableCell className="border p-2">{mr.kode}</TableCell>
+                      <TableCell className="border p-2">{mr.mr_kode}</TableCell>
                       <TableCell className="border p-2">
-                        {formatTanggal(mr.tanggal_mr)}
+                        {formatTanggal(mr.mr_tanggal)}
                       </TableCell>
                       <TableCell className="border p-2">
-                        {formatTanggal(mr.due_date)}
+                        {formatTanggal(mr.mr_due_date)}
                       </TableCell>
-                      <TableCell className="border p-2">{mr.lokasi}</TableCell>
-                      <TableCell className="border p-2">{mr.pic}</TableCell>
-                      <TableCell className="border p-2">{mr.status}</TableCell>
+                      <TableCell className="border p-2">{mr.mr_lokasi}</TableCell>
+                      <TableCell className="border p-2">{mr.mr_pic}</TableCell>
+                      <TableCell className="border p-2">{mr.mr_status}</TableCell>
                       <TableCell className="border p-2">
-                        {mr.barang?.length || 0}
+                        {mr.details?.length || 0}
                       </TableCell>
                       <TableCell className="border p-2">
                         <Button
@@ -313,17 +313,10 @@ export default function MaterialRequest() {
                           asChild
                         >
                           <Link
-                            to={`/material-request/${encodeURIComponent(
-                              mr.kode
-                            )}`}
-                          >
+                            to={`/mr/kode/${encodeURIComponent(mr.mr_kode)}`}>
                             Detail
                           </Link>
                         </Button>
-                        {/* {(user?.role === "warehouse" ||
-                          user?.role === "purchasing") && (
-                          <EditMRDialog mr={mr} refresh={setRefresh} />
-                        )} */}
                       </TableCell>
                     </TableRow>
                   ))

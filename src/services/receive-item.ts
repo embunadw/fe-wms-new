@@ -1,90 +1,40 @@
-/**
- * TODO
- * 1. Create RI : System
- * 2. Update RI : Warehouse
- * 3. Get all RI : All
- * 4. Get RI by id : All
- */
-
-import { POCollection, RICollection, StockCollection } from "@/lib/firebase";
-import type { PR, RI } from "@/types";
-import {
-  addDoc,
-  getDocs,
-  orderBy,
-  query,
-  Timestamp,
-  updateDoc,
-  where,
-} from "firebase/firestore";
+import api from "@/lib/axios";
+import type { POReceive, RI } from "@/types";
 
 export async function getAllRi(): Promise<RI[]> {
-  try {
-    const q = query(RICollection, orderBy("kode", "desc"));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    })) as RI[];
-  } catch (error) {
-    console.error("Error fetching all PO:", error);
-    throw error;
-  }
+  const res = await api.get("/receive");
+  return res.data;
 }
 
-export async function getRiByKode(kode: string): Promise<RI | null> {
-  try {
-    const q = query(RICollection, where("kode", "==", kode));
-    const snapshot = await getDocs(q);
-    if (snapshot.empty) return null;
-    const doc = snapshot.docs[0];
-    return { id: doc.id, ...doc.data() } as RI;
-  } catch (error) {
-    console.error(`Error fetching RI by kode ${kode}:`, error);
-    throw error;
-  }
+export async function getPurchasedPO(): Promise<POReceive[]> {
+  const res = await api.get("/receive/purchase-orders");
+  return res.data.data;
 }
 
-export async function createRI(newRIData: RI, prTerkait: PR): Promise<boolean> {
-  try {
-    const q = query(RICollection, where("kode", "==", newRIData.kode));
-    const existingSnap = await getDocs(q);
-    if (!existingSnap.empty) {
-      throw new Error(
-        `RI kode ${newRIData.kode} already exists. Please use a different code.`
-      );
-    }
+export async function getRIByKode(ri_kode: string): Promise<RI> {
+  const res = await api.get(`/receive/kode/${encodeURIComponent(ri_kode)}`);
+  return res.data;
+}
 
-    // Update stocks di gudang penerima
-    prTerkait.order_item.forEach(async (item) => {
-      const q = query(
-        StockCollection,
-        where("part_number", "==", item.part_number),
-        where("lokasi", "==", newRIData.gudang_penerima)
-      );
-      const stockRef = await getDocs(q);
+export async function createRI(data: any): Promise<boolean> {
+  const payload = {
+    ri_kode: data.ri_kode,
+    po_id: data.po_id,
+    ri_lokasi: data.ri_lokasi,
+    ri_tanggal: data.ri_tanggal,
+    ri_keterangan: data.ri_keterangan,
+    ri_pic: data.ri_pic,
 
-      await updateDoc(stockRef.docs[0].ref, {
-        qty: stockRef.docs[0].data().qty + item.qty,
-        updated_at: Timestamp.now(),
-      });
-    });
+    details: data.details.map((d: any) => ({
+      part_id: d.part_id,
+      mr_id: d.mr_id,
+      dtl_ri_part_number: d.dtl_ri_part_number,
+      dtl_ri_part_name: d.dtl_ri_part_name,
+      dtl_ri_satuan: d.dtl_ri_satuan,
+      dtl_ri_qty: d.dtl_ri_qty,
+    })),
+  };
 
-    // Update status po jadi received
-    const poRef = await getDocs(
-      query(POCollection, where("kode", "==", newRIData.kode_po))
-    );
-
-    await updateDoc(poRef.docs[0].ref, {
-      status: "received",
-    });
-
-    // Insert new RI
-    await addDoc(RICollection, newRIData);
-
-    return true;
-  } catch (error) {
-    console.error("Error creating RI:", error);
-    throw error;
-  }
+  const res = await api.post("/receive", payload);
+  return res.data.status === true;
 }

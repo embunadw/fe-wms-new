@@ -1,14 +1,13 @@
-// pages/material-request/[kode].tsx atau sesuai routing Anda
 import SectionContainer, {
   SectionBody,
   SectionFooter,
   SectionHeader,
 } from "@/components/content-container";
 import WithSidebar from "@/components/layout/WithSidebar";
-import type { Delivery, MR } from "@/types"; // Pastikan path ini benar
+import type { DeliveryReceive, MRReceive } from "@/types"; 
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { toast } from "sonner"; // Import toast for user feedback
+import { toast } from "sonner"; 
 import {
   Table,
   TableBody,
@@ -23,13 +22,33 @@ import { getDeliveryByKode, updateDelivery } from "@/services/delivery";
 import { getMrByKode } from "@/services/material-request";
 import { EditDeliveryDialog } from "@/components/dialog/edit-delivery";
 import { ConfirmDialog } from "@/components/dialog/edit-status-delivery";
+import { getCurrentUser } from "@/services/auth";
+import type { UserComplete } from "@/types";
+import { Button } from "@/components/ui/button";
+import { Printer } from "lucide-react";
+
+
 
 export function DeliveryDetail() {
   const { kode } = useParams<{ kode: string }>();
-  const [mr, setMr] = useState<MR | null>(null);
-  const [dlvry, setdlvry] = useState<Delivery | null>(null);
+  const [mr, setMr] = useState<MRReceive | null>(null);
+  const [dlvry, setdlvry] = useState<DeliveryReceive | null>(null);
+  const [currentUser, setCurrentUser] = useState<UserComplete | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [refresh, setRefresh] = useState<boolean>(false);
+
+  useEffect(() => {
+    async function fetchCurrentUser() {
+      try {
+        const user = await getCurrentUser();
+        setCurrentUser(user);
+      } catch (error) {
+        console.error("Gagal mengambil user login", error);
+      }
+    }
+
+    fetchCurrentUser();
+  }, []);
 
   useEffect(() => {
     async function fetchDeliveryDetail(kode: string) {
@@ -88,11 +107,11 @@ export function DeliveryDetail() {
     }
 
     if (dlvry) {
-      fetchMrDetail(dlvry.kode_mr);
+      fetchMrDetail(dlvry.mr?.mr_kode ?? "");
     }
   }, [dlvry]);
 
-  async function updateDeliveryStatus(status: "on delivery" | "completed") {
+  async function updateDeliveryStatus(status: "on delivery" | "delivered") {
     if (!dlvry) {
       toast.error("Delivery tidak ditemukan.");
       return;
@@ -100,7 +119,7 @@ export function DeliveryDetail() {
 
     try {
       if (status === "on delivery") {
-        const res = await updateDelivery(dlvry.kode_it, {
+        const res = await updateDelivery(dlvry.dlv_kode, {
           status: "on delivery",
         });
         if (res) {
@@ -111,9 +130,9 @@ export function DeliveryDetail() {
         } else {
           toast.error("Gagal memperbarui status delivery.");
         }
-      } else if (status === "completed") {
-        const res = await updateDelivery(dlvry.kode_it, {
-          status: "completed",
+      } else if (status === "delivered") {
+        const res = await updateDelivery(dlvry.dlv_kode, {
+          status: "delivered",
         });
         if (res) {
           toast.success(
@@ -163,6 +182,7 @@ export function DeliveryDetail() {
             <p className="text-sm text-muted-foreground text-center w-full">
               Pastikan kode yang Anda masukkan benar.
             </p>
+            
           </SectionFooter>
         </SectionContainer>
       </WithSidebar>
@@ -173,7 +193,8 @@ export function DeliveryDetail() {
     <WithSidebar>
       {/* Detail Delivery */}
       <SectionContainer span={12}>
-        <SectionHeader>Detail Delivery: {dlvry.kode_it}</SectionHeader>
+        <SectionHeader>Detail Delivery: {dlvry.dlv_kode}
+        </SectionHeader>
         <SectionBody className="grid grid-cols-12 gap-6">
           {/* Informasi Umum Delivery */}
           <div className="col-span-12 space-y-4">
@@ -183,47 +204,47 @@ export function DeliveryDetail() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label className="text-sm text-muted-foreground">Kode IT</Label>
-                <p className="font-medium text-base">{dlvry.kode_it}</p>
+                <p className="font-medium text-base">{dlvry.dlv_kode}</p>
               </div>
               <div>
                 <Label className="text-sm text-muted-foreground">
                   Referensi MR
                 </Label>
-                <p className="font-medium text-base">{dlvry.kode_mr}</p>
+                <p className="font-medium text-base">{dlvry.mr?.mr_kode}</p>
               </div>
               <div>
                 <Label className="text-sm text-muted-foreground">Status</Label>
-                <p className="font-medium text-base">{dlvry.status}</p>
+                <p className="font-medium text-base">{dlvry.dlv_status}</p>
               </div>
               <div>
                 <Label className="text-sm text-muted-foreground">
                   Person in charge
                 </Label>
-                <p className="font-medium text-base">{dlvry.pic}</p>
+                <p className="font-medium text-base">{dlvry.dlv_pic}</p>
               </div>
               <div>
                 <Label className="text-sm text-muted-foreground">
                   Dari gudang
                 </Label>
-                <p className="font-medium text-base">{dlvry.dari_gudang}</p>
+                <p className="font-medium text-base">{dlvry.dlv_dari_gudang}</p>
               </div>
               <div>
                 <Label className="text-sm text-muted-foreground">
                   Ke gudang
                 </Label>
-                <p className="font-medium text-base">{dlvry.ke_gudang}</p>
+                <p className="font-medium text-base">{dlvry.dlv_ke_gudang}</p>
               </div>
               <div>
                 <Label className="text-sm text-muted-foreground">
                   Ekspedisi yang digunakan
                 </Label>
-                <p className="font-medium text-base">{dlvry.ekspedisi}</p>
+                <p className="font-medium text-base">{dlvry.dlv_ekspedisi}</p>
               </div>
               <div>
                 <Label className="text-sm text-muted-foreground">
                   No. resi
                 </Label>
-                <p className="font-medium text-base">{dlvry.resi_pengiriman}</p>
+                <p className="font-medium text-base">{dlvry.dlv_no_resi}</p>
               </div>
               <div>
                 <Label className="text-sm text-muted-foreground">
@@ -249,8 +270,9 @@ export function DeliveryDetail() {
           {/* {dlvry.status !== "completed" && (
             <EditDeliveryDialog delivery={dlvry} refresh={setRefresh} />
           )} */}
+           
           <EditDeliveryDialog delivery={dlvry} refresh={setRefresh} />
-          {dlvry.status === "pending" && (
+          {dlvry.dlv_status === "pending" && (
             <ConfirmDialog
               text="Naikkan status ke on delivery"
               onClick={() => {
@@ -258,14 +280,23 @@ export function DeliveryDetail() {
               }}
             />
           )}
-          {dlvry.status === "on delivery" && (
-            <ConfirmDialog
-              text="Selesaikan delivery"
-              onClick={() => {
-                updateDeliveryStatus("completed");
-              }}
-            />
-          )}
+          <Button
+            variant={"outline"}
+            onClick={() => window.print()}
+            className="print:hidden"
+          >
+            <Printer />
+          </Button>
+          {dlvry.dlv_status === "on delivery" &&
+  currentUser?.lokasi === dlvry.dlv_ke_gudang && (
+    <ConfirmDialog
+      text="Selesaikan delivery"
+      onClick={() => {
+        updateDeliveryStatus("delivered");
+      }}
+    />
+)}
+
         </SectionFooter>
       </SectionContainer>
 
@@ -290,31 +321,29 @@ export function DeliveryDetail() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {mr?.barang && mr.barang.length > 0 ? (
-                    mr.barang.map((item, index) => (
+                  {mr?.details && mr.details.length > 0 ? (
+                    mr.details.map((item, index) => (
                       <TableRow key={index} className="[&>td]:border">
                         <TableCell className="w-[50px] text-center">
                           {index + 1}
                         </TableCell>
-                        <TableCell>{item.part_number}</TableCell>
-                        <TableCell>{item.part_name}</TableCell>
-                        <TableCell>{item.satuan}</TableCell>
-                        <TableCell>{item.qty}</TableCell>
-                        <TableCell>{item.qty_delivered}</TableCell>
+                        <TableCell>{item.dtl_mr_part_number}</TableCell>
+                        <TableCell>{item.dtl_mr_part_name}</TableCell>
+                        <TableCell>{item.dtl_mr_satuan}</TableCell>
+                        <TableCell>{item.dtl_mr_qty_request}</TableCell>
+                        <TableCell>{item.dtl_mr_qty_received}</TableCell>
                         <TableCell>
-                          {dlvry.items.find(
-                            (e) => e.part_number === item.part_number
+                          {dlvry.details.find(
+                            (e) => e.dtl_dlv_part_number === item.dtl_mr_part_number
                           )?.qty_on_delivery || 0}
                         </TableCell>
                         <TableCell>
-                          {dlvry.items.find(
-                            (e) => e.part_number === item.part_number
+                          {dlvry.details.find(
+                            (e) => e.dtl_dlv_part_number === item.dtl_mr_part_number
                           )?.qty_pending || 0}
                         </TableCell>
                         <TableCell>
-                          {dlvry.items.find(
-                            (e) => e.part_number === item.part_number
-                          )?.dari_gudang || "-"}
+                          {dlvry.dlv_dari_gudang ?? "-"}
                         </TableCell>
                       </TableRow>
                     ))

@@ -4,6 +4,7 @@ import SectionContainer, {
   SectionFooter,
 } from "@/components/content-container";
 import { EditStockDialog } from "@/components/dialog/edit-stock";
+import { EditPartDialog } from "@/components/dialog/edit-part";
 import CreateMasterPartForm from "@/components/form/create-master-part";
 import WithSidebar from "@/components/layout/WithSidebar";
 import { MyPagination } from "@/components/my-pagination";
@@ -105,7 +106,8 @@ export default function BarangDanStok() {
       />
 
       {/* Data Master Part */}
-      <DataMasterPartSection masterParts={masterParts as MasterPart[]} />
+      <DataMasterPartSection masterParts={masterParts as MasterPart[]} 
+      setRefresh={setRefresh}/>
 
       {/* Tambah */}
       <SectionContainer span={12}>
@@ -129,7 +131,9 @@ export default function BarangDanStok() {
   );
 }
 
-function MasterPartCollumnsGenerator() {
+function MasterPartCollumnsGenerator(
+  setRefresh: Dispatch<SetStateAction<boolean>>
+) {
   return [
     {
       header: "Part Number",
@@ -141,7 +145,7 @@ function MasterPartCollumnsGenerator() {
     },
     {
       header: "Satuan",
-      accessorKey: "satuan",
+      accessorKey: "part_satuan",
     },
     {
       header: "Created At",
@@ -156,16 +160,21 @@ function MasterPartCollumnsGenerator() {
     {
       header: "Aksi",
       accessorKey: "aksi",
-      cell: () => (
-        <Button variant="outline" size={"sm"}>
-          Edit
-        </Button>
+      cell: (_: any, row: MasterPart) => (
+        <EditPartDialog refresh={setRefresh} part={row} />
       ),
     },
   ];
 }
 
-function DataMasterPartSection({ masterParts }: { masterParts: MasterPart[] }) {
+
+function DataMasterPartSection({  
+  masterParts,
+  setRefresh,
+  }: {
+    masterParts: MasterPart[];
+    setRefresh: Dispatch<SetStateAction<boolean>>;
+  }) {
   const [filteredMasterParts, setFilteredMasterParts] = useState<MasterPart[]>(
     []
   );
@@ -202,7 +211,7 @@ function DataMasterPartSection({ masterParts }: { masterParts: MasterPart[] }) {
 
     if (uom) {
       filtered = filtered.filter((mp) =>
-        mp.satuan.toLowerCase().includes(uom.toLowerCase())
+        mp.part_satuan.toLowerCase().includes(uom.toLowerCase())
       );
     }
 
@@ -294,7 +303,7 @@ function DataMasterPartSection({ masterParts }: { masterParts: MasterPart[] }) {
           </div>
           <QuickTable
             data={tableMasterParts}
-            columns={MasterPartCollumnsGenerator()}
+            columns={MasterPartCollumnsGenerator(setRefresh)}
             page={currentPage}
           />
         </div>
@@ -338,36 +347,62 @@ function DataStokBarangSection({
     const startIndex = (currentPage - 1) * PagingSize;
     const endIndex = startIndex + PagingSize;
     setTableStocks(filteredStock.slice(startIndex, endIndex));
+    
   }, [currentPage, filteredStock]);
 
   useEffect(() => {
-    // Mulai dari stocks penuh atau dibatasi lokasi user
-    let data = semuaLokasi
-      ? stocks
-      : stocks.filter((stock) => stock.lokasi === lokasiUser);
+    let data = stocks.map((s) => ({
+      ...s,
+      part_number: s.barang?.part_number ?? "-",
+      part_name: s.barang?.part_name ?? "-",
+      part_satuan: s.barang?.part_satuan ?? "-",
 
-    // Apply filters
+      stk_location: s.stk_location ?? lokasiUser,
+      stk_qty: s.stk_qty ?? 0,
+      stk_min: s.stk_min ?? 0,
+      stk_max: s.stk_max ?? 0,
+    }));
+    console.log("RAW STOCKS FROM API:", stocks);
+
+    // ✅ FILTER LOKASI SESUAI LOGIN
+    if (!semuaLokasi && lokasiUser) {
+      data = data.filter(
+        (stock) =>
+          stock.stk_location?.toLowerCase() === lokasiUser.toLowerCase()
+      );
+    }
+
+    // ✅ FILTER PART NUMBER
     if (pn) {
       data = data.filter((stock) =>
-        stock.part_number.toLowerCase().includes(pn.toLowerCase())
+        stock.barang.part_number
+          ?.toLowerCase()
+          .includes(pn.toLowerCase())
       );
     }
 
+    // ✅ FILTER PART NAME
     if (pnm) {
       data = data.filter((stock) =>
-        stock.part_name.toLowerCase().includes(pnm.toLowerCase())
+        stock.barang?.part_name
+          ?.toLowerCase()
+          .includes(pnm.toLowerCase())
       );
     }
 
+    // ✅ FILTER SATUAN
     if (uom) {
       data = data.filter((stock) =>
-        stock.satuan.toLowerCase().includes(uom.toLowerCase())
+        stock.barang?.part_satuan
+          ?.toLowerCase()
+          .includes(uom.toLowerCase())
       );
     }
 
+    // FILTER LOKASI MANUAL
     if (lokasi) {
       data = data.filter((stock) =>
-        stock.lokasi.toLowerCase().includes(lokasi.toLowerCase())
+        stock.stk_location?.toLowerCase().includes(lokasi.toLowerCase())
       );
     }
 
@@ -396,23 +431,23 @@ function DataStokBarangSection({
       },
       {
         header: "Satuan",
-        accessorKey: "satuan",
+        accessorKey: "part_satuan", 
       },
       {
         header: "Lokasi",
-        accessorKey: "lokasi",
+        accessorKey: "stk_location",
       },
       {
         header: "Qty",
-        accessorKey: "qty",
+        accessorKey: "stk_qty",
       },
       {
         header: "Min",
-        accessorKey: "min",
+        accessorKey: "stk_min",
       },
       {
         header: "Max",
-        accessorKey: "max",
+        accessorKey: "stk_max",
       },
       {
         header: "Aksi",
@@ -429,9 +464,7 @@ function DataStokBarangSection({
       <SectionHeader>Daftar Stok Barang</SectionHeader>
       <SectionBody className="grid grid-cols-12 gap-2">
         <div className="flex flex-col gap-4 col-span-12 rounded-sm text-center">
-          {/* Filtering */}
           <div className="col-span-12 grid grid-cols-12 gap-4 items-end">
-            {/* Search by kode */}
             <div className="col-span-12 md:col-span-4 lg:col-span-5">
               <Input
                 placeholder="Cari berdasarkan part number"
@@ -440,7 +473,6 @@ function DataStokBarangSection({
               />
             </div>
 
-            {/* Filter popover */}
             <div className="col-span-12 md:col-span-4 lg:col-span-3">
               <Popover>
                 <PopoverTrigger asChild>
@@ -449,7 +481,6 @@ function DataStokBarangSection({
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-80 space-y-4">
-                  {/* PN */}
                   <div>
                     <label className="block text-sm font-medium mb-1">
                       Part Name
@@ -460,7 +491,7 @@ function DataStokBarangSection({
                       onChange={(e) => setPnm(e.target.value)}
                     />
                   </div>
-                  {/* UOM */}
+
                   <div>
                     <label className="block text-sm font-medium mb-1">
                       Satuan
@@ -471,7 +502,7 @@ function DataStokBarangSection({
                       onChange={(e) => setUom(e.target.value)}
                     />
                   </div>
-                  {/* Lokasi */}
+
                   <div>
                     <label className="block text-sm font-medium mb-1">
                       Lokasi
@@ -482,7 +513,7 @@ function DataStokBarangSection({
                       onChange={(e) => setLokasi(e.target.value)}
                     />
                   </div>
-                  {/* Checkbox semua lokasi */}
+
                   <div className="flex gap-2 items-center">
                     <Checkbox
                       id="semua-lokasi"
@@ -491,10 +522,7 @@ function DataStokBarangSection({
                         setSemuaLokasi(checked === true)
                       }
                     />
-                    <label
-                      htmlFor="semua-lokasi"
-                      className="text-sm font-medium"
-                    >
+                    <label className="text-sm font-medium">
                       Tampilkan semua lokasi
                     </label>
                   </div>
@@ -502,7 +530,6 @@ function DataStokBarangSection({
               </Popover>
             </div>
 
-            {/* Clear filter button */}
             <div className="col-span-12 md:col-span-4 lg:col-span-2">
               <Button
                 className="w-full"
@@ -513,9 +540,10 @@ function DataStokBarangSection({
               </Button>
             </div>
           </div>
+          
 
           <QuickTable
-            data={tableStocks}
+            data={filteredStock}
             columns={StockCollumnsGenerator()}
             page={currentPage}
           />
@@ -523,7 +551,7 @@ function DataStokBarangSection({
       </SectionBody>
       <SectionFooter>
         <MyPagination
-          data={filteredStock}
+          data={tableStocks}
           currentPage={currentPage}
           triggerNext={() => setCurrentPage((page) => page + 1)}
           triggerPrevious={() => setCurrentPage((page) => page - 1)}
@@ -533,3 +561,4 @@ function DataStokBarangSection({
     </SectionContainer>
   );
 }
+

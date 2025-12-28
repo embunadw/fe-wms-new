@@ -1,129 +1,76 @@
 /**
- * TODO
- * 1. Create MR : Warehouse - done
- * 2. Update MR : Warehouse - done
- * 3. Get all MR : All - done
- * 4. Get MR by id : All - done
+ * MR SERVICE (BACKEND)
+ *
+ * 1. Generate MR Code : Backend
+ * 2. Create MR        : Backend
+ * 3. Get all MR       : All (TIDAK DIUBAH)
+ * 4. Get MR by kode   : All
  */
 
-import { MRCollection } from "@/lib/firebase";
-import type { MR, UserComplete, UserDb } from "@/types";
-import { LokasiList } from "@/types/enum";
-import {
-  addDoc,
-  doc,
-  getDocs,
-  limit,
-  orderBy,
-  query,
-  Timestamp,
-  updateDoc,
-  where,
-} from "firebase/firestore";
+import type { MRReceive } from "@/types";
+import axios from "axios";
+import api from "@/lib/axios";
 
-// --- MR Service Functions ---
+const BASE_URL = "http://localhost:8000/api/mr";
 
-export async function generateKodeMR(
-  user: UserDb | UserComplete
-): Promise<string> {
-  // Contoh GMI/JKT/25/4/00005
-  const locationShort =
-    LokasiList.find((loc) => loc.nama === user.lokasi)?.kode || "UNK";
-  const tahunShort = new Date().getFullYear().toString().slice(-2);
-  const bulanShort = (new Date().getMonth() + 1).toString();
+export async function generateKodeMR(lokasi: string): Promise<string> {
+  const res = await axios.get(
+    `${BASE_URL}/generate-kode`,
+    { params: { lokasi } }
+  );
+
+  return res.data; 
+}
+export async function getOpenMR() {
+  const res = await api.get( `${BASE_URL}/open`);
+  return res.data;
+}
+
+
+export async function createMR(data: MRReceive) {
+  const payload = {
+    mr_kode: data.mr_kode,
+    mr_tanggal: data.mr_tanggal,
+    mr_due_date: data.mr_due_date,
+    mr_lokasi: data.mr_lokasi,
+    mr_pic: data.mr_pic,
+    mr_status: data.mr_status,
+    created_at: data.created_at,
+    updated_at: data.updated_at,
+
+    details: data.details.map((d) => ({
+      part_id: d.part_id,
+      dtl_mr_part_number: d.dtl_mr_part_number,
+      dtl_mr_part_name: d.dtl_mr_part_name,
+      dtl_mr_satuan: d.dtl_mr_satuan,
+      dtl_mr_prioritas: d.dtl_mr_prioritas,
+      dtl_mr_qty_request: d.dtl_mr_qty_request ?? 0,
+      dtl_mr_qty_received: d.dtl_mr_qty_received ?? 0,
+    })),
+  };
+
+  return api.post("/mr", payload);
+}
+
+export async function getAllMr(): Promise<MRReceive[]> {
+  const res = await api.get("/mr");
+  return res.data;
+}
+
+export async function getMrByKode(
+  mr_kode: string
+): Promise<MRReceive | null> {
   try {
-    const templateKode = `GMI/${locationShort}/${tahunShort}/`;
-    const q = query(
-      MRCollection,
-      where("kode", ">=", templateKode),
-      where("kode", "<", templateKode + "99999"),
-      orderBy("kode", "desc"),
-      limit(1)
+    const res = await axios.get(
+      `${BASE_URL}/kode/${encodeURIComponent(mr_kode)}`
     );
-    const getLatestKodeInCollection = await getDocs(q);
-    if (getLatestKodeInCollection.empty) {
-      return templateKode + bulanShort + "/00001";
-    }
-    const latestDoc = getLatestKodeInCollection.docs[0];
-    const latestKode = latestDoc.data().kode as string;
-    const latestNumber = parseInt(latestKode.split("/").pop() || "0", 10);
-    const nextNumber = latestNumber + 1;
-    const nextKode = nextNumber.toString().padStart(5, "0");
-    return `${templateKode}${bulanShort}/${nextKode}`;
-  } catch (error) {
-    throw error;
+
+    return res.data ?? null;
+  } catch (error: any) {
+    if (error.response?.status === 404) return null;
+    console.error("Error fetching MR by kode:", error);
+    throw new Error("Failed to fetch MR by kode");
   }
 }
 
-export async function createMR(
-  newMRData: Omit<MR, "id" | "created_at" | "updated_at">
-): Promise<boolean> {
-  try {
-    // check mr with same kode
-    const q = query(MRCollection, where("kode", "==", newMRData.kode));
-    const existingSnap = await getDocs(q);
 
-    if (!existingSnap.empty) {
-      throw new Error(
-        `MR dengan kode ${newMRData.kode} sudah ada, ganti dengan yang lain.`
-      );
-    }
-
-    const timestamp = Timestamp.now();
-    const mrToAdd = {
-      ...newMRData,
-      created_at: timestamp,
-      updated_at: timestamp,
-    };
-    await addDoc(MRCollection, mrToAdd);
-
-    return true;
-  } catch (error) {
-    console.error("Error creating MR:", error);
-    throw error;
-  }
-}
-
-export async function getAllMr(): Promise<MR[]> {
-  try {
-    const q = query(MRCollection, orderBy("kode", "desc"));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    })) as MR[];
-  } catch (error) {
-    console.error("Error fetching all MR:", error);
-    throw error;
-  }
-}
-
-export async function getMrByKode(kode: string): Promise<MR | null> {
-  try {
-    const q = query(MRCollection, where("kode", "==", kode));
-    const snapshot = await getDocs(q);
-    if (snapshot.empty) return null;
-    const doc = snapshot.docs[0];
-    return { id: doc.id, ...doc.data() } as MR;
-  } catch (error) {
-    console.error(`Error fetching MR by kode ${kode}:`, error);
-    throw error;
-  }
-}
-
-export async function updateMR(
-  mrid: string,
-  updatedData: Partial<MR>
-): Promise<boolean> {
-  try {
-    const docref = doc(MRCollection, mrid);
-    await updateDoc(docref, {
-      ...updatedData,
-      updated_at: Timestamp.now(),
-    });
-    return true;
-  } catch (error) {
-    console.error(`Error updating MR with id ${mrid}:`, error);
-    throw error;
-  }
-}

@@ -1,4 +1,4 @@
-// components/dialog/AddItemMRDialog.tsx
+// components/dialog/AddItemDeliveryDialog.tsx
 import React, { useState } from "react";
 import {
   Dialog,
@@ -13,12 +13,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import type { MRItem } from "@/types";
+
+// ⬇️ ubah tipe dari MRItem ke MRDetail
+import type { MRDetail } from "@/types";
 
 interface AddDeliveryItemDialogProps {
-  mr_item: MRItem | undefined;
+  mr_item: MRDetail | undefined;
   dari: string;
-  onAddItem: (part: MRItem, qty: number) => void; // Callback untuk menambahkan item ke daftar di parent
+
+  // ⬇️ callback mengikuti MRDetail
+  onAddItem: (part: MRDetail, qty: number) => void;
+
   triggerButton: React.ReactNode;
 }
 
@@ -28,6 +33,7 @@ export function AddItemDeliveryDialog({
   dari,
   triggerButton,
 }: AddDeliveryItemDialogProps) {
+
   const [qty, setQty] = useState<number>(1);
   const [isOpen, setIsOpen] = useState(false);
 
@@ -41,7 +47,6 @@ export function AddItemDeliveryDialog({
 
     onAddItem(mr_item, qty);
 
-    // Reset form dan tutup dialog
     setQty(1);
     setIsOpen(false);
   };
@@ -56,57 +61,62 @@ export function AddItemDeliveryDialog({
             Masukkan detail untuk item yang akan dikirim.
           </DialogDescription>
         </DialogHeader>
+
         <div className="grid gap-4 py-4">
+
+          {/* PART NUMBER */}
           <div className="flex flex-col gap-2">
             <Label htmlFor="partNo">Part No</Label>
             <Input
               id="partNo"
-              placeholder="Part number"
-              value={mr_item?.part_number}
+              value={mr_item?.dtl_mr_part_number}
               disabled
               required
             />
           </div>
+
+          {/* PART NAME */}
           <div className="flex flex-col gap-2">
             <Label htmlFor="partName">Nama Part</Label>
             <Input
               id="partName"
-              placeholder="Nama part"
-              value={mr_item?.part_name}
+              value={mr_item?.dtl_mr_part_name}
               disabled
               required
             />
           </div>
+
+          {/* SATUAN */}
           <div className="flex flex-col gap-2">
             <Label htmlFor="satuan">Satuan</Label>
             <Input
               id="satuan"
-              placeholder="Satuan (contoh: Pcs, Kg)"
-              value={mr_item?.satuan}
+              value={mr_item?.dtl_mr_satuan}
               disabled
               required
             />
           </div>
 
+          {/* QTY REQUEST */}
           <div className="flex flex-col gap-2">
-            <Label htmlFor="qty">Jumlah yg diminta</Label>
+            <Label>Jumlah yg diminta</Label>
             <Input
-              id="qty"
               type="number"
-              placeholder="Jumlah"
-              value={mr_item?.qty}
-              required
+              value={mr_item?.dtl_mr_qty_request}
               disabled
+              required
             />
           </div>
 
+          {/* LOCATION */}
           <div className="flex flex-col gap-2">
-            <Label htmlFor="qty">Gudang dipilih untuk mengirim</Label>
-            <Input id="qty" type="text" value={dari} required disabled />
+            <Label>Gudang dipilih untuk mengirim</Label>
+            <Input value={dari} disabled required />
           </div>
 
+          {/* QTY DELIVERY */}
           <div className="flex flex-col gap-2">
-            <Label htmlFor="qty">Jumlah yg akan dikirim</Label>
+            <Label>Jumlah yg akan dikirim</Label>
             <Input
               id="qty_delivery"
               type="number"
@@ -117,12 +127,15 @@ export function AddItemDeliveryDialog({
               required
             />
           </div>
+
         </div>
+
         <DialogFooter>
           <Button type="button" onClick={handleSaveItem}>
             Tambahkan
           </Button>
         </DialogFooter>
+
       </DialogContent>
     </Dialog>
   );

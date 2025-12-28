@@ -1,127 +1,47 @@
-import { MasterPartCollection, StockCollection } from "@/lib/firebase";
-import type { MasterPart, Stock } from "@/types";
-import { LokasiList } from "@/types/enum";
-import {
-  addDoc,
-  deleteDoc,
-  getDocs,
-  query,
-  Timestamp,
-  updateDoc,
-  where,
-} from "firebase/firestore";
+import api from "@/lib/axios";
+import axios from "@/lib/axios";
+import type { MasterPart } from "@/types";
+import { getCurrentUser } from "@/services/auth";
 
-export async function createMasterPart(data: MasterPart): Promise<boolean> {
-  const { part_number, part_name, satuan } = data;
-  if (!part_number || !part_name || !satuan) {
-    throw new Error("Part number, part name, and satuan are required.");
-  }
+ const user = await getCurrentUser();
 
-  // Cek jika part number sudah ada
-  const q = query(
-    MasterPartCollection,
-    where("part_number", "==", part_number)
-  );
-  const existingPart = await getDocs(q);
-  if (!existingPart.empty) {
-    return false;
-  }
+export async function createMasterPart(
+  data: MasterPart
+): Promise<boolean> {
+  const payload = {
+    part_number: data.part_number,
+    part_name: data.part_name,
+    part_satuan: data.part_satuan,
+    lokasi: user?.lokasi,
+  };
 
-  // Simpan data baru
-  await addDoc(MasterPartCollection, {
-    part_name,
-    part_number,
-    satuan,
-    created_at: Timestamp.now(),
-    updated_at: Timestamp.now(),
-  } as MasterPart);
-
-  // Simpan stok untuk semua lokasi
-  LokasiList.map(async (lokasi) => {
-    if (lokasi.nama === "unassigned") {
-      return;
-    }
-
-    const stockData: Stock = {
-      part_number,
-      part_name,
-      satuan,
-      lokasi: lokasi.nama,
-      max: 0, // default
-      min: 0, // default
-      qty: 0,
-      created_at: Timestamp.now(),
-      updated_at: Timestamp.now(),
-    };
-
-    // Simpan stok untuk setiap lokasi
-    await addDoc(StockCollection, stockData);
-  });
-
-  return true;
+  const res = await api.post("/barang", payload);
+  return res.data.status === true;
 }
 
-export async function getMasterParts(): Promise<MasterPart[]> {
-  const snapShot = await getDocs(MasterPartCollection);
 
-  const res = snapShot.docs
-    .map((doc) => {
-      return doc.data() as MasterPart;
-    })
-    .flat();
-  console.log(res);
-  return res;
+export async function getMasterParts(): Promise<MasterPart[]> {
+  const res = await api.get("/barang");
+
+  return res.data.data.map((item: any) => ({
+    part_id: item.part_id,
+    part_number: item.part_number,
+    part_name: item.part_name,
+    part_satuan: item.part_satuan,
+    created_at: item.created_at,
+    updated_at: item.updated_at,
+  }));
 }
 
 export async function updateMasterPart(
-  data: Partial<MasterPart>
-): Promise<boolean> {
-  const { id, part_number, part_name, satuan } = data;
-  if (!id || !part_number || !part_name || !satuan) {
-    throw new Error("ID, part number, part name, and satuan are required.");
+  part_id: number,
+  payload: {
+    part_number: string;
+    part_name: string;
+    part_satuan: string;
   }
-
-  // Cek jika part number sudah ada
-  const q = query(
-    MasterPartCollection,
-    where("part_number", "==", part_number)
-  );
-  const existingPart = await getDocs(q);
-  if (existingPart.empty) {
-    return false;
-  }
-
-  const docRef = existingPart.docs[0].ref;
-
-  // Update data
-  await updateDoc(docRef, data);
-  return true;
+) {
+  const res = await axios.put(`/barang/${part_id}`, payload);
+  return res.data;
 }
 
-export async function deleteMasterPart(id: string): Promise<boolean> {
-  if (!id) {
-    throw new Error("ID is required.");
-  }
-
-  const q = query(MasterPartCollection, where("id", "==", id));
-  const existingPart = await getDocs(q);
-  if (existingPart.empty) {
-    return false;
-  }
-
-  const docRef = existingPart.docs[0].ref;
-
-  // Hapus data Master Part
-  await deleteDoc(docRef);
-
-  // Hapus semua stok terkait
-  const stockQuery = query(
-    StockCollection,
-    where("part_no", "==", existingPart.docs[0].data().part_number)
-  );
-  const stockSnapshot = await getDocs(stockQuery);
-  stockSnapshot.forEach(async (stockDoc) => {
-    await deleteDoc(stockDoc.ref);
-  });
-  return true;
-}

@@ -14,7 +14,7 @@ import { Button } from "../ui/button";
 import type { Stock } from "@/types";
 import { toast } from "sonner";
 import type { Dispatch, SetStateAction } from "react";
-import { updateStock } from "@/services/stock";
+import { saveStock } from "@/services/stock";
 
 interface MyDialogProps {
   onSubmit?: () => void;
@@ -26,10 +26,10 @@ export function EditStockDialog({ stock, refresh }: MyDialogProps) {
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    const min = formData.get("min") as string;
-    const max = formData.get("max") as string;
-    const qty = formData.get("qty") as string;
-    if (!stock.id) {
+    const min = formData.get("stk_min") as string;
+    const max = formData.get("stk_max") as string;
+    const qty = formData.get("stk_qty") as string;
+    if (!stock.stk_id) {
       toast.error("Stock tidak ditemukan");
       return;
     }
@@ -40,21 +40,22 @@ export function EditStockDialog({ stock, refresh }: MyDialogProps) {
     // }
 
     try {
-      const res = await updateStock({
-        ...stock,
-        min: parseInt(min, 10),
-        max: parseInt(max, 10),
-        qty: parseInt(qty, 10),
+      const res = await saveStock({
+        part_id: Number(stock.part_id),
+        stk_location: stock.stk_location,
+        stk_qty: parseInt(qty, 10),
+        stk_min: parseInt(min, 10),
+        stk_max: parseInt(max, 10),
       });
       if (res) {
-        toast.success("Data MR berhasil diupdate");
+        toast.success("Data stock berhasil diupdate");
         refresh((prev) => !prev);
       }
     } catch (error) {
       if (error instanceof Error) {
-        toast.error(`Gagal mengupdate nr: ${error.message}`);
+        toast.error(`Gagal mengupdate stock: ${error.message}`);
       } else {
-        toast.error("Gagal mengupdate nr");
+        toast.error("Gagal mengupdate stock");
       }
     }
   }
@@ -96,28 +97,28 @@ export function EditStockDialog({ stock, refresh }: MyDialogProps) {
             </div>
             {/* lokasi */}
             <div className="grid gap-3">
-              <Label htmlFor="lokasi">Lokasi gudang</Label>
+              <Label htmlFor="stk_location">Lokasi gudang</Label>
               <Input
-                id="lokasi"
-                name="lokasi"
-                defaultValue={stock.lokasi}
+                id="stk_location"
+                name="stk_location"
+                defaultValue={stock.stk_location}
                 disabled
               />
             </div>
             {/* min */}
             <div className="grid gap-3">
-              <Label htmlFor="min">Min Stock</Label>
-              <Input id="min" name="min" defaultValue={stock.min} />
+              <Label htmlFor="stk_min">Min Stock</Label>
+              <Input id="stk_min" name="stk_min" defaultValue={stock.stk_min} />
             </div>
             {/* max */}
             <div className="grid gap-3">
-              <Label htmlFor="max">Max Stock</Label>
-              <Input id="max" name="max" defaultValue={stock.max} />
+              <Label htmlFor="stk_max">Max Stock</Label>
+              <Input id="stk_max" name="stk_max" defaultValue={stock.stk_max} />
             </div>
             {/* Stock */}
             <div className="grid gap-3">
-              <Label htmlFor="qty">Qty Stock</Label>
-              <Input id="qty" name="qty" defaultValue={stock.qty} />
+              <Label htmlFor="stk_qty">Qty Stock</Label>
+              <Input id="stk_qty" name="stk_qty" defaultValue={stock.stk_qty} />
             </div>
           </div>
         </form>

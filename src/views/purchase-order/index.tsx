@@ -8,7 +8,7 @@ import WithSidebar from "@/components/layout/WithSidebar";
 import { MyPagination } from "@/components/my-pagination";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label"; // <-- Impor Label
+import { Label } from "@/components/ui/label";
 import {
   Popover,
   PopoverContent,
@@ -20,7 +20,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"; // <-- Impor Select
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -29,17 +29,58 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-// Diasumsikan Anda memiliki komponen DatePicker, jika tidak, Anda perlu membuatnya.
-// import { DatePicker } from "@/components/ui/date-picker";
 import { formatTanggal } from "@/lib/utils";
 import { getCurrentUser } from "@/services/auth";
 import { getAllPo } from "@/services/purchase-order";
 import type { PO, UserComplete } from "@/types";
 import { PagingSize } from "@/types/enum";
 import { Plus } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Component } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
+
+// Error Boundary Component
+class ErrorBoundary extends Component<
+  { children: React.ReactNode },
+  { hasError: boolean; error: Error | null }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: any) {
+    console.error("❌ Error in CreatePOForm:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="p-4 border border-red-300 bg-red-50 rounded-sm">
+          <p className="text-red-800 font-semibold mb-2">
+            ⚠️ Error loading form
+          </p>
+          <p className="text-sm text-red-600 mb-2">
+            {this.state.error?.message || "Unknown error"}
+          </p>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => this.setState({ hasError: false, error: null })}
+          >
+            Coba Lagi
+          </Button>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
 
 export default function PurchaseOrder() {
   const [refresh, setRefresh] = useState<boolean>(false);
@@ -49,18 +90,21 @@ export default function PurchaseOrder() {
   const [poToShow, setPoToShow] = useState<PO[]>([]);
   const [currentPage, setCurrentPage] = useState<number>(1);
 
-  // --- State untuk Filtering ---
+  // State untuk Filtering
   const [kodePo, setKodePo] = useState<string>("");
   const [kodePr, setKodePr] = useState<string>("");
   const [status, setStatus] = useState<string>("");
-  // Contoh state untuk filter tanggal, jika diperlukan
-  // const [tanggalAwal, setTanggalAwal] = useState<Date | undefined>();
-  // const [tanggalAkhir, setTanggalAkhir] = useState<Date | undefined>();
 
   useEffect(() => {
     async function fetchUser() {
-      const user = await getCurrentUser();
-      setUser(user);
+      try {
+        const userData = await getCurrentUser();
+        console.log("✅ User data loaded:", userData); // DEBUG
+        setUser(userData);
+      } catch (error) {
+        console.error("❌ Error fetching user:", error);
+        toast.error("Gagal mengambil data user");
+      }
     }
     fetchUser();
   }, []);
@@ -69,9 +113,11 @@ export default function PurchaseOrder() {
     async function fetchAllPOs() {
       try {
         const poResult = await getAllPo();
-        setPos(poResult);
-        setFilteredPos(poResult); // Awalnya, data yang difilter sama dengan data asli
+        setPos(poResult || []);
+        setFilteredPos(poResult || []);
       } catch (error) {
+        setPos([]);
+        setFilteredPos([]);
         toast.error(
           `Gagal mengambil data PO: ${
             error instanceof Error ? error.message : "Unknown error"
@@ -83,45 +129,35 @@ export default function PurchaseOrder() {
     fetchAllPOs();
   }, [refresh]);
 
-  // --- useEffect untuk Filtering Otomatis ---
   useEffect(() => {
     let filtered = pos;
 
-    // Filter berdasarkan Kode PO
     if (kodePo) {
       filtered = filtered.filter((po) =>
         po.kode.toLowerCase().includes(kodePo.toLowerCase())
       );
     }
 
-    // Filter berdasarkan Kode PR
     if (kodePr) {
       filtered = filtered.filter((po) =>
         po.kode_pr?.toLowerCase().includes(kodePr.toLowerCase())
       );
     }
 
-    // Filter berdasarkan Status
     if (status) {
       filtered = filtered.filter((po) => po.status === status);
     }
 
-    // // Contoh filter berdasarkan rentang tanggal
-    // if (tanggalAwal) {
-    //   filtered = filtered.filter(po => new Date(po.created_at) >= tanggalAwal);
-    // }
-    // if (tanggalAkhir) {
-    //   const endOfDay = new Date(tanggalAkhir);
-    //   endOfDay.setHours(23, 59, 59, 999); // Set ke akhir hari
-    //   filtered = filtered.filter(po => new Date(po.created_at) <= endOfDay);
-    // }
-
     setFilteredPos(filtered);
-    setCurrentPage(1); // Selalu reset ke halaman pertama setelah filter berubah
-  }, [pos, kodePo, kodePr, status /*, tanggalAwal, tanggalAkhir */]); // <-- Tambahkan semua state filter di sini
+    setCurrentPage(1);
+  }, [pos, kodePo, kodePr, status]);
 
-  // --- useEffect untuk Mengatur Paginasi ---
   useEffect(() => {
+    if (!filteredPos || !Array.isArray(filteredPos)) {
+      setPoToShow([]);
+      return;
+    }
+
     const startIndex = (currentPage - 1) * PagingSize;
     const endIndex = startIndex + PagingSize;
     setPoToShow(filteredPos.slice(startIndex, endIndex));
@@ -131,12 +167,9 @@ export default function PurchaseOrder() {
     setKodePo("");
     setKodePr("");
     setStatus("");
-    // setTanggalAwal(undefined);
-    // setTanggalAkhir(undefined);
     toast.success("Filter telah direset.");
   }
 
-  // Fungsi paginasi tidak perlu diubah
   function nextPage() {
     setCurrentPage((prev) => prev + 1);
   }
@@ -149,6 +182,13 @@ export default function PurchaseOrder() {
     setCurrentPage(page);
   }
 
+  // DEBUG: Log untuk melihat kondisi render
+  console.log("🔍 Render check:", {
+    userExists: !!user,
+    userRole: user?.role,
+    canCreate: user?.role === "warehouse" || user?.role === "purchasing"
+  });
+
   return (
     <WithSidebar>
       {/* Data PO */}
@@ -157,7 +197,6 @@ export default function PurchaseOrder() {
         <SectionBody className="grid grid-cols-12 gap-2">
           {/* Filtering */}
           <div className="col-span-12 grid grid-cols-12 gap-4 items-end">
-            {/* Search by kode PO */}
             <div className="col-span-12 md:col-span-6 lg:col-span-7">
               <Input
                 id="search-kode-po"
@@ -167,7 +206,6 @@ export default function PurchaseOrder() {
               />
             </div>
 
-            {/* Filter popover */}
             <div className="col-span-6 md:col-span-3 lg:col-span-3">
               <Popover>
                 <PopoverTrigger asChild>
@@ -207,21 +245,11 @@ export default function PurchaseOrder() {
                         </SelectContent>
                       </Select>
                     </div>
-                    {/* // Contoh jika ingin menambahkan filter tanggal
-                        <div className="grid gap-2">
-                           <Label>Tanggal PO</Label>
-                           <div className="flex gap-2">
-                              <DatePicker date={tanggalAwal} setDate={setTanggalAwal} placeholder="Dari Tanggal" />
-                              <DatePicker date={tanggalAkhir} setDate={setTanggalAkhir} placeholder="Sampai Tanggal" />
-                           </div>
-                        </div> 
-                        */}
                   </div>
                 </PopoverContent>
               </Popover>
             </div>
 
-            {/* Clear filter button */}
             <div className="col-span-6 md:col-span-3 lg:col-span-2">
               <Button
                 className="w-full"
@@ -232,6 +260,7 @@ export default function PurchaseOrder() {
               </Button>
             </div>
           </div>
+          
           <div className="col-span-12 border rounded-sm overflow-x-auto">
             <Table>
               <TableHeader>
@@ -253,14 +282,27 @@ export default function PurchaseOrder() {
                         {PagingSize * (currentPage - 1) + (index + 1)}
                       </TableCell>
                       <TableCell className="p-2 border">{po.kode}</TableCell>
-                      <TableCell className="p-2 border">{po.kode_pr}</TableCell>
+                      <TableCell className="p-2 border">
+                        {po.kode_pr || '-'}
+                      </TableCell>
                       <TableCell className="p-2 border">
                         {formatTanggal(po.created_at)}
                       </TableCell>
                       <TableCell className="p-2 border">
                         {formatTanggal(po.tanggal_estimasi)}
                       </TableCell>
-                      <TableCell className="p-2 border">{po.status}</TableCell>
+                      <TableCell className="p-2 border">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          po.status === 'pending' 
+                            ? 'bg-yellow-100 text-yellow-800' 
+                            : po.status === 'purchased'
+                            ? 'bg-blue-100 text-blue-800'
+                            : 'bg-green-100 text-green-800'
+                        }`}>
+                          {po.status === 'pending' ? 'Pending' : 
+                           po.status === 'purchased' ? 'Purchased' : 'Received'}
+                        </span>
+                      </TableCell>
                       <TableCell className="p-2 border">
                         <Button size="sm" variant="outline" asChild>
                           <Link
@@ -277,7 +319,7 @@ export default function PurchaseOrder() {
                 ) : (
                   <TableRow>
                     <TableCell
-                      colSpan={7} // <-- Disesuaikan menjadi 7
+                      colSpan={7}
                       className="p-4 text-center text-muted-foreground"
                     >
                       Tidak ada Purchase Order ditemukan.
@@ -300,13 +342,27 @@ export default function PurchaseOrder() {
         </SectionFooter>
       </SectionContainer>
 
-      {/* Tambah PO (tidak ada perubahan di sini) */}
-      {user?.role === "warehouse" || user?.role === "purchasing" ? (
+      {/* Tambah PO - DENGAN ERROR HANDLING */}
+      {!user ? (
+        // Loading state
         <SectionContainer span={12}>
           <SectionHeader>Tambah PO Baru</SectionHeader>
           <SectionBody className="grid grid-cols-12 gap-2">
-            <div className="col-span-12 border border-border rounded-sm p-2 text-center">
-              <CreatePOForm setRefresh={setRefresh} user={user} />
+            <div className="col-span-12 p-8 text-center text-muted-foreground">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+              <p>Memuat informasi user...</p>
+            </div>
+          </SectionBody>
+        </SectionContainer>
+      ) : user.role === "warehouse" || user.role === "purchasing" ? (
+        // User memiliki akses
+        <SectionContainer span={12}>
+          <SectionHeader>Tambah PO Baru</SectionHeader>
+          <SectionBody className="grid grid-cols-12 gap-2">
+            <div className="col-span-12 border border-border rounded-sm p-2">
+              <ErrorBoundary>
+                <CreatePOForm setRefresh={setRefresh} user={user} />
+              </ErrorBoundary>
             </div>
           </SectionBody>
           <SectionFooter>
@@ -320,7 +376,23 @@ export default function PurchaseOrder() {
           </SectionFooter>
         </SectionContainer>
       ) : (
-        ""
+        // User tidak memiliki akses
+        <SectionContainer span={12}>
+          <SectionHeader>Tambah PO Baru</SectionHeader>
+          <SectionBody className="grid grid-cols-12 gap-2">
+            <div className="col-span-12 p-8 text-center border border-dashed rounded-sm">
+              <p className="text-muted-foreground mb-2">
+                Anda tidak memiliki akses untuk menambah PO
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Role Anda: <span className="font-mono font-semibold">{user.role}</span>
+              </p>
+              <p className="text-xs text-muted-foreground mt-2">
+                (Hanya warehouse dan purchasing yang dapat menambah PO)
+              </p>
+            </div>
+          </SectionBody>
+        </SectionContainer>
       )}
     </WithSidebar>
   );

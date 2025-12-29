@@ -44,7 +44,7 @@ export default function Register() {
 
     try {
       await registerUser({ email, nama, password });
-      navigate("/verify-email");
+      navigate("/login");
     } catch (err: any) {
       console.error("Failed to register:", err);
       // Tampilkan pesan error dari fungsi registerUser

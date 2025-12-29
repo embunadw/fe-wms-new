@@ -1,418 +1,179 @@
-// import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
-// import { toast } from "sonner";
-// import { Label } from "../ui/label";
-// import { Input } from "../ui/input";
-// import { getAllMr } from "@/services/material-request";
-// import type { MasterPart, MR, PR, PRItem, UserComplete, UserDb } from "@/types";
-// import { DatePicker } from "../date-picker";
-// import {
-//   Select,
-//   SelectContent,
-//   SelectGroup,
-//   SelectItem,
-//   SelectLabel,
-//   SelectTrigger,
-//   SelectValue,
-// } from "../ui/select";
-// import {
-//   Table,
-//   TableBody,
-//   TableCell,
-//   TableHead,
-//   TableHeader,
-//   TableRow,
-// } from "../ui/table";
-// import { Button } from "../ui/button";
-// import { LokasiList } from "@/types/enum";
-// import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
-// import { CheckIcon, ChevronsUpDownIcon } from "lucide-react";
-// import {
-//   Command,
-//   CommandEmpty,
-//   CommandGroup,
-//   CommandInput,
-//   CommandItem,
-//   CommandList,
-// } from "../ui/command";
-// import { cn } from "@/lib/utils";
-// import { getMasterParts } from "@/services/master-part";
-// import { AddItemPRDialog } from "../dialog/add-item-pr";
-// import { createPR } from "@/services/purchase-request";
-// import { Timestamp } from "firebase/firestore";
+// src/components/form/create-pr.tsx
+import { useEffect, useState } from "react";
+import axios from "@/lib/axios";
+import type { Dispatch, SetStateAction } from "react";
+import type { UserComplete, MRReceive, MasterPart, PRItem } from "@/types";
 
-// interface CreatePRFormProps {
-//   user: UserComplete | UserDb;
-//   setRefresh: Dispatch<SetStateAction<boolean>>;
-// }
+interface CreatePRProps {
+  setRefresh: Dispatch<SetStateAction<boolean>>;
+  user: UserComplete;
+}
 
-// export default function CreatePRForm({ user, setRefresh }: CreatePRFormProps) {
-//   const [tanggalPR, setTanggalPR] = useState<Date | undefined>(new Date());
-//   const [prItems, setPRItems] = useState<PRItem[]>([]);
-//   const [mrIncluded, setMrIncluded] = useState<string[]>([]);
+const CreatePRForm = ({ setRefresh, user }: CreatePRProps) => {
+  const [mrs, setMrs] = useState<MRReceive[]>([]);
+  const [parts, setParts] = useState<MasterPart[]>([]);
+  const [items, setItems] = useState<PRItem[]>([]);
 
-//   // Pencarian master part
-//   const [open, setOpen] = useState<boolean>(false);
-//   const [open2, setOpen2] = useState<boolean>(false);
-//   const [masterParts, setMasterParts] = useState<MasterPart[]>([]);
-//   const [filteredParts, setFilteredParts] = useState<MasterPart[]>([]);
-//   const [mr, setMR] = useState<MR[]>([]);
-//   const [filteredMr, setFilteredMR] = useState<MR[]>([]);
-//   const [selectedPart, setSelectedPart] = useState<MasterPart>();
-//   const [selectedMr, setSelectedMr] = useState<MR>();
+  const [selectedMr, setSelectedMr] = useState<MRReceive | null>(null);
+  const [selectedPart, setSelectedPart] = useState<MasterPart | null>(null);
+  const [qty, setQty] = useState<number>(1);
 
-//   // Fetch master parts
-//   useEffect(() => {
-//     async function fetchMasterParts() {
-//       try {
-//         const parts = await getMasterParts();
-//         setMasterParts(parts);
-//         setFilteredParts(parts);
-//       } catch (error) {
-//         if (error instanceof Error) {
-//           toast.error(`Gagal mengambil data master part: ${error.message}`);
-//         } else {
-//           toast.error("Terjadi kesalahan saat mengambil data master part.");
-//         }
-//       }
-//     }
+  // ===== FETCH MR OPEN =====
+  useEffect(() => {
+    axios.get("/mr/open").then((res) => {
+      setMrs(res.data.data || []);
+    });
+  }, []);
 
-//     fetchMasterParts();
-//   }, []);
+  // ===== FETCH PART =====
+  useEffect(() => {
+    axios.get("/master-part").then((res) => {
+      setParts(res.data.data || []);
+    });
+  }, []);
 
-//   // Fetch Mr
-//   useEffect(() => {
-//     async function fetchMR() {
-//       try {
-//         const mr = await getAllMr();
-//         setMR(mr);
-//         setFilteredMR(mr);
-//       } catch (error) {
-//         if (error instanceof Error) {
-//           toast.error(`Gagal mengambil data MR: ${error.message}`);
-//         } else {
-//           toast.error("Terjadi kesalahan saat mengambil data MR.");
-//         }
-//       }
-//     }
+  // ===== ADD ITEM =====
+  const addItem = () => {
+    if (!selectedMr || !selectedPart) return;
 
-//     fetchMR();
-//   }, []);
+    const newItem: PRItem = {
+      part_id: Number(selectedPart.part_id), // convert ke number saat submit
+      part_number: selectedPart.part_number,
+      part_name: selectedPart.part_name,
+      satuan: selectedPart.part_satuan,
 
-//   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-//     event.preventDefault();
-//     if (prItems.length === 0) {
-//       toast.error("Belum ada item untuk PR ini.");
-//       return;
-//     }
+      mr_id: Number(selectedMr.mr_id), // convert ke number saat submit
+      kode_mr: selectedMr.mr_kode,
 
-//     const formData = new FormData(event.currentTarget);
-//     const kodePR = formData.get("kodePR") as string;
+      qty,
+    };
 
-//     const data: PR = {
-//       kode: kodePR,
-//       status: "open",
-//       lokasi: user.lokasi,
-//       pic: user.nama,
-//       mrs: mrIncluded,
-//       order_item: prItems.map((item) => ({
-//         part_id: item.part_id,
-//         part_number: item.part_number,
-//         part_name: item.part_name,
-//         satuan: item.satuan,
-//         qty: item.qty,
-//         kode_mr: item.kode_mr,
-//       })),
-//       created_at: Timestamp.now(),
-//       updated_at: Timestamp.now(),
-//     };
+    setItems((prev) => [...prev, newItem]);
+    setSelectedPart(null);
+    setQty(1);
+  };
 
-//     try {
-//       const res = await createPR(data);
-//       if (res) {
-//         toast.success("Purchase Request berhasil dibuat.");
-//         setMrIncluded([]);
-//         setRefresh((prev) => !prev);
-//         setPRItems([]);
-//         setTanggalPR(new Date());
-//       } else {
-//         toast.error("Gagal membuat Purchase Request. Silakan coba lagi.");
-//       }
-//     } catch (error) {
-//       if (error instanceof Error) {
-//         toast.error(`Gagal membuat PR: ${error.message}`);
-//       } else {
-//         toast.error("Terjadi kesalahan saat membuat PR.");
-//       }
-//       return;
-//     }
-//   }
+  // ===== REMOVE ITEM =====
+  const removeItem = (index: number) => {
+    setItems((prev) => prev.filter((_, i) => i !== index));
+  };
 
-//   function handleAddItem(part: MasterPart, qty: number) {
-//     if (!part || !qty || qty <= 0 || !selectedMr) {
-//       toast.error(
-//         "Mohon lengkapi semua detail item dan pastikan kuantitas valid."
-//       );
-//       return;
-//     }
+  // ===== SUBMIT PR =====
+  const submitPR = async () => {
+    if (!items.length) return;
 
-//     const newItem: PRItem = {
-//       part_name: part.part_name,
-//       part_number: part.part_number,
-//       satuan: part.part_satuan,
-//       qty: qty,
-//       kode_mr: selectedMr.kode,
-//     };
+    try {
+      await axios.post("/pr", {
+        order_item: items,
+        mrs: [...new Set(items.map((i) => i.kode_mr))],
+        user_id: user.id,
+      });
 
-//     setPRItems((prevItems) => [...prevItems, newItem]);
-//     setMrIncluded((prev) => [...prev, selectedMr.kode]);
-//     setSelectedPart(undefined);
-//     setSelectedMr(undefined);
-//     setOpen(false);
-//     setOpen2(false);
-//     toast.success("Item berhasil ditambahkan ke daftar.");
-//   }
+      alert("PR berhasil dibuat");
+      setItems([]);
+      setRefresh(true); // trigger reload di halaman PR
+    } catch (error) {
+      alert(
+        `Gagal submit PR: ${error instanceof Error ? error.message : "Unknown"}`
+      );
+    }
+  };
 
-//   function handleRemoveItem(index: number) {
-//     setPRItems((prevItems) => prevItems.filter((_, i) => i !== index));
-//     toast.success("Item berhasil dihapus dari daftar.");
-//   }
+  return (
+    <div className="space-y-4">
+      <h2 className="text-xl font-bold">Create Purchase Request</h2>
 
-//   return (
-//     <form
-//       onSubmit={handleSubmit}
-//       id="create-pr-form"
-//       className="grid grid-cols-12 gap-4"
-//     >
-//       <div className="flex flex-col col-span-12 lg:col-span-6 gap-4">
-//         {/* Kode PR */}
-//         <div className="flex flex-col gap-2">
-//           <Label htmlFor="kodePR">Kode PR</Label>
-//           <Input name="kodePR" className="lg:tracking-wider" required />
-//         </div>
+      {/* MR Select */}
+      <div>
+        <label>Pilih MR</label>
+        <select
+          value={selectedMr?.mr_id ?? ""}
+          onChange={(e) =>
+            setSelectedMr(
+              mrs.find((mr) => mr.mr_id === e.target.value) || null
+            )
+          }
+        >
+          <option value="">Pilih MR</option>
+          {mrs.map((mr) => (
+            <option key={mr.mr_id} value={mr.mr_id}>
+              {mr.mr_kode}
+            </option>
+          ))}
+        </select>
+      </div>
 
-//         {/* Tanggal PR */}
-//         <div className="flex flex-col gap-2">
-//           <Label>Tanggal PR</Label>
-//           <div className="flex items-center">
-//             <DatePicker value={tanggalPR} onChange={setTanggalPR} />
-//           </div>
-//         </div>
-//       </div>
+      {/* Part Select */}
+      <div>
+        <label>Pilih Part</label>
+        <select
+          value={selectedPart?.part_id ?? ""}
+          onChange={(e) =>
+            setSelectedPart(
+              parts.find((p) => p.part_id === e.target.value) || null
+            )
+          }
+        >
+          <option value="">Pilih Part</option>
+          {parts.map((p) => (
+            <option key={p.part_id} value={p.part_id}>
+              {p.part_name}
+            </option>
+          ))}
+        </select>
+      </div>
 
-//       <div className="flex flex-col col-span-12 lg:col-span-6 gap-4">
-//         {/* PIC */}
-//         <div className="flex flex-col gap-2">
-//           <Label>Person in Charge</Label>
-//           <div className="flex items-center">
-//             <Input value={user.nama} name="pic" disabled />
-//           </div>
-//         </div>
+      {/* Quantity */}
+      <div>
+        <label>Qty</label>
+        <input
+          type="number"
+          min={1}
+          value={qty}
+          onChange={(e) => setQty(Number(e.target.value))}
+        />
+      </div>
 
-//         {/* Lokasi */}
-//         <div className="flex flex-col gap-2">
-//           <Label htmlFor="lokasi">Lokasi</Label>
-//           <div className="flex items-center">
-//             <Select required name="lokasi" value={user.lokasi} disabled>
-//               <SelectTrigger className="w-full" name="lokasi" id="lokasi">
-//                 <SelectValue
-//                   placeholder={user.lokasi}
-//                   defaultValue={user.lokasi}
-//                 />
-//               </SelectTrigger>
-//               <SelectContent>
-//                 <SelectGroup>
-//                   <SelectLabel>Daftar Lokasi</SelectLabel>
-//                   {LokasiList?.map((lokasi) => (
-//                     <SelectItem key={lokasi.kode} value={lokasi.nama}>
-//                       {lokasi.nama}
-//                     </SelectItem>
-//                   ))}
-//                 </SelectGroup>
-//               </SelectContent>
-//             </Select>
-//           </div>
-//         </div>
-//       </div>
+      {/* Add Item Button */}
+      <div>
+        <button
+          onClick={addItem}
+          className="bg-green-500 text-white px-3 py-1 rounded"
+        >
+          Tambah Item
+        </button>
+      </div>
 
-//       {/* Tambah Item PR */}
-//       <div className="col-span-12 grid grid-cols-12 gap-4">
-//         {/* Combobox Item */}
-//         <Popover open={open} onOpenChange={setOpen}>
-//           <PopoverTrigger asChild>
-//             <Button
-//               variant="outline"
-//               role="combobox"
-//               aria-expanded={open}
-//               className={cn("col-span-12 lg:col-span-4 justify-between")}
-//             >
-//               {selectedPart
-//                 ? masterParts.find(
-//                     (part: MasterPart) =>
-//                       part.part_number === selectedPart.part_number
-//                   )?.part_number
-//                 : "Cari part number..."}
-//               <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-//             </Button>
-//           </PopoverTrigger>
-//           <PopoverContent className="w-(--radix-popover-trigger-width) p-0">
-//             <Command>
-//               <CommandInput placeholder="Cari part number..." />
-//               <CommandList>
-//                 <CommandEmpty>Tidak ada.</CommandEmpty>
-//                 <CommandGroup>
-//                   {filteredParts?.map((part) => (
-//                     <CommandItem
-//                       key={part.part_number}
-//                       value={part.part_number}
-//                       onSelect={(currentValue) => {
-//                         setSelectedPart(
-//                           masterParts.find(
-//                             (part) => part.part_number === currentValue
-//                           )
-//                         );
-//                         setOpen(false);
-//                       }}
-//                     >
-//                       <CheckIcon
-//                         className={cn(
-//                           "mr-2 h-4 w-4",
-//                           selectedPart?.part_number === part.part_number
-//                             ? "opacity-100"
-//                             : "opacity-0"
-//                         )}
-//                       />
-//                       {`${part.part_number} | ${part.part_name}`}
-//                     </CommandItem>
-//                   ))}
-//                 </CommandGroup>
-//               </CommandList>
-//             </Command>
-//           </PopoverContent>
-//         </Popover>
+      {/* Item List */}
+      <ul className="border rounded p-2 space-y-1">
+        {items.map((item, i) => (
+          <li key={i} className="flex justify-between items-center">
+            <span>
+              {item.part_name} - {item.qty} {item.satuan} ({item.kode_mr})
+            </span>
+            <button
+              onClick={() => removeItem(i)}
+              className="text-red-500 font-bold"
+            >
+              X
+            </button>
+          </li>
+        ))}
+        {items.length === 0 && <li className="text-gray-500">Belum ada item</li>}
+      </ul>
 
-//         {/* Combobox Referensi MR */}
-//         <Popover open={open2} onOpenChange={setOpen2}>
-//           <PopoverTrigger asChild>
-//             <Button
-//               variant="outline"
-//               role="combobox"
-//               aria-expanded={open2}
-//               className={cn("col-span-12 lg:col-span-4 justify-between")}
-//             >
-//               {selectedMr
-//                 ? mr.find((mr: MR) => mr.kode === selectedMr?.kode)?.kode
-//                 : "Cari kode mr..."}
-//               <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-//             </Button>
-//           </PopoverTrigger>
-//           <PopoverContent className="w-(--radix-popover-trigger-width) p-0">
-//             <Command>
-//               <CommandInput placeholder="Cari kode mr..." />
-//               <CommandList>
-//                 <CommandEmpty>Tidak ada.</CommandEmpty>
-//                 <CommandGroup>
-//                   {filteredMr?.map((m) => (
-//                     <CommandItem
-//                       key={m.kode}
-//                       value={m.kode}
-//                       onSelect={(currentValue) => {
-//                         setSelectedMr(mr.find((m) => m.kode === currentValue));
-//                         setOpen2(false);
-//                       }}
-//                     >
-//                       <CheckIcon
-//                         className={cn(
-//                           "mr-2 h-4 w-4",
-//                           selectedMr?.kode === m.kode
-//                             ? "opacity-100"
-//                             : "opacity-0"
-//                         )}
-//                       />
-//                       {`${m.kode}`}
-//                     </CommandItem>
-//                   ))}
-//                 </CommandGroup>
-//               </CommandList>
-//             </Command>
-//           </PopoverContent>
-//         </Popover>
+      {/* Submit PR */}
+      <div>
+        <button
+          disabled={!items.length}
+          onClick={submitPR}
+          className="bg-blue-500 text-white px-4 py-2 rounded disabled:opacity-50"
+        >
+          Submit PR
+        </button>
+      </div>
+    </div>
+  );
+};
 
-//         <AddItemPRDialog
-//           selectedPart={selectedPart}
-//           onAddItem={handleAddItem}
-//           triggerButton={
-//             <Button
-//               className="col-span-12 md:col-span-4"
-//               variant={"outline"}
-//               disabled={!selectedPart || !selectedMr}
-//             >
-//               Tambah Barang
-//             </Button>
-//           }
-//         />
-//       </div>
-
-//       {/* Item yang masuk PR */}
-//       <div className="col-span-12">
-//         <Table>
-//           <TableHeader>
-//             <TableRow className="border [&>*]:border">
-//               <TableHead className="w-[50px] font-semibold text-center">
-//                 No
-//               </TableHead>
-//               <TableHead className="font-semibold text-center">
-//                 Part Number
-//               </TableHead>
-//               <TableHead className="font-semibold text-center">
-//                 Part Name
-//               </TableHead>
-//               <TableHead className="font-semibold text-center">
-//                 Satuan
-//               </TableHead>
-//               <TableHead className="font-semibold text-center">Qty</TableHead>
-//               <TableHead className="font-semibold text-center">
-//                 Berdasarkan MR
-//               </TableHead>
-//               <TableHead className="font-semibold text-center">Aksi</TableHead>
-//             </TableRow>
-//           </TableHeader>
-//           <TableBody>
-//             {prItems.length > 0 ? (
-//               prItems?.map((item, index) => (
-//                 <TableRow key={index} className="border [&>*]:border">
-//                   <TableCell className="w-[50px]">{index + 1}</TableCell>
-//                   <TableCell className="text-start">
-//                     {item.part_number}
-//                   </TableCell>
-//                   <TableCell className="text-start">{item.part_name}</TableCell>
-//                   <TableCell>{item.satuan}</TableCell>
-//                   <TableCell>{item.qty}</TableCell>
-//                   <TableCell>{item.kode_mr}</TableCell>
-//                   <TableCell>
-//                     <Button
-//                       type="button"
-//                       size={"sm"}
-//                       variant={"outline"}
-//                       onClick={() => handleRemoveItem(index)}
-//                     >
-//                       Hapus
-//                     </Button>
-//                   </TableCell>
-//                 </TableRow>
-//               ))
-//             ) : (
-//               <TableRow>
-//                 <TableCell
-//                   colSpan={5}
-//                   className="text-center text-muted-foreground"
-//                 >
-//                   Tidak ada item MR.
-//                 </TableCell>
-//               </TableRow>
-//             )}
-//           </TableBody>
-//         </Table>
-//       </div>
-//     </form>
-//   );
-// }
+export default CreatePRForm;

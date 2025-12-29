@@ -1,17 +1,22 @@
 import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
 import { toast } from "sonner";
+
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
+import { Button } from "../ui/button";
+import { Textarea } from "../ui/textarea";
+
 import type { PO, PR, UserComplete, UserDb } from "@/types";
+
 import {
   Select,
   SelectContent,
   SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
+
 import {
   Table,
   TableBody,
@@ -20,7 +25,7 @@ import {
   TableHeader,
   TableRow,
 } from "../ui/table";
-import { Button } from "../ui/button";
+
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { CheckIcon, ChevronsUpDownIcon } from "lucide-react";
 import {
@@ -31,12 +36,11 @@ import {
   CommandItem,
   CommandList,
 } from "../ui/command";
+
 import { cn } from "@/lib/utils";
-import { Timestamp } from "firebase/firestore";
 import { getAllPr } from "@/services/purchase-request";
 import { createPO } from "@/services/purchase-order";
 import { DatePicker } from "../date-picker";
-import { Textarea } from "../ui/textarea";
 
 interface CreatePOFormProps {
   user: UserComplete | UserDb;
@@ -44,139 +48,121 @@ interface CreatePOFormProps {
 }
 
 export default function CreatePOForm({ user, setRefresh }: CreatePOFormProps) {
-  const [open, setOpen] = useState<boolean>(false);
-  const [pr, setPR] = useState<PR[]>([]);
-  const [filteredPR, setFilteredPR] = useState<PR[]>([]);
-  const [selectedPR, setSelectedPR] = useState<PR>();
+  const [open, setOpen] = useState(false);
+  const [prList, setPrList] = useState<PR[]>([]);
+  const [selectedPR, setSelectedPR] = useState<PR | undefined>();
   const [estimasi, setEstimasi] = useState<Date | undefined>();
 
-  // Fetch PR
+  // ===============================
+  // FETCH PR
+  // ===============================
   useEffect(() => {
     async function fetchPR() {
       try {
         const res = await getAllPr();
-        setPR(res);
-        setFilteredPR(res);
-      } catch (error) {
-        if (error instanceof Error) {
-          toast.error(`Gagal mengambil data PR: ${error.message}`);
-        } else {
-          toast.error("Terjadi kesalahan saat mengambil data PR.");
-        }
+        setPrList(res);
+      } catch (err) {
+        toast.error("Gagal mengambil data PR");
       }
     }
-
     fetchPR();
   }, []);
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const form = event.currentTarget;
+  // ===============================
+  // SUBMIT
+  // ===============================
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
 
     if (!estimasi) {
-      toast.error("Tanggal estimasi tidak boleh kosong.");
+      toast.error("Tanggal estimasi wajib diisi");
       return;
     }
 
     if (!selectedPR) {
-      toast.error("Referensi PR tidak boleh kosong.");
+      toast.error("Referensi PR wajib dipilih");
       return;
     }
 
-    const formData = new FormData(event.currentTarget);
-    const kode = formData.get("kode") as string;
-    const kode_pr = selectedPR.kode;
-    const pic = user.nama;
-    const status = formData.get("status") as string;
-    const keterangan = formData.get("keterangan") as string;
+    const formData = new FormData(e.currentTarget);
 
-    const data: PO = {
-      kode,
-      kode_pr,
+    const payload: PO = {
+      kode: formData.get("kode") as string,
+      kode_pr: selectedPR.kode,
       tanggal_estimasi: estimasi.toISOString(),
-      pic,
-      status,
-      keterangan,
-      created_at: Timestamp.now(),
-      updated_at: Timestamp.now(),
+      pic: user.nama,
+      status: formData.get("status") as string,
+      keterangan: (formData.get("keterangan") as string) || "",
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     };
 
     try {
-      const res = await createPO(data);
-      if (res) {
-        toast.success("Purchase Order berhasil dibuat.");
-        setRefresh((prev) => !prev);
-        form.reset();
-        setSelectedPR(undefined);
-      } else {
-        toast.error("Gagal membuat Purchase Order. Silakan coba lagi.");
-      }
-    } catch (error) {
-      if (error instanceof Error) {
-        toast.error(`Gagal membuat PO: ${error.message}`);
-      } else {
-        toast.error("Terjadi kesalahan saat membuat PO.");
-      }
-      return;
+      await createPO(payload);
+      toast.success("Purchase Order berhasil dibuat");
+      setRefresh((prev) => !prev);
+      e.currentTarget.reset();
+      setSelectedPR(undefined);
+      setEstimasi(undefined);
+    } catch (err: any) {
+      toast.error(err?.message || "Gagal membuat PO");
     }
   }
 
+  // ===============================
+  // RENDER
+  // ===============================
   return (
     <form
-      onSubmit={handleSubmit}
       id="create-po-form"
+      onSubmit={handleSubmit}
       className="grid grid-cols-12 gap-4"
     >
-      <div className="flex flex-col col-span-12 lg:col-span-6 gap-4">
-        {/* Kode PO */}
+      {/* KIRI */}
+      <div className="col-span-12 lg:col-span-6 flex flex-col gap-4">
         <div className="flex flex-col gap-2">
-          <Label htmlFor="kode">Kode PO</Label>
-          <Input name="kode" className="lg:tracking-wider" required />
+          <Label>Kode PO</Label>
+          <Input name="kode" required />
         </div>
 
-        {/* Combobox Referensi PR */}
         <div className="flex flex-col gap-2">
-          <Label htmlFor="kodePR">Delivery untuk PR</Label>
+          <Label>Referensi PR</Label>
           <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
                 role="combobox"
-                aria-expanded={open}
-                className={cn("col-span-12 lg:col-span-4 justify-between")}
+                className="justify-between"
               >
-                {selectedPR
-                  ? pr.find((pr: PR) => pr.kode === selectedPR?.kode)?.kode
-                  : "Cari kode PR..."}
-                <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                {selectedPR ? selectedPR.kode : "Pilih PR"}
+                <ChevronsUpDownIcon className="h-4 w-4 opacity-50" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-(--radix-popover-trigger-width) p-0">
+
+            <PopoverContent className="p-0">
               <Command>
-                <CommandInput placeholder="Cari kode mr..." />
+                <CommandInput placeholder="Cari kode PR..." />
                 <CommandList>
-                  <CommandEmpty>Tidak ada.</CommandEmpty>
+                  <CommandEmpty>Tidak ada PR</CommandEmpty>
                   <CommandGroup>
-                    {filteredPR?.map((m) => (
+                    {prList.map((pr) => (
                       <CommandItem
-                        key={m.kode}
-                        value={m.kode}
-                        onSelect={(currentValue) => {
-                          setSelectedPR(
-                            pr.find((m) => m.kode === currentValue)
-                          );
+                        key={pr.kode}
+                        value={pr.kode}
+                        onSelect={() => {
+                          setSelectedPR(pr);
                           setOpen(false);
                         }}
                       >
                         <CheckIcon
                           className={cn(
                             "mr-2 h-4 w-4",
-                            selectedPR?.kode === m.kode
+                            selectedPR?.kode === pr.kode
                               ? "opacity-100"
                               : "opacity-0"
                           )}
                         />
-                        {`${m.kode}`}
+                        {pr.kode}
                       </CommandItem>
                     ))}
                   </CommandGroup>
@@ -187,91 +173,62 @@ export default function CreatePOForm({ user, setRefresh }: CreatePOFormProps) {
         </div>
       </div>
 
-      <div className="flex flex-col col-span-12 lg:col-span-6 gap-4">
-        {/* Status */}
+      {/* KANAN */}
+      <div className="col-span-12 lg:col-span-6 flex flex-col gap-4">
         <div className="flex flex-col gap-2">
-          <Label htmlFor="status">Pilih status</Label>
-          <div className="flex items-center">
-            <Select required name="status">
-              <SelectTrigger className="w-full" name="status" id="status">
-                <SelectValue placeholder="Pilih status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  <SelectLabel>Daftar Status</SelectLabel>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="purchased">Purchased</SelectItem>
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          </div>
+          <Label>Status</Label>
+          <Select name="status" required>
+            <SelectTrigger>
+              <SelectValue placeholder="Pilih status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="purchased">Purchased</SelectItem>
+              </SelectGroup>
+            </SelectContent>
+          </Select>
         </div>
 
-        {/* Estimasi */}
         <div className="flex flex-col gap-2">
           <Label>Tanggal Estimasi</Label>
-          <div className="flex items-center">
-            <DatePicker value={estimasi} onChange={setEstimasi} />
-          </div>
+          <DatePicker value={estimasi} onChange={setEstimasi} />
         </div>
       </div>
 
-      {/* Keterangan */}
-      <div className="col-span-12 flex flex-col gap-2">
-        <Label htmlFor="keterangan">Keterangan</Label>
-        <div className="flex items-center">
-          <Textarea
-            placeholder="Masukkan keterangan..."
-            name="keterangan"
-            id="keterangan"
-          />
-        </div>
+      {/* KETERANGAN */}
+      <div className="col-span-12">
+        <Label>Keterangan</Label>
+        <Textarea name="keterangan" placeholder="Opsional..." />
       </div>
 
-      {/* Item dari MR */}
+      {/* TABLE ITEM PR */}
       <div className="col-span-12">
         <Table>
           <TableHeader>
-            <TableRow className="border [&>*]:border">
-              <TableHead className="w-[50px] font-semibold text-center">
-                No
-              </TableHead>
-              <TableHead className="font-semibold text-center">
-                Part Number
-              </TableHead>
-              <TableHead className="font-semibold text-center">
-                Part Name
-              </TableHead>
-              <TableHead className="font-semibold text-center">
-                Satuan
-              </TableHead>
-              <TableHead className="font-semibold text-center">Qty</TableHead>
-              <TableHead className="font-semibold text-center">
-                Untuk MR
-              </TableHead>
+            <TableRow>
+              <TableHead>No</TableHead>
+              <TableHead>Part Number</TableHead>
+              <TableHead>Part Name</TableHead>
+              <TableHead>Satuan</TableHead>
+              <TableHead>Qty</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {selectedPR && selectedPR.order_item.length > 0 ? (
-              selectedPR.order_item.map((item, index) => (
-                <TableRow key={index} className="border [&>*]:border">
-                  <TableCell className="w-[50px]">{index + 1}</TableCell>
-                  <TableCell className="text-start">
-                    {item.part_number}
-                  </TableCell>
-                  <TableCell className="text-start">{item.part_name}</TableCell>
+            {selectedPR?.order_item?.length ? (
+              selectedPR.order_item.map((item, i) => (
+                <TableRow key={i}>
+                  <TableCell>{i + 1}</TableCell>
+                  <TableCell>{item.part_number}</TableCell>
+                  <TableCell>{item.part_name}</TableCell>
                   <TableCell>{item.satuan}</TableCell>
                   <TableCell>{item.qty}</TableCell>
-                  <TableCell>{item.kode_mr}</TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell
-                  colSpan={5}
-                  className="text-center text-muted-foreground"
-                >
-                  Tidak ada item PR.
+                <TableCell colSpan={5} className="text-center text-muted">
+                  Belum ada item
                 </TableCell>
               </TableRow>
             )}

@@ -13,11 +13,23 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { getAllUsers } from "@/services/user";
+import { getAllUsers, updateUserStatus } from "@/services/user";
 import type { UserDb } from "@/types";
 import { PagingSize } from "@/types/enum";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function UserManagement() {
   const [users, setUsers] = useState<UserDb[]>([]);
@@ -31,7 +43,27 @@ export default function UserManagement() {
   const [nama, setNama] = useState<string>("");
   const [lokasi, setLokasi] = useState<string>("");
   const [role, setRole] = useState<string>("");
-  const [provider, setProvider] = useState<string>("");
+
+  // Soft delete
+  async function handleDeactivate(userId: string) {
+    try {
+      await updateUserStatus(userId, "inactive");
+      toast.success("User berhasil dinonaktifkan");
+      setRefresh((prev) => !prev);
+    } catch (error) {
+      toast.error("Gagal menonaktifkan user");
+    }
+  }
+
+  async function handleActivate(userId: string) {
+    try {
+      await updateUserStatus(userId, "active");
+      toast.success("User berhasil diaktifkan kembali");
+      setRefresh((prev) => !prev);
+    } catch (error) {
+      toast.error("Gagal mengaktifkan user");
+    }
+  }
 
   useEffect(() => {
     async function fetchUsers() {
@@ -45,7 +77,6 @@ export default function UserManagement() {
         toast.error("Gagal memuat data pengguna");
       }
     }
-
     fetchUsers();
   }, [refresh]);
 
@@ -56,45 +87,23 @@ export default function UserManagement() {
   }, [filteredUsers, currentPage]);
 
   useEffect(() => {
-    let data = users;
+    let data = users.filter((u) => u.status !== "inactive"); // default hanya tampilkan aktif
 
-    if (email) {
-      data = data.filter((user) =>
-        user.email.toLowerCase().includes(email.toLowerCase())
-      );
-    }
-    if (nama) {
-      data = data.filter((user) =>
-        user.nama.toLowerCase().includes(nama.toLowerCase())
-      );
-    }
-    if (lokasi) {
-      data = data.filter((user) =>
-        user.lokasi.toLowerCase().includes(lokasi.toLowerCase())
-      );
-    }
-    if (role) {
-      data = data.filter((user) =>
-        user.role.toLowerCase().includes(role.toLowerCase())
-      );
-    }
-    if (provider) {
-      data = data.filter((user) =>
-        user.auth_provider.toLowerCase().includes(provider.toLowerCase())
-      );
-    }
+    if (email) data = data.filter((u) => u.email.toLowerCase().includes(email.toLowerCase()));
+    if (nama) data = data.filter((u) => u.nama.toLowerCase().includes(nama.toLowerCase()));
+    if (lokasi) data = data.filter((u) => u.lokasi.toLowerCase().includes(lokasi.toLowerCase()));
+    if (role) data = data.filter((u) => u.role.toLowerCase().includes(role.toLowerCase()));
 
     setFilteredUsers(data);
     setTableUsers(data.slice(0, PagingSize));
     setCurrentPage(1);
-  }, [users, email, nama, lokasi, role, provider]);
+  }, [users, email, nama, lokasi, role]);
 
   function resetFilter() {
     setEmail("");
     setNama("");
     setLokasi("");
     setRole("");
-    setProvider("");
   }
 
   return (
@@ -105,7 +114,6 @@ export default function UserManagement() {
           <div className="flex flex-col gap-4 col-span-12 border border-border rounded-sm p-2 overflow-x-auto">
             {/* Filtering */}
             <div className="col-span-12 grid grid-cols-12 gap-4 items-end">
-              {/* Search by email */}
               <div className="col-span-12 md:col-span-4 lg:col-span-5">
                 <Input
                   placeholder="Cari berdasarkan email"
@@ -113,8 +121,6 @@ export default function UserManagement() {
                   onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
-
-              {/* Filter popover */}
               <div className="col-span-12 md:col-span-4 lg:col-span-3">
                 <Popover>
                   <PopoverTrigger asChild>
@@ -123,61 +129,23 @@ export default function UserManagement() {
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-80 space-y-4">
-                    {/* nama */}
                     <div>
-                      <label className="block text-sm font-medium mb-1">
-                        Nama
-                      </label>
-                      <Input
-                        placeholder="nama"
-                        value={nama}
-                        onChange={(e) => setNama(e.target.value)}
-                      />
+                      <label className="block text-sm font-medium mb-1">Nama</label>
+                      <Input placeholder="nama" value={nama} onChange={(e) => setNama(e.target.value)} />
                     </div>
-                    {/* role */}
                     <div>
-                      <label className="block text-sm font-medium mb-1">
-                        Role
-                      </label>
-                      <Input
-                        placeholder="role"
-                        value={role}
-                        onChange={(e) => setRole(e.target.value)}
-                      />
+                      <label className="block text-sm font-medium mb-1">Role</label>
+                      <Input placeholder="role" value={role} onChange={(e) => setRole(e.target.value)} />
                     </div>
-                    {/* Lokasi */}
                     <div>
-                      <label className="block text-sm font-medium mb-1">
-                        Lokasi
-                      </label>
-                      <Input
-                        placeholder="lokasi"
-                        value={lokasi}
-                        onChange={(e) => setLokasi(e.target.value)}
-                      />
-                    </div>
-                    {/* Provider */}
-                    <div>
-                      <label className="block text-sm font-medium mb-1">
-                        Login Provider
-                      </label>
-                      <Input
-                        placeholder="provider"
-                        value={provider}
-                        onChange={(e) => setProvider(e.target.value)}
-                      />
+                      <label className="block text-sm font-medium mb-1">Lokasi</label>
+                      <Input placeholder="lokasi" value={lokasi} onChange={(e) => setLokasi(e.target.value)} />
                     </div>
                   </PopoverContent>
                 </Popover>
               </div>
-
-              {/* Clear filter button */}
               <div className="col-span-12 md:col-span-4 lg:col-span-2">
-                <Button
-                  className="w-full"
-                  variant={"destructive"}
-                  onClick={resetFilter}
-                >
+                <Button className="w-full" variant={"destructive"} onClick={resetFilter}>
                   Hapus Filter
                 </Button>
               </div>
@@ -191,27 +159,51 @@ export default function UserManagement() {
                   <th className="p-2">Email</th>
                   <th className="p-2">Role</th>
                   <th className="p-2">Lokasi</th>
-                  <th className="p-2">Email Verified</th>
-                  <th className="p-2">Provider</th>
+                  <th className="p-2">Status</th>
                   <th className="p-2">Action</th>
                 </tr>
               </thead>
               <tbody>
                 {tableUsers?.map((user, index) => (
                   <tr key={user.id} className="border-b hover:bg-accent">
-                    <td className="p-2">
-                      {(currentPage - 1) * PagingSize + index + 1}
-                    </td>
+                    <td className="p-2">{(currentPage - 1) * PagingSize + index + 1}</td>
                     <td className="p-2">{user.nama}</td>
                     <td className="p-2">{user.email}</td>
                     <td className="p-2">{user.role}</td>
                     <td className="p-2">{user.lokasi}</td>
-                    <td className="p-2">
-                      {user.email_verified ? "Verified" : "Not Verified"}
-                    </td>
-                    <td className="p-2">{user.auth_provider}</td>
+                    <td className="p-2">{user.status}</td>
                     <td className="p-2 flex gap-2 items-center">
                       <EditUserDialog user={user} refresh={setRefresh} />
+
+                      {user.status === "active" ? (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="destructive" size="sm">Nonaktifkan</Button>
+                          </AlertDialogTrigger>
+
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Yakin ingin menonaktifkan user ini?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                User <b>{user.nama}</b> akan dinonaktifkan.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Batal</AlertDialogCancel>
+                              <AlertDialogAction
+                                className="bg-destructive text-white hover:bg-destructive/90"
+                                onClick={() => handleDeactivate(user.id)}
+                              >
+                                Ya, Nonaktifkan
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      ) : (
+                        <Button variant="secondary" size="sm" onClick={() => handleActivate(user.id)}>
+                          Aktifkan Kembali
+                        </Button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -224,15 +216,9 @@ export default function UserManagement() {
           <MyPagination
             data={filteredUsers}
             currentPage={currentPage}
-            triggerNext={() => {
-              setCurrentPage((prev) => prev + 1);
-            }}
-            triggerPrevious={() => {
-              setCurrentPage((prev) => prev - 1);
-            }}
-            triggerPageChange={(page: number) => {
-              setCurrentPage(page);
-            }}
+            triggerNext={() => setCurrentPage((prev) => prev + 1)}
+            triggerPrevious={() => setCurrentPage((prev) => prev - 1)}
+            triggerPageChange={(page: number) => setCurrentPage(page)}
           />
         </SectionFooter>
       </SectionContainer>

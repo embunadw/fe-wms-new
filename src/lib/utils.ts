@@ -1,61 +1,52 @@
-import { clsx, type ClassValue } from "clsx";
-import { isValid, parse } from "date-fns";
-import { Timestamp } from "firebase/firestore";
-import { twMerge } from "tailwind-merge";
+/* =========================
+   GENERAL UTILS (NO FIREBASE)
+========================= */
 
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
+/**
+ * Gabung className (pengganti cn dari shadcn)
+ */
+export function cn(...classes: (string | undefined | null | false)[]) {
+  return classes.filter(Boolean).join(" ");
 }
 
-export function formatTanggal(timestamp: number | string | Timestamp): string {
-  const hari = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
-  const bulan = [
-    "Januari",
-    "Februari",
-    "Maret",
-    "April",
-    "Mei",
-    "Juni",
-    "Juli",
-    "Agustus",
-    "September",
-    "Oktober",
-    "November",
-    "Desember",
-  ];
+/**
+ * Format tanggal ke format Indonesia
+ * input: string | Date
+ * output: 12 Jan 2025
+ */
+export function formatTanggal(
+  date?: string | Date | null
+): string {
+  if (!date) return "-";
 
-  let date: Date | null = null;
+  const d = typeof date === "string" ? new Date(date) : date;
 
-  if (typeof timestamp === "number") {
-    date = new Date(timestamp);
-  } else if (typeof timestamp === "string") {
-    // Coba parse ISOString terlebih dahulu
-    const isoDate = new Date(timestamp);
-    if (isValid(isoDate)) {
-      date = isoDate;
-    } else {
-      // Jika bukan ISOString, parse dengan format d/M/yyyy
-      const parsed = parse(timestamp, "d/M/yyyy", new Date());
-      if (isValid(parsed)) {
-        date = parsed;
-      }
-    }
-  } else if (timestamp instanceof Timestamp) {
-    date = timestamp.toDate();
-  }
+  if (isNaN(d.getTime())) return "-";
 
-  if (date && isValid(date)) {
-    const hariNama = hari[date.getDay()];
-    const tanggal = date.getDate();
-    const bulanNama = bulan[date.getMonth()];
-    const tahun = date.getFullYear();
-    return `${hariNama}, ${tanggal} ${bulanNama} ${tahun}`;
-  }
-
-  return "Tanggal tidak valid";
+  return d.toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
 }
 
-export function generateAvatarUrl(name: string): string {
-  const encodedName = encodeURIComponent(name.trim());
-  return `https://ui-avatars.com/api/?name=${encodedName}&background=random&color=fff&bold=true`;
+/**
+ * Format datetime (opsional, kalau dipakai)
+ */
+export function formatDateTime(
+  date?: string | Date | null
+): string {
+  if (!date) return "-";
+
+  const d = typeof date === "string" ? new Date(date) : date;
+
+  if (isNaN(d.getTime())) return "-";
+
+  return d.toLocaleString("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }

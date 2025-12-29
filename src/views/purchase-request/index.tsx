@@ -8,7 +8,7 @@ import WithSidebar from "@/components/layout/WithSidebar";
 import { MyPagination } from "@/components/my-pagination";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label"; // <-- Impor
+import { Label } from "@/components/ui/label";
 import {
   Popover,
   PopoverContent,
@@ -20,7 +20,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"; // <-- Impor
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -41,9 +41,9 @@ import { toast } from "sonner";
 export default function PurchaseRequest() {
   const [refresh, setRefresh] = useState<boolean>(false);
   const [user, setUser] = useState<UserComplete | null>(null);
-  const [prs, setPrs] = useState<PR[]>([]);
-  const [filteredPrs, setFilteredPrs] = useState<PR[]>([]);
-  const [prToShow, setPrToShow] = useState<PR[]>([]);
+  const [prs, setPrs] = useState<PR[]>([]); // ✅ Inisialisasi dengan array kosong
+  const [filteredPrs, setFilteredPrs] = useState<PR[]>([]); // ✅ Inisialisasi dengan array kosong
+  const [prToShow, setPrToShow] = useState<PR[]>([]); // ✅ Inisialisasi dengan array kosong
   const [currentPage, setCurrentPage] = useState<number>(1);
 
   // --- State untuk Filtering ---
@@ -51,7 +51,7 @@ export default function PurchaseRequest() {
   const [status, setStatus] = useState<string>("");
   const [lokasi, setLokasi] = useState<string>("");
   const [pic, setPic] = useState<string>("");
-  const [partNumber, setPartNumber] = useState<string>(""); // Filter tambahan
+  const [partNumber, setPartNumber] = useState<string>("");
 
   useEffect(() => {
     async function fetchUser() {
@@ -65,8 +65,13 @@ export default function PurchaseRequest() {
     async function fetchAllPRs() {
       try {
         const prResult = await getAllPr();
-        setPrs(prResult);
+        // ✅ Set kedua state sekaligus untuk menghindari undefined
+        setPrs(prResult || []); 
+        setFilteredPrs(prResult || []); 
       } catch (error) {
+        // ✅ Set ke array kosong saat error
+        setPrs([]);
+        setFilteredPrs([]);
         toast.error(
           `Gagal mengambil data PR: ${
             error instanceof Error ? error.message : "Unknown error"
@@ -103,18 +108,24 @@ export default function PurchaseRequest() {
     // Filter berdasarkan part number di dalam order_item
     if (partNumber) {
       filtered = filtered.filter((pr) =>
-        pr.order_item.some((item) =>
+        pr.order_item?.some((item) =>
           item.part_number.toLowerCase().includes(partNumber.toLowerCase())
         )
       );
     }
 
     setFilteredPrs(filtered);
-    setCurrentPage(1); // Reset ke halaman pertama setiap kali filter berubah
-  }, [prs, kode, status, lokasi, pic, partNumber]); // <-- Semua state filter jadi dependensi
+    setCurrentPage(1);
+  }, [prs, kode, status, lokasi, pic, partNumber]);
 
   // --- useEffect untuk Mengatur Paginasi ---
   useEffect(() => {
+    // ✅ Tambahkan guard clause untuk safety
+    if (!filteredPrs || !Array.isArray(filteredPrs)) {
+      setPrToShow([]);
+      return;
+    }
+
     const startIndex = (currentPage - 1) * PagingSize;
     const endIndex = startIndex + PagingSize;
     setPrToShow(filteredPrs.slice(startIndex, endIndex));
@@ -129,7 +140,6 @@ export default function PurchaseRequest() {
     toast.success("Filter telah direset.");
   }
 
-  // Fungsi paginasi tidak perlu diubah
   function nextPage() {
     setCurrentPage((prev) => prev + 1);
   }
@@ -272,7 +282,7 @@ export default function PurchaseRequest() {
                 ) : (
                   <TableRow>
                     <TableCell
-                      colSpan={6} // Disesuaikan dengan jumlah kolom
+                      colSpan={6}
                       className="p-4 text-center text-muted-foreground"
                     >
                       Tidak ada Purchase Request ditemukan.
@@ -295,7 +305,7 @@ export default function PurchaseRequest() {
         </SectionFooter>
       </SectionContainer>
 
-      {/* Tambah (tidak ada perubahan) */}
+      {/* Tambah PR */}
       {user?.role === "warehouse" || user?.role === "purchasing" ? (
         <SectionContainer span={12}>
           <SectionHeader>Tambah PR Baru</SectionHeader>

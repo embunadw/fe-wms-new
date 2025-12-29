@@ -2,9 +2,9 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { signInWithGoogle } from "@/services/auth";
-import { useNavigate } from "react-router-dom";
-import { toast } from "sonner";
+// import { signInWithGoogle } from "@/services/auth";
+// import { useNavigate } from "react-router-dom";
+// import { toast } from "sonner";
 
 // Tambahkan type untuk props: loading
 interface RegisterFormProps extends React.ComponentProps<"form"> {
@@ -16,25 +16,25 @@ export function RegisterForm({
   loading,
   ...props
 }: RegisterFormProps) {
-  const nav = useNavigate();
-  async function hanldeGoogleLogin() {
-    try {
-      const result = await signInWithGoogle();
-      if (result) {
-        nav("/dashboard");
-      } else {
-        throw new Error("Gagal masuk dengan Google");
-      }
-    } catch (error) {
-      if (error instanceof Error) {
-        toast.error(
-          error.message || "Terjadi kesalahan saat masuk dengan Google."
-        );
-      } else {
-        toast.error("Terjadi kesalahan yang tidak diketahui.");
-      }
-    }
-  }
+  // const nav = useNavigate();
+  // async function hanldeGoogleLogin() {
+  //   try {
+  //     const result = await signInWithGoogle();
+  //     if (result) {
+  //       nav("/dashboard");
+  //     } else {
+  //       throw new Error("Gagal masuk dengan Google");
+  //     }
+  //   } catch (error) {
+  //     if (error instanceof Error) {
+  //       toast.error(
+  //         error.message || "Terjadi kesalahan saat masuk dengan Google."
+  //       );
+  //     } else {
+  //       toast.error("Terjadi kesalahan yang tidak diketahui.");
+  //     }
+  //   }
+  // }
   return (
     <form className={cn("flex flex-col gap-6", className)} {...props}>
       <div className="flex flex-col items-center gap-2 text-center">
@@ -81,7 +81,7 @@ export function RegisterForm({
         </div>
         {/* Konfirmasi Pass */}
         <div className="grid gap-3">
-          <Label htmlFor="password-confirm">Konfirmasi Password</Label>
+          <Label htmlFor="password-confirm">Konfirmasi Kata Sandi</Label>
           <Input
             id="password-confirm"
             type="password"
@@ -96,7 +96,7 @@ export function RegisterForm({
           {/* Ubah teks tombol saat loading */}
         </Button>
         {/* Alternatif */}
-        <div className="after:border-border relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t">
+        {/* <div className="after:border-border relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t">
           <span className="bg-background text-muted-foreground relative z-10 px-2">
             Atau
           </span>
@@ -114,12 +114,12 @@ export function RegisterForm({
             />
           </svg>
           Lanjutkan dengan akun Google
-        </Button>
+        </Button> */}
       </div>
       <div className="text-center text-sm">
         Sudah memiliki akun?{" "}
         <a href="/login" className="underline underline-offset-4">
-          Login
+          Masuk
         </a>
       </div>
     </form>

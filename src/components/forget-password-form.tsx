@@ -15,7 +15,7 @@ export function ForgetPasswordForm({
   return (
     <form className={cn("flex flex-col gap-6", className)} {...props}>
       <div className="flex flex-col items-center gap-2 text-center">
-        <h1 className="text-2xl font-bold">Reset Password</h1>
+        <h1 className="text-2xl font-bold"> Atur Ulang Kata Sandi </h1>
         <p className="text-muted-foreground text-sm text-balance">
           Masukkan email anda yang terdaftar.
         </p>
@@ -33,7 +33,7 @@ export function ForgetPasswordForm({
           />
         </div>
         <Button type="submit" className="w-full" disabled={loading}>
-          {loading ? "Loading..." : "Reset Password"}
+          {loading ? "Loading..." : "Atur Ulang Kata Sandi"}
         </Button>
         <div className="after:border-border relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t">
           <span className="bg-background text-muted-foreground relative z-10 px-2">
@@ -44,7 +44,7 @@ export function ForgetPasswordForm({
       <div className="text-center text-sm">
         Kembali ke halaman{" "}
         <a href="/login" className="underline underline-offset-4">
-          Login
+          Masuk
         </a>{" "}
         atau{" "}
         <a href="/register" className="underline underline-offset-4">

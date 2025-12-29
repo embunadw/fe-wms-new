@@ -1,47 +1,59 @@
-import { db } from "@/lib/firebase";
+import api from "@/lib/axios"; 
 import type { UserDb } from "@/types";
-import {
-  collection,
-  doc,
-  getDocs,
-  orderBy,
-  query,
-  serverTimestamp,
-  updateDoc,
-} from "firebase/firestore";
 
-const userRef = collection(db, "users");
-
-export async function getAllUsers({} = {}): Promise<UserDb[]> {
+/**
+ * Get all users
+ */
+export async function getAllUsers(): Promise<UserDb[]> {
   try {
-    const q = query(userRef, orderBy("created_at", "desc"));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    })) as UserDb[];
-  } catch (error) {
+    const res = await api.get("/users");
+    return res.data.data as UserDb[];
+  } catch (error: any) {
     console.error("Error fetching all users:", error);
-    throw error;
+    throw new Error(error.response?.data?.message || "Gagal mengambil data user.");
   }
 }
 
-
+/**
+ * Update user
+ */
 export async function updateUser(user: Partial<UserDb>): Promise<boolean> {
+  if (!user.id) throw new Error("User ID is required for update.");
+
   try {
-    const docRef = doc(db, "users", user.id!);
-    await updateDoc(docRef, {
+    await api.put(`/users/${user.id}`, {
       nama: user.nama,
       role: user.role,
       lokasi: user.lokasi,
-      updated_at: serverTimestamp(),
-    } as Partial<UserDb>);
+    });
     return true;
   } catch (error: any) {
-    if (error instanceof Error) {
-      throw new Error(`Failed to update user: ${error.message}`);
-    } else {
-      throw new Error("Failed to update user due to an unexpected error.");
-    }
+    console.error("Error updating user:", error);
+    throw new Error(error.response?.data?.message || "Gagal memperbarui user.");
+  }
+}
+
+export async function deleteUser(id: string): Promise<boolean> {
+  try {
+    await api.delete(`/users/${id}`);
+    return true;
+  } catch (error: any) {
+    console.error("Error deleting user:", error);
+    throw new Error(
+      error.response?.data?.message || "Gagal menghapus user."
+    );
+  }
+}
+
+/**
+ * Update user status (soft delete / re-activate)
+ */
+export async function updateUserStatus(userId: string, status: "active" | "inactive"): Promise<boolean> {
+  try {
+    await api.put(`/users/${userId}/status`, { status });
+    return true;
+  } catch (error: any) {
+    console.error("Error updating user status:", error);
+    throw new Error(error.response?.data?.message || "Gagal memperbarui status user.");
   }
 }

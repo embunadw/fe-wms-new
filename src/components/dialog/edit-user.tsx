@@ -1,3 +1,4 @@
+import React, { useState } from "react";
 import {
   Dialog,
   DialogClose,
@@ -27,48 +28,32 @@ import type { Dispatch, SetStateAction } from "react";
 import { LokasiList } from "@/types/enum";
 
 interface MyDialogProps {
-  onSubmit?: () => void;
   user: UserDb;
   refresh: Dispatch<SetStateAction<boolean>>;
 }
 
 export function EditUserDialog({ user, refresh }: MyDialogProps) {
+  const [open, setOpen] = useState(false);
+
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    const nama = formData.get("nama") as string;
-    const role = formData.get("role") as string;
-    const lokasi = formData.get("lokasi") as string;
-    console.log(formData);
-    if (!nama) {
-      toast.warning("Nama tidak boleh kosong");
-      return;
-    }
-    if (!role) {
-      toast.warning("Nama tidak boleh kosong");
-      return;
-    }
-    if (!lokasi) {
-      toast.warning("Lokasi tidak boleh kosong");
-      return;
-    }
+
+    const nama = (formData.get("nama") as string) || user.nama;
+    const role = (formData.get("role") as string) || user.role;
+    const lokasi = (formData.get("lokasi") as string) || user.lokasi;
 
     if (nama === user.nama && role === user.role && lokasi === user.lokasi) {
       toast.warning("Tidak ada perubahan yang dilakukan");
       return;
     }
 
-    // Update user
     try {
-      const res = await updateUser({
-        nama,
-        role,
-        lokasi,
-        id: user.id,
-      });
+      const res = await updateUser({ id: user.id, nama, role, lokasi });
       if (res) {
         toast.success("User berhasil diupdate");
         refresh((prev) => !prev);
+        setOpen(false); // <<< otomatis tutup dialog
       }
     } catch (error) {
       if (error instanceof Error) {
@@ -78,8 +63,9 @@ export function EditUserDialog({ user, refresh }: MyDialogProps) {
       }
     }
   }
+
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline">Edit</Button>
       </DialogTrigger>
@@ -98,17 +84,12 @@ export function EditUserDialog({ user, refresh }: MyDialogProps) {
             </div>
             <div className="grid gap-3">
               <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                name="email"
-                disabled
-                defaultValue={user.email}
-              />
+              <Input id="email" name="email" disabled defaultValue={user.email} />
             </div>
             <div className="grid gap-3">
               <Label htmlFor="role">Role</Label>
-              <Select name="role" required>
-                <SelectTrigger className="w-full" name="role" id="role">
+              <Select name="role">
+                <SelectTrigger className="w-full" id="role">
                   <SelectValue placeholder={user.role} />
                 </SelectTrigger>
                 <SelectContent>
@@ -126,15 +107,17 @@ export function EditUserDialog({ user, refresh }: MyDialogProps) {
             </div>
             <div className="grid gap-3">
               <Label htmlFor="lokasi">Lokasi</Label>
-              <Select required name="lokasi">
-                <SelectTrigger className="w-full" name="lokasi" id="lokasi">
+              <Select name="lokasi">
+                <SelectTrigger className="w-full" id="lokasi">
                   <SelectValue placeholder={user.lokasi} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
                     <SelectLabel>Daftar Lokasi</SelectLabel>
                     {LokasiList.map((lokasi) => (
-                      <SelectItem value={lokasi.nama}>{lokasi.nama}</SelectItem>
+                      <SelectItem key={lokasi.nama} value={lokasi.nama}>
+                        {lokasi.nama}
+                      </SelectItem>
                     ))}
                   </SelectGroup>
                 </SelectContent>

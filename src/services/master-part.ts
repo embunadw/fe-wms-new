@@ -1,38 +1,40 @@
 import api from "@/lib/axios";
-import axios from "@/lib/axios";
-import type { MasterPart } from "@/types";
+import type { MasterPart, CreateMasterPartPayload } from "@/types";
 import { getCurrentUser } from "@/services/auth";
 
- const user = await getCurrentUser();
-
+/* ================= CREATE ================= */
 export async function createMasterPart(
-  data: MasterPart
+  payload: CreateMasterPartPayload
 ): Promise<boolean> {
-  const payload = {
-    part_number: data.part_number,
-    part_name: data.part_name,
-    part_satuan: data.part_satuan,
+  const user = await getCurrentUser();
+
+  const body = {
+    part_number: payload.part_number,
+    part_name: payload.part_name,
+    part_satuan: payload.part_satuan,
     lokasi: user?.lokasi,
   };
 
-  const res = await api.post("/barang", payload);
+  const res = await api.post("/barang", body);
   return res.data.status === true;
 }
 
-
+/* ================= GET ================= */
 export async function getMasterParts(): Promise<MasterPart[]> {
   const res = await api.get("/barang");
 
   return res.data.data.map((item: any) => ({
-    part_id: item.part_id,
+    id: item.part_id,
     part_number: item.part_number,
     part_name: item.part_name,
     part_satuan: item.part_satuan,
+    lokasi: item.lokasi,
     created_at: item.created_at,
     updated_at: item.updated_at,
   }));
 }
 
+/* ================= UPDATE ================= */
 export async function updateMasterPart(
   part_id: number,
   payload: {
@@ -41,7 +43,6 @@ export async function updateMasterPart(
     part_satuan: string;
   }
 ) {
-  const res = await axios.put(`/barang/${part_id}`, payload);
+  const res = await api.put(`/barang/${part_id}`, payload);
   return res.data;
 }
-

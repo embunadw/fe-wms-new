@@ -133,7 +133,7 @@ export function MaterialRequestDetail() {
                 {/* Pastikan mr.tanggal_mr adalah Timestamp sebelum memanggil toDate() */}
                 <p className="font-medium text-base">
                   {formatTanggal(
-                    parse(mr.mr_tanggal, "d/M/yyyy", new Date()).getTime()
+                    parse(mr.mr_tanggal, "d/M/yyyy", new Date())
                   )}
                 </p>
               </div>
@@ -144,7 +144,7 @@ export function MaterialRequestDetail() {
                 {/* Pastikan mr.tanggal_estimasi adalah Timestamp sebelum memanggil toDate() */}
                 <p className="font-medium text-base">
                   {formatTanggal(
-                    parse(mr.mr_due_date, "d/M/yyyy", new Date()).getTime()
+                    parse(mr.mr_due_date, "d/M/yyyy", new Date())
                   )}
                 </p>
               </div>
@@ -154,7 +154,7 @@ export function MaterialRequestDetail() {
                 </Label>
                 <p className="font-medium text-base">
                   {mr.updated_at
-                    ? formatTanggal(new Date(mr.updated_at).getTime())
+                    ? formatTanggal(new Date(mr.updated_at))
                     : "N/A"}
                 </p>
               </div>

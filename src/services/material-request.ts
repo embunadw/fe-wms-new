@@ -61,7 +61,7 @@ export async function getMrByKode(
   mr_kode: string
 ): Promise<MRReceive | null> {
   try {
-    const res = await axios.get(
+    const res = await api.get(
       `${BASE_URL}/kode/${encodeURIComponent(mr_kode)}`
     );
 

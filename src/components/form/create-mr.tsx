@@ -80,7 +80,21 @@ export default function CreateMRForm({ user, setRefresh }: CreateMRFormProps) {
   }, []);
 
   // Fetch kode MR
-
+  async function fetchKodeMR() {
+    toast.info("Menghasilkan Kode MR baru...");
+    try {
+      const kode = await generateKodeMR(user.lokasi);
+      setKodeMR(kode);
+      toast.success("Kode MR sudah terbaru.");
+      console.log("KODE MASUK", kode)
+    } catch (error) {
+      if (error instanceof Error) {
+        toast.error(`Gagal menghasilkan Kode MR: ${error.message}`);
+      } else {
+        toast.error("Terjadi kesalahan saat menghasilkan Kode MR.");
+      }
+    }
+  }
   
   async function fetchKodeMRSilent() {
   try {

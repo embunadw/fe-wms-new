@@ -1,4 +1,3 @@
-import axios from "axios";
 import api from "@/lib/axios";
 import type { DeliveryReceive } from "@/types"; 
 
@@ -12,7 +11,7 @@ export async function getAllDelivery(): Promise<DeliveryReceive[]> {
 
 export async function getDeliveryByKode(dlv_kode: string): Promise<DeliveryReceive | null> {
   try {
-    const res = await axios.get(
+    const res = await api.get(
       `${BASE_URL}/kode/${encodeURIComponent(dlv_kode)}`
     );
 
@@ -77,7 +76,7 @@ export async function update(
     dlv_jumlah_koli: number;
   }
 ) {
-  const res = await axios.put(
+  const res = await api.put(
     `${BASE_URL}/kode/${encodeURIComponent(dlv_kode)}`
     , payload);
   return res.data;

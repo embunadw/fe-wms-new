@@ -1,5 +1,5 @@
 import api from "@/lib/axios";
-import type { PR } from "@/types";
+import type { PR, PurchaseRequest } from "@/types";
 
 /**
  * ROLE
@@ -16,13 +16,13 @@ export async function getAllPr(): Promise<PR[]> {
 }
 
 /* ===================== GET PR BY KODE ===================== */
-export async function getPrByKode(kode: string): Promise<PR | null> {
+export async function getPrByKode(kode: string): Promise<PurchaseRequest | null> {
   const res = await api.get(`/pr/${kode}`);
 
   // Jika API masih return array, ambil item pertama
   const data = res.data?.data;
   if (Array.isArray(data) && data.length > 0) {
-    return data[0] as PR;
+    return data[0] as PurchaseRequest;
   }
 
   return data ?? null;

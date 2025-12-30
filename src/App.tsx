@@ -1,29 +1,20 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/context/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
-
-/* ===== VIEWS ===== */
 import Login from "@/views/login";
 import Register from "@/views/register";
-// import VerifyEmail from "@/views/verify-email";
 import ForgotPassword from "@/views/forgot-password";
-
 import Dashboard from "@/views/dashboard";
 import BarangDanStok from "@/views/barang-dan-stok";
-
 import MaterialRequest from "@/views/material-request";
 import { MaterialRequestDetail } from "@/views/material-request/[kode]";
-
 import ReceiveItem from "@/views/receive-item";
 import { ReceiveDetail } from "@/views/receive-item/[kode]";
-
 import DeliveryPage from "@/views/delivery";
 import { DeliveryDetail } from "@/views/delivery/[kode]";
-
 import PurchaseRequest from "@/views/purchase-request";
 import PurchaseOrder from "@/views/purchase-order";
 import UserManagement from "@/views/user-management";
-
 import NotFound from "@/views/not-found";
 
 export default function App() {

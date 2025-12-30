@@ -60,9 +60,12 @@ export default function CreatePOForm({ user, setRefresh }: CreatePOFormProps) {
     async function fetchPR() {
       try {
         const res = await getAllPr();
-        setPrList(res);
+        // Pastikan res adalah array, jika tidak set ke empty array
+        setPrList(Array.isArray(res) ? res : []);
       } catch (err) {
+        console.error("Error fetching PR:", err);
         toast.error("Gagal mengambil data PR");
+        setPrList([]); // Set ke empty array jika error
       }
     }
     fetchPR();
@@ -105,6 +108,7 @@ export default function CreatePOForm({ user, setRefresh }: CreatePOFormProps) {
       setSelectedPR(undefined);
       setEstimasi(undefined);
     } catch (err: any) {
+      console.error("Error creating PO:", err);
       toast.error(err?.message || "Gagal membuat PO");
     }
   }
@@ -122,7 +126,7 @@ export default function CreatePOForm({ user, setRefresh }: CreatePOFormProps) {
       <div className="col-span-12 lg:col-span-6 flex flex-col gap-4">
         <div className="flex flex-col gap-2">
           <Label>Kode PO</Label>
-          <Input name="kode" required />
+          <Input name="kode" placeholder="Masukkan kode PO" required />
         </div>
 
         <div className="flex flex-col gap-2">
@@ -139,32 +143,34 @@ export default function CreatePOForm({ user, setRefresh }: CreatePOFormProps) {
               </Button>
             </PopoverTrigger>
 
-            <PopoverContent className="p-0">
+            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
               <Command>
                 <CommandInput placeholder="Cari kode PR..." />
                 <CommandList>
-                  <CommandEmpty>Tidak ada PR</CommandEmpty>
+                  <CommandEmpty>Tidak ada PR tersedia</CommandEmpty>
                   <CommandGroup>
-                    {prList.map((pr) => (
-                      <CommandItem
-                        key={pr.kode}
-                        value={pr.kode}
-                        onSelect={() => {
-                          setSelectedPR(pr);
-                          setOpen(false);
-                        }}
-                      >
-                        <CheckIcon
-                          className={cn(
-                            "mr-2 h-4 w-4",
-                            selectedPR?.kode === pr.kode
-                              ? "opacity-100"
-                              : "opacity-0"
-                          )}
-                        />
-                        {pr.kode}
-                      </CommandItem>
-                    ))}
+                    {prList && prList.length > 0 ? (
+                      prList.map((pr) => (
+                        <CommandItem
+                          key={pr.kode}
+                          value={pr.kode}
+                          onSelect={() => {
+                            setSelectedPR(pr);
+                            setOpen(false);
+                          }}
+                        >
+                          <CheckIcon
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              selectedPR?.kode === pr.kode
+                                ? "opacity-100"
+                                : "opacity-0"
+                            )}
+                          />
+                          {pr.kode}
+                        </CommandItem>
+                      ))
+                    ) : null}
                   </CommandGroup>
                 </CommandList>
               </Command>
@@ -177,7 +183,7 @@ export default function CreatePOForm({ user, setRefresh }: CreatePOFormProps) {
       <div className="col-span-12 lg:col-span-6 flex flex-col gap-4">
         <div className="flex flex-col gap-2">
           <Label>Status</Label>
-          <Select name="status" required>
+          <Select name="status" required defaultValue="pending">
             <SelectTrigger>
               <SelectValue placeholder="Pilih status" />
             </SelectTrigger>
@@ -199,41 +205,48 @@ export default function CreatePOForm({ user, setRefresh }: CreatePOFormProps) {
       {/* KETERANGAN */}
       <div className="col-span-12">
         <Label>Keterangan</Label>
-        <Textarea name="keterangan" placeholder="Opsional..." />
+        <Textarea name="keterangan" placeholder="Keterangan (opsional)..." />
       </div>
 
       {/* TABLE ITEM PR */}
       <div className="col-span-12">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>No</TableHead>
-              <TableHead>Part Number</TableHead>
-              <TableHead>Part Name</TableHead>
-              <TableHead>Satuan</TableHead>
-              <TableHead>Qty</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {selectedPR?.order_item?.length ? (
-              selectedPR.order_item.map((item, i) => (
-                <TableRow key={i}>
-                  <TableCell>{i + 1}</TableCell>
-                  <TableCell>{item.part_number}</TableCell>
-                  <TableCell>{item.part_name}</TableCell>
-                  <TableCell>{item.satuan}</TableCell>
-                  <TableCell>{item.qty}</TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted">
-                  Belum ada item
-                </TableCell>
+        <Label className="mb-2 block">
+          Item dari PR {selectedPR ? `(${selectedPR.kode})` : ""}
+        </Label>
+        <div className="border rounded-sm overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow className="border [&>*]:border">
+                <TableHead className="font-semibold text-center">No</TableHead>
+                <TableHead className="font-semibold text-center">Part Number</TableHead>
+                <TableHead className="font-semibold text-center">Part Name</TableHead>
+                <TableHead className="font-semibold text-center">Satuan</TableHead>
+                <TableHead className="font-semibold text-center">Qty</TableHead>
               </TableRow>
-            )}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {selectedPR?.order_item && selectedPR.order_item.length > 0 ? (
+                selectedPR.order_item.map((item, i) => (
+                  <TableRow key={i} className="border [&>*]:border">
+                    <TableCell className="text-center">{i + 1}</TableCell>
+                    <TableCell className="text-start">{item.part_number}</TableCell>
+                    <TableCell className="text-start">{item.part_name}</TableCell>
+                    <TableCell className="text-center">{item.satuan}</TableCell>
+                    <TableCell className="text-center">{item.qty}</TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                    {selectedPR 
+                      ? "Tidak ada item dalam PR ini" 
+                      : "Pilih PR terlebih dahulu untuk melihat item"}
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
     </form>
   );

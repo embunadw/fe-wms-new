@@ -309,7 +309,7 @@ export default function CreateRIForm({ user, setRefresh }: CreatePOFormProps) {
                   <TableCell className="text-start">{item.dtl_pr_part_name}</TableCell>
                   <TableCell>{item.dtl_pr_satuan}</TableCell>
                   <TableCell>{item.dtl_pr_qty}</TableCell>
-                  <TableCell>{item.mr.mr_kode}</TableCell>
+                  <TableCell>{item.mr?.mr_kode}</TableCell>
                 </TableRow>
               ))
             ) : (

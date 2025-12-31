@@ -1,11 +1,19 @@
-// src/components/form/create-pr.tsx
 import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
 import { toast } from "sonner";
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
-import { Button } from "../ui/button";
-import type { MRReceive, MasterPart, PRItem, UserComplete } from "@/types";
-
+import { getAllMr } from "@/services/material-request";
+import type { MasterPart, MRReceive, PR, PRItem, PRItemReceive, PurchaseRequest, UserComplete, UserDb } from "@/types";
+import { DatePicker } from "../date-picker";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
 import {
   Table,
   TableBody,
@@ -14,10 +22,10 @@ import {
   TableHeader,
   TableRow,
 } from "../ui/table";
+import { Button } from "../ui/button";
+import { LokasiList } from "@/types/enum";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
-import { CheckIcon, ChevronsUpDownIcon, Trash2 } from "lucide-react";
-import { getAllMr } from "@/services/material-request";
-import { getMasterParts } from "@/services/master-part";
+import { CheckIcon, ChevronsUpDownIcon } from "lucide-react";
 import {
   Command,
   CommandEmpty,
@@ -27,50 +35,35 @@ import {
   CommandList,
 } from "../ui/command";
 import { cn } from "@/lib/utils";
-import axios from "@/lib/axios";
+import { getMasterParts } from "@/services/master-part";
+import { AddItemPRDialog } from "../dialog/add-item-pr";
+import { createPR } from "@/services/purchase-request";
 
 interface CreatePRFormProps {
+  user: UserComplete | UserDb;
   setRefresh: Dispatch<SetStateAction<boolean>>;
-  user: UserComplete;
 }
 
-export default function CreatePRForm({ setRefresh, user }: CreatePRFormProps) {
-  const [kodePR, setKodePR] = useState<string>("");
-  const [pic, setPic] = useState<string>(user.nama || "");
-  const [lokasi, setLokasi] = useState<string>(user.lokasi || "");
-  const [items, setItems] = useState<PRItem[]>([]);
+function toMysqlDatetime(date: Date) {
+  return date.toISOString().slice(0, 19).replace("T", " ");
+}
 
-  // State untuk MR dan Part
-  const [mr, setMR] = useState<MRReceive[]>([]);  
+export default function CreatePRForm({ user, setRefresh }: CreatePRFormProps) {
+  const [tanggalPR, setTanggalPR] = useState<Date | undefined>(new Date());
+  const [prItems, setPRItems] = useState<PRItemReceive[]>([]);
+  const [mrIncluded, setMrIncluded] = useState<string[]>([]);
+
+  // Pencarian master part
+  const [open, setOpen] = useState<boolean>(false);
+  const [open2, setOpen2] = useState<boolean>(false);
+  const [masterParts, setMasterParts] = useState<MasterPart[]>([]);
+  const [filteredParts, setFilteredParts] = useState<MasterPart[]>([]);
+  const [mr, setMR] = useState<MRReceive[]>([]);
   const [filteredMr, setFilteredMR] = useState<MRReceive[]>([]);
+  const [selectedPart, setSelectedPart] = useState<MasterPart>();
   const [selectedMr, setSelectedMr] = useState<MRReceive>();
-  const [qty, setQty] = useState<number>(1);
-    const [masterParts, setMasterParts] = useState<MasterPart[]>([]);
-    const [filteredParts, setFilteredParts] = useState<MasterPart[]>([]);
-    const [selectedPart, setSelectedPart] = useState<MasterPart>();
 
-  // State untuk Popover/Combobox
-  const [openMr, setOpenMr] = useState<boolean>(false);
-  const [openPart, setOpenPart] = useState<boolean>(false);
-
-  // Fetch MR yang open
-  useEffect(() => {
-    async function fetchMR() {
-      try {
-        const mrData = await getAllMr();
-        const validMR = Array.isArray(mrData) ? mrData : [];
-        setMR(validMR);
-        setFilteredMR(validMR);
-      } catch {
-        toast.error("Gagal mengambil data MR.");
-        setMR([]);
-        setFilteredMR([]);
-      }
-    }
-    fetchMR();
-  }, []);
-
-  // Fetch Master Parts
+  // Fetch master parts
   useEffect(() => {
     async function fetchMasterParts() {
       try {
@@ -89,259 +82,290 @@ export default function CreatePRForm({ setRefresh, user }: CreatePRFormProps) {
     fetchMasterParts();
   }, []);
 
-  // Add Item
-  function handleAddItem() {
-    if (!selectedMr || !selectedPart || qty <= 0) {
-      toast.error("Pilih MR, Part, dan masukkan quantity yang valid");
-      return;
+  // Fetch Mr
+  useEffect(() => {
+    async function fetchMR() {
+      try {
+        const mr = await getAllMr();
+        setMR(mr);
+        setFilteredMR(mr);
+      } catch (error) {
+        if (error instanceof Error) {
+          toast.error(`Gagal mengambil data MR: ${error.message}`);
+        } else {
+          toast.error("Terjadi kesalahan saat mengambil data MR.");
+        }
+      }
     }
 
-    // Check if item already exists
-    if (items.some((item) => item.part_number === selectedPart.part_number)) {
-      toast.warning("Part ini sudah ada di daftar");
-      return;
-    }
+    fetchMR();
+  }, []);
 
-    const newItem: PRItem = {
-      part_id: Number(selectedPart.part_id),
-      part_number: selectedPart.part_number,
-      part_name: selectedPart.part_name,
-      satuan: selectedPart.part_satuan,
-      mr_id: Number(selectedMr.mr_id),
-      kode_mr: selectedMr.mr_kode,
-      qty,
-    };
-
-    setItems((prev) => [...prev, newItem]);
-    
-    // Reset selection
-    setSelectedPart(undefined);
-    setQty(1);
-    
-    toast.success("Item berhasil ditambahkan");
-  }
-
-  // Remove Item
-  function handleRemoveItem(index: number) {
-    setItems((prev) => prev.filter((_, i) => i !== index));
-    toast.success("Item berhasil dihapus");
-  }
-
-  // Submit PR
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-
-    if (!kodePR || !pic || !lokasi) {
-      toast.error("Kode PR, PIC, dan Lokasi harus diisi");
+    if (prItems.length === 0) {
+      toast.error("Belum ada item untuk PR ini.");
+      return;
+    }
+    if (!tanggalPR) {
+      toast.error("Tanggal PR wajib diisi");
       return;
     }
 
-    if (items.length === 0) {
-      toast.error("Tambahkan minimal 1 item");
-      return;
-    }
+    const formData = new FormData(event.currentTarget);
+    const kodePR = formData.get("kodePR") as string;
+
+    const data: PurchaseRequest = {
+  pr_kode: kodePR,
+  pr_status: "open",
+  pr_lokasi: user.lokasi,
+  pr_pic: user.nama,
+  pr_tanggal: toMysqlDatetime(tanggalPR),
+
+  details: prItems.map((item) => ({
+    part_id: item.part_id,
+     mr_id: item.mr_id,  
+
+    dtl_pr_part_number: item.dtl_pr_part_number,
+    dtl_pr_part_name: item.dtl_pr_part_name,
+    dtl_pr_satuan: item.dtl_pr_satuan,
+    dtl_pr_qty: Number(item.dtl_pr_qty),
+  })),
+
+  created_at: toMysqlDatetime(new Date()),
+  updated_at: toMysqlDatetime(new Date()),
+};
+
 
     try {
-      await axios.post("/pr", {
-        order_item: items,
-        mrs: [...new Set(items.map((i) => i.kode_mr))],
-        user_id: user.id,
-      });
-
-      toast.success("Purchase Request berhasil dibuat!");
-      
-      // Reset form
-      setItems([]);
-      setSelectedMr(undefined);
-      setSelectedPart(undefined);
-      setQty(1);
-      setKodePR("");
-      
-      setRefresh(true);
-      setTimeout(() => setRefresh(false), 100);
+      const res = await createPR(data);
+      if (res) {
+        toast.success("Purchase Request berhasil dibuat.");
+        setMrIncluded([]);
+        setRefresh((prev) => !prev);
+        setPRItems([]);
+        setTanggalPR(new Date());
+      } else {
+        toast.error("Gagal membuat Purchase Request. Silakan coba lagi.");
+      }
     } catch (error) {
-      console.error("Error creating PR:", error);
-      toast.error(
-        `Gagal membuat PR: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`
-      );
+      if (error instanceof Error) {
+        toast.error(`Gagal membuat PR: ${error.message}`);
+      } else {
+        toast.error("Terjadi kesalahan saat membuat PR.");
+      }
+      return;
     }
+  }
+
+  function handleAddItem(part: MasterPart, qty: number) {
+    if (!part || !qty || qty <= 0 || !selectedMr) {
+      toast.error(
+        "Mohon lengkapi semua detail item dan pastikan kuantitas valid."
+      );
+      return;
+    }
+
+    const newItem: PRItemReceive = {
+      part_id: part.part_id,
+      mr_id: selectedMr.mr_id,
+      dtl_pr_part_name: part.part_name,
+      dtl_pr_part_number: part.part_number,
+      dtl_pr_satuan: part.part_satuan,
+      dtl_pr_qty: qty,
+      mr: selectedMr,
+    };
+
+    setPRItems((prevItems) => [...prevItems, newItem]);
+    setMrIncluded((prev) => [...prev, selectedMr.mr_kode]);
+    setSelectedPart(undefined);
+    setSelectedMr(undefined);
+    setOpen(false);
+    setOpen2(false);
+    toast.success("Item berhasil ditambahkan ke daftar.");
+  }
+
+  function handleRemoveItem(index: number) {
+    setPRItems((prevItems) => prevItems.filter((_, i) => i !== index));
+    toast.success("Item berhasil dihapus dari daftar.");
   }
 
   return (
     <form
-      id="create-pr-form"
       onSubmit={handleSubmit}
+      id="create-pr-form"
       className="grid grid-cols-12 gap-4"
     >
-      {/* Row 1: Kode PR, PIC, Lokasi */}
-      <div className="flex flex-col col-span-12 lg:col-span-4 gap-4">
+      <div className="flex flex-col col-span-12 lg:col-span-6 gap-4">
         {/* Kode PR */}
         <div className="flex flex-col gap-2">
-          <Label>Kode PR</Label>
-          <Input
-            value={kodePR}
-            onChange={(e) => setKodePR(e.target.value)}
-            placeholder="Masukkan kode PR"
-            required
-          />
+          <Label htmlFor="kodePR">Kode PR</Label>
+          <Input name="kodePR" className="lg:tracking-wider" required />
+        </div>
+
+        {/* Tanggal PR */}
+        <div className="flex flex-col gap-2">
+          <Label>Tanggal PR</Label>
+          <div className="flex items-center">
+            <DatePicker value={tanggalPR} onChange={setTanggalPR} />
+          </div>
         </div>
       </div>
 
-      <div className="flex flex-col col-span-12 lg:col-span-4 gap-4">
+      <div className="flex flex-col col-span-12 lg:col-span-6 gap-4">
         {/* PIC */}
         <div className="flex flex-col gap-2">
           <Label>Person in Charge</Label>
-          <Input
-            value={pic}
-            onChange={(e) => setPic(e.target.value)}
-            disabled
-          />
+          <div className="flex items-center">
+            <Input value={user.nama} name="pic" disabled />
+          </div>
         </div>
-      </div>
 
-      <div className="flex flex-col col-span-12 lg:col-span-4 gap-4">
         {/* Lokasi */}
         <div className="flex flex-col gap-2">
-          <Label>Lokasi</Label>
-          <Input
-            value={lokasi}
-            onChange={(e) => setLokasi(e.target.value)}
-            disabled
-          />
+          <Label htmlFor="lokasi">Lokasi</Label>
+          <div className="flex items-center">
+            <Select required name="lokasi" value={user.lokasi} disabled>
+              <SelectTrigger className="w-full" name="lokasi" id="lokasi">
+                <SelectValue
+                  placeholder={user.lokasi}
+                  defaultValue={user.lokasi}
+                />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectLabel>Daftar Lokasi</SelectLabel>
+                  {LokasiList?.map((lokasi) => (
+                    <SelectItem key={lokasi.kode} value={lokasi.nama}>
+                      {lokasi.nama}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
 
-      {/* Row 2: Select MR, Select Part, Qty, Add Button */}
-      <div className="col-span-12 grid grid-cols-12 gap-4 items-end">
-        <div className="col-span-12 lg:col-span-4">
-          <Label>Pilih MR</Label>
-          <Popover open={openMr} onOpenChange={setOpenMr}>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                role="combobox"
-                aria-expanded={openMr}
-                className="w-full justify-between mt-2"
-              >
-                {selectedMr
-                  ? `${selectedMr.mr_kode} - ${selectedMr.mr_pic}`
-                  : "Pilih MR"}
-                <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-              <Command>
-                <CommandInput placeholder="Cari MR..." />
-                <CommandList>
-                  <CommandEmpty>Tidak ada MR tersedia.</CommandEmpty>
-                  <CommandGroup>
-                    {mr.map((mr) => (
-                      <CommandItem
-                        key={mr.mr_id}
-                        value={mr.mr_kode}
-                        onSelect={() => {
-                          setSelectedMr(mr);
-                          setOpenMr(false);
-                        }}
-                      >
-                        <CheckIcon
-                          className={cn(
-                            "mr-2 h-4 w-4",
-                            selectedMr?.mr_id === mr.mr_id
-                              ? "opacity-100"
-                              : "opacity-0"
-                          )}
-                        />
-                        {`${mr.mr_kode} - ${mr.mr_pic} (${mr.mr_lokasi})`}
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
-        </div>
+      {/* Tambah Item PR */}
+      <div className="col-span-12 grid grid-cols-12 gap-4">
+        {/* Combobox Item */}
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              role="combobox"
+              aria-expanded={open}
+              className={cn("col-span-12 lg:col-span-4 justify-between")}
+            >
+              {selectedPart
+                ? masterParts.find(
+                    (part: MasterPart) =>
+                      part.part_number === selectedPart.part_number
+                  )?.part_number
+                : "Cari part number..."}
+              <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-(--radix-popover-trigger-width) p-0">
+            <Command>
+              <CommandInput placeholder="Cari part number..." />
+              <CommandList>
+                <CommandEmpty>Tidak ada.</CommandEmpty>
+                <CommandGroup>
+                  {filteredParts?.map((part) => (
+                    <CommandItem
+                      key={part.part_number}
+                      value={part.part_number}
+                      onSelect={(currentValue) => {
+                        setSelectedPart(
+                          masterParts.find(
+                            (part) => part.part_number === currentValue
+                          )
+                        );
+                        setOpen(false);
+                      }}
+                    >
+                      <CheckIcon
+                        className={cn(
+                          "mr-2 h-4 w-4",
+                          selectedPart?.part_number === part.part_number
+                            ? "opacity-100"
+                            : "opacity-0"
+                        )}
+                      />
+                      {`${part.part_number} | ${part.part_name}`}
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
 
-        {/* Select Part */}
-        <div className="col-span-12 lg:col-span-4">
-          <Label>Pilih Part</Label>
-          <Popover open={openPart} onOpenChange={setOpenPart}>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                role="combobox"
-                aria-expanded={openPart}
-                className="w-full justify-between mt-2"
-                disabled={!selectedMr}
-              >
-                {selectedPart
-                  ? `${selectedPart.part_number} - ${selectedPart.part_name}`
-                  : "Pilih Part"}
-                <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-              <Command>
-                <CommandInput placeholder="Cari part number..." />
-                <CommandList>
-                  <CommandEmpty>Tidak ada part tersedia.</CommandEmpty>
-                  <CommandGroup>
-                    {masterParts.map((part) => (
-                      <CommandItem
-                        key={part.part_id}
-                        value={part.part_number}
-                        onSelect={() => {
-                          setSelectedPart(part);
-                          setOpenPart(false);
-                        }}
-                      >
-                        <CheckIcon
-                          className={cn(
-                            "mr-2 h-4 w-4",
-                            selectedPart?.part_id === part.part_id
-                              ? "opacity-100"
-                              : "opacity-0"
-                          )}
-                        />
-                        {`${part.part_number} | ${part.part_name}`}
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
-        </div>
+        {/* Combobox Referensi MR */}
+        <Popover open={open2} onOpenChange={setOpen2}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              role="combobox"
+              aria-expanded={open2}
+              className={cn("col-span-12 lg:col-span-4 justify-between")}
+            >
+              {selectedMr
+                ? mr.find((mr: MRReceive) => mr.mr_kode === selectedMr?.mr_kode)?.mr_kode
+                : "Cari kode mr..."}
+              <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-(--radix-popover-trigger-width) p-0">
+            <Command>
+              <CommandInput placeholder="Cari kode mr..." />
+              <CommandList>
+                <CommandEmpty>Tidak ada.</CommandEmpty>
+                <CommandGroup>
+                  {filteredMr?.map((m) => (
+                    <CommandItem
+                      key={m.mr_kode}
+                      value={m.mr_kode}
+                      onSelect={(currentValue) => {
+                        setSelectedMr(mr.find((m) => m.mr_kode === currentValue));
+                        setOpen2(false);
+                      }}
+                    >
+                      <CheckIcon
+                        className={cn(
+                          "mr-2 h-4 w-4",
+                          selectedMr?.mr_kode === m.mr_kode
+                            ? "opacity-100"
+                            : "opacity-0"
+                        )}
+                      />
+                      {`${m.mr_kode}`}
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
 
-        {/* Quantity */}
-        <div className="col-span-12 md:col-span-6 lg:col-span-2">
-          <Label htmlFor="qty">Qty</Label>
-          <Input
-            id="qty"
-            type="number"
-            min="1"
-            value={qty}
-            onChange={(e) => setQty(Number(e.target.value))}
-            className="mt-2"
-          />
-        </div>
-
-        {/* Add Button */}
-        <div className="col-span-12 md:col-span-6 lg:col-span-2">
-          <Button
-            type="button"
-            onClick={handleAddItem}
-            className="w-full"
-            disabled={!selectedMr || !selectedPart}
-          >
-            Tambah Item
-          </Button>
-        </div>
+        <AddItemPRDialog
+          selectedPart={selectedPart}
+          onAddItem={handleAddItem}
+          triggerButton={
+            <Button
+              className="col-span-12 md:col-span-4"
+              variant={"outline"}
+              disabled={!selectedPart || !selectedMr}
+            >
+              Tambah Barang
+            </Button>
+          }
+        />
       </div>
 
-      {/* Table Items */}
+      {/* Item yang masuk PR */}
       <div className="col-span-12">
         <Table>
           <TableHeader>
@@ -366,27 +390,25 @@ export default function CreatePRForm({ setRefresh, user }: CreatePRFormProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {items.length > 0 ? (
-              items.map((item, index) => (
+            {prItems.length > 0 ? (
+              prItems?.map((item, index) => (
                 <TableRow key={index} className="border [&>*]:border">
-                  <TableCell className="w-[50px] text-center">
-                    {index + 1}
-                  </TableCell>
+                  <TableCell className="w-[50px]">{index + 1}</TableCell>
                   <TableCell className="text-start">
-                    {item.part_number}
+                    {item.dtl_pr_part_number}
                   </TableCell>
-                  <TableCell className="text-start">{item.part_name}</TableCell>
-                  <TableCell className="text-center">{item.satuan}</TableCell>
-                  <TableCell className="text-center">{item.qty}</TableCell>
-                  <TableCell className="text-center">{item.kode_mr}</TableCell>
-                  <TableCell className="text-center">
+                  <TableCell className="text-start">{item.dtl_pr_part_name}</TableCell>
+                  <TableCell>{item.dtl_pr_satuan}</TableCell>
+                  <TableCell>{item.dtl_pr_qty}</TableCell>
+                  <TableCell>{item.mr?.mr_kode}</TableCell>
+                  <TableCell>
                     <Button
                       type="button"
-                      size="sm"
-                      variant="outline"
+                      size={"sm"}
+                      variant={"outline"}
                       onClick={() => handleRemoveItem(index)}
                     >
-                      <Trash2 className="h-4 w-4" />
+                      Hapus
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -394,34 +416,16 @@ export default function CreatePRForm({ setRefresh, user }: CreatePRFormProps) {
             ) : (
               <TableRow>
                 <TableCell
-                  colSpan={7}
-                  className="text-center text-muted-foreground py-8"
+                  colSpan={5}
+                  className="text-center text-muted-foreground"
                 >
-                  Tidak ada item PR.
+                  Tidak ada item MR.
                 </TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
       </div>
-
-      {/* Summary */}
-      {items.length > 0 && (
-        <div className="col-span-12 flex justify-between items-center p-4 bg-muted/50 rounded-sm border">
-          <div className="text-sm text-muted-foreground">
-            Total Item:{" "}
-            <span className="font-semibold text-foreground">
-              {items.length}
-            </span>
-          </div>
-          <div className="text-sm text-muted-foreground">
-            Total Quantity:{" "}
-            <span className="font-semibold text-foreground">
-              {items.reduce((sum, item) => sum + item.qty, 0)}
-            </span>
-          </div>
-        </div>
-      )}
     </form>
   );
 }

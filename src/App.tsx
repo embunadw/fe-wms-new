@@ -16,6 +16,7 @@ import PurchaseRequest from "@/views/purchase-request";
 import PurchaseOrder from "@/views/purchase-order";
 import UserManagement from "@/views/user-management";
 import NotFound from "@/views/not-found";
+import { PurchaseRequestDetail } from "./views/purchase-order/[kode]";
 
 export default function App() {
   return (
@@ -118,6 +119,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <PurchaseRequest />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/pr/:kode"
+            element={
+              <ProtectedRoute>
+                <PurchaseRequestDetail />
               </ProtectedRoute>
             }
           />

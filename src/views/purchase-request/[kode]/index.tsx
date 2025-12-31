@@ -1,14 +1,14 @@
-// pages/purchase-request/[kode].tsx
+// pages/material-request/[kode].tsx atau sesuai routing Anda
 import SectionContainer, {
   SectionBody,
   SectionFooter,
   SectionHeader,
 } from "@/components/content-container";
 import WithSidebar from "@/components/layout/WithSidebar";
-import type { PR } from "@/types";
+import type { PurchaseRequest } from "@/types"; // Pastikan path ini benar
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { toast } from "sonner";
+import { useParams } from "react-router-dom";
+import { toast } from "sonner"; // Import toast for user feedback
 import {
   Table,
   TableBody,
@@ -18,56 +18,46 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
 import { formatTanggal } from "@/lib/utils";
 import { getPrByKode } from "@/services/purchase-request";
-import { ArrowLeft } from "lucide-react";
 
 export function PurchaseRequestDetail() {
   const { kode } = useParams<{ kode: string }>();
-  const navigate = useNavigate();
-  const [pr, setPr] = useState<PR | null>(null);
+  const [pr, setPr] = useState<PurchaseRequest | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    async function fetchPrDetail() {
+    async function fetchMrDetail() {
       if (!kode) {
         toast.error("Kode Purchase Request tidak ditemukan di URL.");
         setIsLoading(false);
         return;
       }
-
       setIsLoading(true);
       try {
-        // ✅ Decode URL parameter
-        const decodedKode = decodeURIComponent(kode);
-        const res = await getPrByKode(decodedKode);
-        console.log("API response:", res);
-
+        const res = await getPrByKode(kode);
+        console.log(res);
         if (res) {
-          // ✅ Pastikan order_item selalu array
-          setPr({
-            ...res,
-            order_item: res.order_item || []
-          });
+          setPr(res);
         } else {
-          toast.error(`Purchase Request dengan kode ${decodedKode} tidak ditemukan.`);
+          toast.error(`Purchase Request dengan kode ${kode} tidak ditemukan.`);
           setPr(null);
         }
       } catch (error) {
-        console.error("Gagal mengambil detail PR:", error);
+        console.error("Gagal mengambil detail MR:", error);
         if (error instanceof Error) {
-          toast.error(`Gagal mengambil detail PR: ${error.message}`);
+          toast.error(`Gagal mengambil detail MR: ${error.message}`);
         } else {
-          toast.error("Terjadi kesalahan saat mengambil detail PR.");
+          toast.error(
+            "Terjadi kesalahan saat mengambil detail Material Request."
+          );
         }
         setPr(null);
       } finally {
         setIsLoading(false);
       }
     }
-
-    fetchPrDetail();
+    fetchMrDetail();
   }, [kode]);
 
   if (isLoading) {
@@ -77,10 +67,7 @@ export function PurchaseRequestDetail() {
           <SectionHeader>Memuat Detail Purchase Request...</SectionHeader>
           <SectionBody className="grid grid-cols-12 gap-2">
             <div className="col-span-12 flex items-center justify-center border border-dashed border-border rounded-sm p-8 text-muted-foreground text-lg">
-              <div className="flex flex-col items-center gap-2">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                <p>Memuat data...</p>
-              </div>
+              Memuat data...
             </div>
           </SectionBody>
         </SectionContainer>
@@ -94,12 +81,8 @@ export function PurchaseRequestDetail() {
         <SectionContainer span={12}>
           <SectionHeader>Purchase Request Tidak Ditemukan</SectionHeader>
           <SectionBody className="grid grid-cols-12 gap-2">
-            <div className="col-span-12 flex flex-col items-center justify-center border border-dashed border-border rounded-sm p-8 text-muted-foreground text-lg gap-4">
-              <p>PR dengan kode "{kode}" tidak ditemukan.</p>
-              <Button onClick={() => navigate('/purchase-request')} variant="outline">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Kembali ke Daftar PR
-              </Button>
+            <div className="col-span-12 flex items-center justify-center border border-dashed border-border rounded-sm p-8 text-muted-foreground text-lg">
+              PR dengan kode "{kode}" tidak ditemukan.
             </div>
           </SectionBody>
           <SectionFooter>
@@ -114,67 +97,47 @@ export function PurchaseRequestDetail() {
 
   return (
     <WithSidebar>
-      {/* Header dengan tombol kembali */}
-      <SectionContainer span={12}>
-        <SectionBody className="grid grid-cols-12 gap-2">
-          <div className="col-span-12">
-            <Button 
-              onClick={() => navigate('/purchase-request')} 
-              variant="ghost"
-              size="sm"
-              className="mb-2"
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Kembali ke Daftar PR
-            </Button>
-          </div>
-        </SectionBody>
-      </SectionContainer>
-
       {/* Detail PR */}
       <SectionContainer span={12}>
-        <SectionHeader>Detail Purchase Request: {pr.kode}</SectionHeader>
+        <SectionHeader>Detail Purchase Request: {pr.pr_kode}</SectionHeader>
         <SectionBody className="grid grid-cols-12 gap-6">
-          {/* Informasi Umum PR */}
+          {/* Informasi Umum MR */}
           <div className="col-span-12 space-y-4">
             <h3 className="text-lg font-semibold border-b pb-2 mb-4">
               Informasi Umum
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-1">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
                 <Label className="text-sm text-muted-foreground">Kode PR</Label>
-                <p className="font-medium text-base">{pr.kode}</p>
+                <p className="font-medium text-base">{pr.pr_kode}</p>
               </div>
-              <div className="space-y-1">
+              <div>
                 <Label className="text-sm text-muted-foreground">PIC</Label>
-                <p className="font-medium text-base">{pr.pic}</p>
+                <p className="font-medium text-base">{pr.pr_pic}</p>
               </div>
-              <div className="space-y-1">
+              <div>
                 <Label className="text-sm text-muted-foreground">
-                  Lokasi Pembuat PR
+                  Lokasi pembuat PR
                 </Label>
-                <p className="font-medium text-base">{pr.lokasi}</p>
+                <p className="font-medium text-base">{pr.pr_lokasi}</p>
               </div>
-              <div className="space-y-1">
+              <div>
                 <Label className="text-sm text-muted-foreground">Status</Label>
-                <p className="font-medium text-base">
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    pr.status === 'open' 
-                      ? 'bg-blue-100 text-blue-800' 
-                      : 'bg-green-100 text-green-800'
-                  }`}>
-                    {pr.status === 'open' ? 'Open' : 'Close'}
-                  </span>
-                </p>
+                <p className="font-medium text-base">{pr.pr_status}</p>
               </div>
-              <div className="space-y-1">
-                <Label className="text-sm text-muted-foreground">Tanggal Dibuat</Label>
+              <div>
+                <Label className="text-sm text-muted-foreground">
+                  Tanggal PR
+                </Label>
+                {/* Pastikan mr.tanggal_mr adalah Timestamp sebelum memanggil toDate() */}
                 <p className="font-medium text-base">
                   {formatTanggal(pr.created_at)}
                 </p>
               </div>
-              <div className="space-y-1">
-                <Label className="text-sm text-muted-foreground">Terakhir Diperbarui</Label>
+              <div>
+                <Label className="text-sm text-muted-foreground">
+                  Diperbarui Pada
+                </Label>
                 <p className="font-medium text-base">
                   {formatTanggal(pr.updated_at)}
                 </p>
@@ -182,61 +145,50 @@ export function PurchaseRequestDetail() {
             </div>
           </div>
         </SectionBody>
+        <SectionFooter>
+          {/* <EditMRDialog mr={mr} refresh={setRefresh} onSubmit={handleEditMR} /> */}
+        </SectionFooter>
       </SectionContainer>
 
-      {/* Daftar Item */}
       <SectionContainer span={12}>
-        <SectionHeader>
-          Daftar Barang ({pr.order_item?.length || 0} item)
-        </SectionHeader>
+        <SectionHeader>Barang dalam PR ini</SectionHeader>
         <SectionBody className="grid grid-cols-12 gap-6">
+          {/* Daftar Barang */}
           <div className="col-span-12 space-y-4">
             <div className="w-full border border-border rounded-sm overflow-x-auto">
               <Table className="w-full">
                 <TableHeader>
-                  <TableRow className="bg-muted/50">
-                    <TableHead className="border text-center w-[60px]">No</TableHead>
-                    <TableHead className="border">Part Number</TableHead>
-                    <TableHead className="border">Nama Part</TableHead>
-                    <TableHead className="border text-center">Satuan</TableHead>
-                    <TableHead className="border text-center">Jumlah</TableHead>
-                    <TableHead className="border">Berdasarkan MR</TableHead>
+                  <TableRow className="[&>th]:border">
+                    <TableHead className="w-[50px] text-center">No</TableHead>
+                    <TableHead>Part Number</TableHead>
+                    <TableHead>Nama Part</TableHead>
+                    <TableHead>Satuan</TableHead>
+                    <TableHead>Jumlah</TableHead>
+                    <TableHead>Berdasarkan MR</TableHead>
+                    {/* <TableHead>Aksi</TableHead> */}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {pr.order_item && pr.order_item.length > 0 ? (
-                    pr.order_item.map((item, index) => (
-                      <TableRow key={index}>
-                        <TableCell className="border text-center">
+                  {pr.details && pr.details.length > 0 ? (
+                    pr.details.map((item, index) => (
+                      <TableRow key={index} className="[&>td]:border">
+                        <TableCell className="w-[50px] text-center">
                           {index + 1}
                         </TableCell>
-                        <TableCell className="border font-mono text-sm">
-                          {item.part_number || '-'}
-                        </TableCell>
-                        <TableCell className="border">
-                          {item.part_name || '-'}
-                        </TableCell>
-                        <TableCell className="border text-center">
-                          {item.satuan || '-'}
-                        </TableCell>
-                        <TableCell className="border text-center font-medium">
-                          {item.qty || 0}
-                        </TableCell>
-                        <TableCell className="border">
-                          {item.kode_mr || '-'}
-                        </TableCell>
+                        <TableCell>{item.dtl_pr_part_number}</TableCell>
+                        <TableCell>{item.dtl_pr_part_name}</TableCell>
+                        <TableCell>{item.dtl_pr_satuan}</TableCell>
+                        <TableCell>{item.dtl_pr_qty}</TableCell>
+                        <TableCell>{item.mr?.mr_kode}</TableCell>
                       </TableRow>
                     ))
                   ) : (
-                    <TableRow>
+                    <TableRow className="[&>td]:border">
                       <TableCell
-                        colSpan={6}
-                        className="border text-center text-muted-foreground py-8"
+                        colSpan={5}
+                        className="text-center text-muted-foreground py-4"
                       >
-                        <div className="flex flex-col items-center gap-2">
-                          <p className="text-lg">Tidak ada barang dalam Purchase Request ini.</p>
-                          <p className="text-sm">Belum ada item yang ditambahkan.</p>
-                        </div>
+                        Tidak ada barang dalam Material Request ini.
                       </TableCell>
                     </TableRow>
                   )}
@@ -245,16 +197,7 @@ export function PurchaseRequestDetail() {
             </div>
           </div>
         </SectionBody>
-        <SectionFooter>
-          <div className="w-full flex justify-between items-center text-sm text-muted-foreground">
-            <p>Total barang: {pr.order_item?.length || 0} item</p>
-            <p>
-              Total quantity: {
-                pr.order_item?.reduce((sum, item) => sum + (item.qty || 0), 0) || 0
-              }
-            </p>
-          </div>
-        </SectionFooter>
+        <SectionFooter></SectionFooter>
       </SectionContainer>
     </WithSidebar>
   );

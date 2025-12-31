@@ -102,8 +102,6 @@ export interface PR {
   mrs: string[];
 }
 
-
-
 export interface PO {
   id?: string;
   kode: string;
@@ -115,6 +113,8 @@ export interface PO {
   created_at: Timestamp;
   updated_at: Timestamp;
 }
+
+
 
 //Diyah Edit
 export interface Stock {
@@ -142,7 +142,6 @@ export interface MasterPart {
   updated_at: string;
 }
 
-
 export interface Pic {
   id?: string;
   nama: string;
@@ -157,12 +156,11 @@ export interface PurchaseRequest {
   pr_id?: string;
   pr_kode: string;
   pr_lokasi: string;
-  pr_pic_id: number;
   pr_tanggal: string;
   pr_status: string;
+  pr_pic: string;
   created_at: string;
   updated_at: string;
-  pic: Pic;
   details: PRItemReceive[];
 }
 
@@ -222,14 +220,13 @@ export interface MRReceive {
 }
 
 export interface PRItemReceive {
-  part_id: string;
+  part_id?: string;
   dtl_pr_part_number: string;
   dtl_pr_part_name: string;
   dtl_pr_satuan: string;
-  mr_id: string;
-  mr_kode: string;
+  mr_id?: string;
   dtl_pr_qty: number;
-  mr: MRReceive;
+  mr?: MRReceive;
 }
 
 export interface DeliveryReceive {

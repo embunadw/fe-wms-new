@@ -8,7 +8,7 @@ import WithSidebar from "@/components/layout/WithSidebar";
 import { MyPagination } from "@/components/my-pagination";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Label } from "@/components/ui/label"; 
 import {
   Popover,
   PopoverContent,
@@ -20,7 +20,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@/components/ui/select"; 
 import {
   Table,
   TableBody,
@@ -30,8 +30,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { getCurrentUser } from "@/services/auth";
-import { getAllPr } from "@/services/purchase-request";
-import type { PR, UserComplete } from "@/types";
+import { getPr } from "@/services/purchase-request";
+import type { PurchaseRequest, UserComplete } from "@/types";
 import { PagingSize } from "@/types/enum";
 import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -41,9 +41,9 @@ import { toast } from "sonner";
 export default function PurchaseRequest() {
   const [refresh, setRefresh] = useState<boolean>(false);
   const [user, setUser] = useState<UserComplete | null>(null);
-  const [prs, setPrs] = useState<PR[]>([]); // ✅ Inisialisasi dengan array kosong
-  const [filteredPrs, setFilteredPrs] = useState<PR[]>([]); // ✅ Inisialisasi dengan array kosong
-  const [prToShow, setPrToShow] = useState<PR[]>([]); // ✅ Inisialisasi dengan array kosong
+  const [prs, setPrs] = useState<PurchaseRequest[]>([]);
+  const [filteredPrs, setFilteredPrs] = useState<PurchaseRequest[]>([]);
+  const [prToShow, setPrToShow] = useState<PurchaseRequest[]>([]);
   const [currentPage, setCurrentPage] = useState<number>(1);
 
   // --- State untuk Filtering ---
@@ -51,7 +51,7 @@ export default function PurchaseRequest() {
   const [status, setStatus] = useState<string>("");
   const [lokasi, setLokasi] = useState<string>("");
   const [pic, setPic] = useState<string>("");
-  const [partNumber, setPartNumber] = useState<string>("");
+  const [partNumber, setPartNumber] = useState<string>(""); // Filter tambahan
 
   useEffect(() => {
     async function fetchUser() {
@@ -64,14 +64,11 @@ export default function PurchaseRequest() {
   useEffect(() => {
     async function fetchAllPRs() {
       try {
-        const prResult = await getAllPr();
-        // ✅ Set kedua state sekaligus untuk menghindari undefined
-        setPrs(prResult || []); 
-        setFilteredPrs(prResult || []); 
+        const prResult = await getPr();
+        
+        setPrs(prResult);
+        console.log("getAllPr result:", prResult);
       } catch (error) {
-        // ✅ Set ke array kosong saat error
-        setPrs([]);
-        setFilteredPrs([]);
         toast.error(
           `Gagal mengambil data PR: ${
             error instanceof Error ? error.message : "Unknown error"
@@ -89,43 +86,45 @@ export default function PurchaseRequest() {
 
     if (kode) {
       filtered = filtered.filter((pr) =>
-        pr.kode.toLowerCase().includes(kode.toLowerCase())
+        pr.pr_kode.toLowerCase().includes(kode.toLowerCase())
       );
     }
     if (status) {
-      filtered = filtered.filter((pr) => pr.status === status);
+      filtered = filtered.filter((pr) => pr.pr_status === status);
     }
     if (lokasi) {
       filtered = filtered.filter((pr) =>
-        pr.lokasi.toLowerCase().includes(lokasi.toLowerCase())
+        pr.pr_lokasi.toLowerCase().includes(lokasi.toLowerCase())
       );
     }
     if (pic) {
       filtered = filtered.filter((pr) =>
-        pr.pic.toLowerCase().includes(pic.toLowerCase())
+        pr.pr_pic.toLowerCase().includes(pic.toLowerCase())
       );
     }
     // Filter berdasarkan part number di dalam order_item
     if (partNumber) {
-      filtered = filtered.filter((pr) =>
-        pr.order_item?.some((item) =>
-          item.part_number.toLowerCase().includes(partNumber.toLowerCase())
-        )
+      filtered = filtered.filter(
+        (pr) =>
+          Array.isArray(pr.details) &&
+          pr.details.some((item) =>
+            item.dtl_pr_part_number
+              ?.toLowerCase()
+              .includes(partNumber.toLowerCase())
+          )
       );
     }
 
     setFilteredPrs(filtered);
-    setCurrentPage(1);
-  }, [prs, kode, status, lokasi, pic, partNumber]);
+    setCurrentPage(1); // Reset ke halaman pertama setiap kali filter berubah
+  }, [prs, kode, status, lokasi, pic, partNumber]); // <-- Semua state filter jadi dependensi
 
   // --- useEffect untuk Mengatur Paginasi ---
   useEffect(() => {
-    // ✅ Tambahkan guard clause untuk safety
-    if (!filteredPrs || !Array.isArray(filteredPrs)) {
-      setPrToShow([]);
-      return;
-    }
-
+     if (!Array.isArray(filteredPrs) || filteredPrs.length === 0) {
+    setPrToShow([]);
+    return;
+  }
     const startIndex = (currentPage - 1) * PagingSize;
     const endIndex = startIndex + PagingSize;
     setPrToShow(filteredPrs.slice(startIndex, endIndex));
@@ -140,6 +139,7 @@ export default function PurchaseRequest() {
     toast.success("Filter telah direset.");
   }
 
+  // Fungsi paginasi tidak perlu diubah
   function nextPage() {
     setCurrentPage((prev) => prev + 1);
   }
@@ -258,20 +258,18 @@ export default function PurchaseRequest() {
               <TableBody>
                 {prToShow.length > 0 ? (
                   prToShow.map((pr, index) => (
-                    <TableRow key={pr.id}>
+                    <TableRow key={pr.pr_id}>
                       <TableCell className="p-2 border">
                         {PagingSize * (currentPage - 1) + (index + 1)}
                       </TableCell>
-                      <TableCell className="p-2 border">{pr.kode}</TableCell>
-                      <TableCell className="p-2 border">{pr.status}</TableCell>
-                      <TableCell className="p-2 border">{pr.lokasi}</TableCell>
-                      <TableCell className="p-2 border">{pr.pic}</TableCell>
+                      <TableCell className="p-2 border">{pr.pr_kode}</TableCell>
+                      <TableCell className="p-2 border">{pr.pr_status}</TableCell>
+                      <TableCell className="p-2 border">{pr.pr_lokasi}</TableCell>
+                      <TableCell className="p-2 border">{pr.pr_pic}</TableCell>
                       <TableCell className="p-2 border">
                         <Button size="sm" variant="outline" asChild>
                           <Link
-                            to={`/purchase-request/${encodeURIComponent(
-                              pr.kode
-                            )}`}
+                            to={`/pr/${encodeURIComponent(pr.pr_kode)}`}
                           >
                             Detail
                           </Link>
@@ -282,7 +280,7 @@ export default function PurchaseRequest() {
                 ) : (
                   <TableRow>
                     <TableCell
-                      colSpan={6}
+                      colSpan={6} // Disesuaikan dengan jumlah kolom
                       className="p-4 text-center text-muted-foreground"
                     >
                       Tidak ada Purchase Request ditemukan.
@@ -305,7 +303,7 @@ export default function PurchaseRequest() {
         </SectionFooter>
       </SectionContainer>
 
-      {/* Tambah PR */}
+      {/* Tambah (tidak ada perubahan) */}
       {user?.role === "warehouse" || user?.role === "purchasing" ? (
         <SectionContainer span={12}>
           <SectionHeader>Tambah PR Baru</SectionHeader>

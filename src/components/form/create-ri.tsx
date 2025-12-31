@@ -291,7 +291,8 @@ export default function CreateRIForm({ user, setRefresh }: CreatePOFormProps) {
               <TableHead className="font-semibold text-center">
                 Satuan
               </TableHead>
-              <TableHead className="font-semibold text-center">Qty</TableHead>
+              <TableHead className="font-semibold text-center">
+                Qty</TableHead>
               <TableHead className="font-semibold text-center">
                 Untuk MR
               </TableHead>

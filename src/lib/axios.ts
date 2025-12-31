@@ -8,13 +8,43 @@ const api = axios.create({
   },
 });
 
-// Tambahkan interceptor untuk token
+/* ===============================
+   REQUEST: kirim token (jika ada)
+================================ */
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
-  if (token && config.headers) {
+  if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
+
+/* ===============================
+   RESPONSE: auto logout (AMAN)
+================================ */
+const PUBLIC_ROUTES = [
+  "/login",
+  "/register",
+  "/forgot-password",
+];
+
+api.interceptors.response.use(
+  (res) => res,
+  (err) => {
+    const is401 = err.response?.status === 401;
+    const currentPath = window.location.pathname;
+
+    const isPublicRoute = PUBLIC_ROUTES.some((path) =>
+      currentPath.startsWith(path)
+    );
+
+    if (is401 && !isPublicRoute) {
+      localStorage.removeItem("token");
+      window.location.href = "/login";
+    }
+
+    return Promise.reject(err);
+  }
+);
 
 export default api;

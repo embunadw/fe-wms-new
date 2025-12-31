@@ -24,7 +24,7 @@ export default function Login() {
     try {
       const user = await signIn({ email, password });
       setUser(user);
-      navigate("/barang-dan-stok");
+      navigate("/dashboard");
     } catch (err: any) {
       setError(err.message || "Terjadi kesalahan saat login.");
     } finally {

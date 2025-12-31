@@ -16,6 +16,8 @@ import {
 } from "../ui/table";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { CheckIcon, ChevronsUpDownIcon, Trash2 } from "lucide-react";
+import { getAllMr } from "@/services/material-request";
+import { getMasterParts } from "@/services/master-part";
 import {
   Command,
   CommandEmpty,
@@ -39,11 +41,13 @@ export default function CreatePRForm({ setRefresh, user }: CreatePRFormProps) {
   const [items, setItems] = useState<PRItem[]>([]);
 
   // State untuk MR dan Part
-  const [mrs, setMrs] = useState<MRReceive[]>([]);
-  const [parts, setParts] = useState<MasterPart[]>([]);
-  const [selectedMr, setSelectedMr] = useState<MRReceive | null>(null);
-  const [selectedPart, setSelectedPart] = useState<MasterPart | null>(null);
+  const [mr, setMR] = useState<MRReceive[]>([]);  
+  const [filteredMr, setFilteredMR] = useState<MRReceive[]>([]);
+  const [selectedMr, setSelectedMr] = useState<MRReceive>();
   const [qty, setQty] = useState<number>(1);
+    const [masterParts, setMasterParts] = useState<MasterPart[]>([]);
+    const [filteredParts, setFilteredParts] = useState<MasterPart[]>([]);
+    const [selectedPart, setSelectedPart] = useState<MasterPart>();
 
   // State untuk Popover/Combobox
   const [openMr, setOpenMr] = useState<boolean>(false);
@@ -51,30 +55,38 @@ export default function CreatePRForm({ setRefresh, user }: CreatePRFormProps) {
 
   // Fetch MR yang open
   useEffect(() => {
-    async function fetchMRs() {
+    async function fetchMR() {
       try {
-        const res = await axios.get("/mr/open");
-        setMrs(res.data.data || []);
-      } catch (error) {
-        console.error("Error fetching MRs:", error);
-        toast.error("Gagal memuat daftar MR");
+        const mrData = await getAllMr();
+        const validMR = Array.isArray(mrData) ? mrData : [];
+        setMR(validMR);
+        setFilteredMR(validMR);
+      } catch {
+        toast.error("Gagal mengambil data MR.");
+        setMR([]);
+        setFilteredMR([]);
       }
     }
-    fetchMRs();
+    fetchMR();
   }, []);
 
   // Fetch Master Parts
   useEffect(() => {
-    async function fetchParts() {
+    async function fetchMasterParts() {
       try {
-        const res = await axios.get("/master-part");
-        setParts(res.data.data || []);
+        const parts = await getMasterParts();
+        setMasterParts(parts);
+        setFilteredParts(parts);
       } catch (error) {
-        console.error("Error fetching parts:", error);
-        toast.error("Gagal memuat daftar part");
+        if (error instanceof Error) {
+          toast.error(`Gagal mengambil data master part: ${error.message}`);
+        } else {
+          toast.error("Terjadi kesalahan saat mengambil data master part.");
+        }
       }
     }
-    fetchParts();
+
+    fetchMasterParts();
   }, []);
 
   // Add Item
@@ -103,7 +115,7 @@ export default function CreatePRForm({ setRefresh, user }: CreatePRFormProps) {
     setItems((prev) => [...prev, newItem]);
     
     // Reset selection
-    setSelectedPart(null);
+    setSelectedPart(undefined);
     setQty(1);
     
     toast.success("Item berhasil ditambahkan");
@@ -140,8 +152,8 @@ export default function CreatePRForm({ setRefresh, user }: CreatePRFormProps) {
       
       // Reset form
       setItems([]);
-      setSelectedMr(null);
-      setSelectedPart(null);
+      setSelectedMr(undefined);
+      setSelectedPart(undefined);
       setQty(1);
       setKodePR("");
       
@@ -225,7 +237,7 @@ export default function CreatePRForm({ setRefresh, user }: CreatePRFormProps) {
                 <CommandList>
                   <CommandEmpty>Tidak ada MR tersedia.</CommandEmpty>
                   <CommandGroup>
-                    {mrs.map((mr) => (
+                    {mr.map((mr) => (
                       <CommandItem
                         key={mr.mr_id}
                         value={mr.mr_kode}
@@ -276,7 +288,7 @@ export default function CreatePRForm({ setRefresh, user }: CreatePRFormProps) {
                 <CommandList>
                   <CommandEmpty>Tidak ada part tersedia.</CommandEmpty>
                   <CommandGroup>
-                    {parts.map((part) => (
+                    {masterParts.map((part) => (
                       <CommandItem
                         key={part.part_id}
                         value={part.part_number}

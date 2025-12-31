@@ -12,16 +12,16 @@ import { QuickTable } from "@/components/quick-table";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { useAuth } from "@/context/AuthContext";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { formatTanggal } from "@/lib/utils";
-import { getCurrentUser } from "@/services/auth";
 import { getMasterParts } from "@/services/master-part";
 import { getAllStocks } from "@/services/stock";
-import type { MasterPart, Stock, UserComplete } from "@/types";
+import type { MasterPart, Stock } from "@/types";
 import { PagingSize } from "@/types/enum";
 import { HousePlus } from "lucide-react";
 import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
@@ -31,70 +31,31 @@ export default function BarangDanStok() {
   const [stocks, setStocks] = useState<Stock[]>([]);
   const [masterParts, setMasterParts] = useState<MasterPart[]>([]);
   const [refresh, setRefresh] = useState<boolean>(false);
-  const [user, setUser] = useState<UserComplete>();
+  const { user } = useAuth();
 
-  useEffect(() => {
-    async function getUser() {
-      try {
-        const res = await getCurrentUser();
-        if (res) {
-          setUser(res);
-        } else {
-          toast.error("Gagal mendapatkan data pengguna saat ini.");
-        }
-      } catch (error) {
-        if (error instanceof Error) {
-          toast.error(`Gagal mendapatkan data pengguna: ${error.message}`);
-        } else {
-          toast.error(
-            "Gagal mendapatkan data pengguna: Terjadi kesalahan yang tidak diketahui."
-          );
-        }
-      }
+useEffect(() => {
+  async function fetchMasterPart() {
+    try {
+      const res = await getMasterParts();
+      if (res) setMasterParts(res);
+    } catch (error) {
+      toast.error("Gagal mengambil data master part");
     }
+  }
 
-    getUser();
-  }, []);
+  async function fetchStocks() {
+    try {
+      const res = await getAllStocks();
+      if (res) setStocks(res);
+    } catch (error) {
+      toast.error("Gagal mengambil data stok barang");
+    }
+  }
 
-  useEffect(() => {
-    async function fetchMasterPart() {
-      try {
-        const res = await getMasterParts();
-        if (res) {
-          setMasterParts(res);
-        }
-      } catch (error) {
-        if (error instanceof Error) {
-          toast.error(`Gagal mengambil data master part: ${error.message}`);
-        } else {
-          toast.error(
-            "Gagal mengambil data master part: Terjadi kesalahan yang tidak diketahui."
-          );
-        }
-      }
-    }
+  fetchMasterPart();
+  fetchStocks();
+}, [refresh]);
 
-    async function fetchStocks() {
-      try {
-        const res = await getAllStocks();
-        if (res) {
-          setStocks(res);
-        }
-      } catch (error) {
-        if (error instanceof Error) {
-          toast.error(`Gagal mengambil data stok barang: ${error.message}`);
-        } else {
-          toast.error(
-            "Gagal mengambil data stok barang: Terjadi kesalahan yang tidak diketahui."
-          );
-        }
-      }
-    }
-    if (user) {
-      fetchMasterPart();
-      fetchStocks();
-    }
-  }, [refresh, user]);
 
   return (
     <WithSidebar>

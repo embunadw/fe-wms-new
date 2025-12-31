@@ -63,7 +63,7 @@ export default function CreateDeliveryForm({
   const [key, setKey] = useState(+new Date());
   const [open, setOpen] = useState<boolean>(false);
 
-  const [mr, setMR] = useState<MRReceive[]>([]);
+  const [mr, setMR] = useState<MRReceive[]>([]);  
   const [filteredMr, setFilteredMR] = useState<MRReceive[]>([]);
   const [selectedMr, setSelectedMr] = useState<MRReceive>();
   const [selectedFrom, setSelectedFrom] = useState<string>("");
@@ -291,10 +291,8 @@ export default function CreateDeliveryForm({
                       </CommandItem>
                     ))}
                   </CommandGroup>
-
                 </CommandList>
               </Command>
-
             </PopoverContent>
           </Popover>
         </div>

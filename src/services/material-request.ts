@@ -8,19 +8,19 @@
  */
 
 import type { MRReceive } from "@/types";
-import axios from "axios";
 import api from "@/lib/axios";
 
 const BASE_URL = "http://localhost:8000/api/mr";
 
 export async function generateKodeMR(lokasi: string): Promise<string> {
-  const res = await axios.get(
+  const res = await api.get(
     `${BASE_URL}/generate-kode`,
     { params: { lokasi } }
   );
 
   return res.data; 
 }
+
 export async function getOpenMR() {
   const res = await api.get( `${BASE_URL}/open`);
   return res.data;

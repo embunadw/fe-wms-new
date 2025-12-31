@@ -1,4 +1,3 @@
-import { Timestamp } from "firebase/firestore";
 import { createMasterPart } from "./master-part";
 import dataJSON from "@/stocks.json";
 import type { MasterPart } from "@/types";
@@ -16,9 +15,9 @@ export async function uploadPartsByPage(page = 1): Promise<void> {
   for (const item of slice) {
     const part_number = String(item["Part no"]).trim();
     const part_name = String(item["Part Name"]).trim();
-    const satuan = String(item["Satuan"]).trim();
+    const part_satuan = String(item["Satuan"]).trim();
 
-    if (!part_number || !part_name || !satuan) {
+    if (!part_number || !part_name || !part_satuan) {
       console.warn(`Skipped part due to missing fields:`, item);
       continue;
     }
@@ -26,9 +25,9 @@ export async function uploadPartsByPage(page = 1): Promise<void> {
     const masterPart: MasterPart = {
       part_number,
       part_name,
-      satuan,
-      created_at: Timestamp.now(),
-      updated_at: Timestamp.now(),
+      part_satuan,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     };
 
     try {

@@ -6,9 +6,9 @@ import SectionContainer, {
 } from "@/components/content-container";
 
 import { getDashboardData } from "@/services/dashboard";
-import { getCurrentUser } from "@/services/auth";
+import { useAuth } from "@/context/AuthContext";
 
-import type { DashboardResponse, UserComplete } from "@/types";
+import type { DashboardResponse } from "@/types";
 import { PagingSize } from "@/types/enum";
 
 import {
@@ -207,23 +207,20 @@ function DashboardTable({ title, data }: { title: string; data: any[] }) {
  DASHBOARD PAGE
 ========================= */
 export default function Dashboard() {
-  const [user, setUser] = useState<UserComplete | null>(null);
+  const { user } = useAuth();
   const [dashboard, setDashboard] = useState<DashboardResponse | null>(null);
   const [activeAlert, setActiveAlert] = useState<
     "mr" | "delivery" | "stock" | null
   >(null);
 
   useEffect(() => {
-    async function load() {
-      const [u, d] = await Promise.all([
-        getCurrentUser(),
-        getDashboardData(),
-      ]);
-      setUser(u);
+    async function loadDashboard() {
+      const d = await getDashboardData();
       setDashboard(d);
     }
-    load();
-  }, []);
+
+    if (user) loadDashboard();
+  }, [user]);
 
   if (!dashboard || !user) {
     return (

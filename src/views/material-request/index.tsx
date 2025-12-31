@@ -3,10 +3,10 @@ import SectionContainer, {
   SectionBody,
   SectionFooter,
 } from "@/components/content-container";
+import { useAuth } from "@/context/AuthContext";
 import WithSidebar from "@/components/layout/WithSidebar";
 import { Button } from "@/components/ui/button";
-import { getCurrentUser } from "@/services/auth";
-import type {MRReceive, UserComplete } from "@/types";
+import type {MRReceive } from "@/types";
 import { ClipboardPlus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -33,7 +33,7 @@ import { formatTanggal } from "@/lib/utils";
 import { PagingSize } from "@/types/enum";
 
 export default function MaterialRequest() {
-  const [user, setUser] = useState<UserComplete | null>(null);
+  const {user} = useAuth()
   const [mrs, setMrs] = useState<MRReceive[]>([]);
   const [filteredMrs, setFilteredMrs] = useState<MRReceive[]>([]);
   const [mrToShow, setMrToShow] = useState<MRReceive[]>([]);
@@ -62,22 +62,14 @@ export default function MaterialRequest() {
         if (error instanceof Error) {
           toast.error(`Gagal mengambil data: ${error.message}`);
         } else {
-          toast.error("Gagal mengambil data pengguna atau MR.");
+          toast.error("Gagal mengambil data MR.");
         }
-        setUser(null);
       }
     }
 
     fetchUserDataAndMRs();
   }, [refresh]);
 
-  useEffect(() => {
-    async function fetchUser() {
-      const user = await getCurrentUser();
-      setUser(user);
-    }
-    fetchUser();
-  }, []);
 
   function filterMrs() {
     let filtered = mrs;

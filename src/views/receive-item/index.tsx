@@ -7,7 +7,7 @@ import WithSidebar from "@/components/layout/WithSidebar";
 import { MyPagination } from "@/components/my-pagination";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label"; // <-- Impor
+import { Label } from "@/components/ui/label"; 
 import {
   Popover,
   PopoverContent,
@@ -22,10 +22,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatTanggal } from "@/lib/utils";
-import { getCurrentUser } from "@/services/auth";
+import { useAuth } from "@/context/AuthContext";
 import { getPurchasedPO } from "@/services/receive-item";
 import { getAllRi } from "@/services/receive-item";
-import type { POReceive, RI, UserComplete } from "@/types";
+import type { POReceive, RI } from "@/types";
 import { PagingSize } from "@/types/enum";
 import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -34,38 +34,23 @@ import { toast } from "sonner";
 import CreateRIForm from "@/components/form/create-ri";
 
 export default function ReceiveItem() {
-  const [user, setUser] = useState<UserComplete | null>(null);
+  const {user} = useAuth();
   const [refresh, setRefresh] = useState<boolean>(false);
-
-  // === Section: State dan Logika untuk Tabel PO ===
   const [pos, setPos] = useState<POReceive[]>([]);
   const [filteredPos, setFilteredPos] = useState<POReceive[]>([]);
   const [poToShow, setPoToShow] = useState<POReceive[]>([]);
   const [currentPagePo, setCurrentPagePo] = useState<number>(1);
-  // State Filter PO
   const [kodePo, setKodePo] = useState<string>("");
   const [kodePr, setKodePr] = useState<string>("");
   const [statusPo, setStatusPo] = useState<string>("");
-
-  // === Section: State dan Logika untuk Tabel RI ===
   const [ris, setRis] = useState<RI[]>([]);
   const [filteredRis, setFilteredRis] = useState<RI[]>([]);
   const [riToShow, setRiToShow] = useState<RI[]>([]);
   const [currentPageRi, setCurrentPageRi] = useState<number>(1);
-  // State Filter RI
   const [kodeRi, setKodeRi] = useState<string>("");
-  const [kodePoRi, setKodePoRi] = useState<string>(""); // Filter RI by PO code
+  const [kodePoRi, setKodePoRi] = useState<string>(""); 
   const [gudang, setGudang] = useState<string>("");
   const [picRi, setPicRi] = useState<string>("");
-
-  // --- Fetch data awal (user, PO, RI) ---
-  useEffect(() => {
-    async function fetchUser() {
-      const user = await getCurrentUser();
-      setUser(user);
-    }
-    fetchUser();
-  }, []);
 
   useEffect(() => {
     async function fetchInitialData() {
@@ -87,7 +72,6 @@ export default function ReceiveItem() {
     fetchInitialData();
   }, [refresh]);
 
-  // --- useEffect untuk filtering Tabel PO ---
   useEffect(() => {
     let filtered = pos;
     if (kodePo) {
@@ -107,7 +91,6 @@ export default function ReceiveItem() {
     setCurrentPagePo(1);
   }, [pos, kodePo, kodePr, statusPo]);
 
-  // --- useEffect untuk paginasi Tabel PO ---
   useEffect(() => {
     const startIndex = (currentPagePo - 1) * PagingSize;
     const endIndex = startIndex + PagingSize;
@@ -115,7 +98,6 @@ export default function ReceiveItem() {
 
   }, [filteredPos, currentPagePo]);
 
-  // --- useEffect untuk filtering Tabel RI ---
   useEffect(() => {
     let filtered = ris;
     if (kodeRi) {

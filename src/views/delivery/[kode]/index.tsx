@@ -22,94 +22,54 @@ import { getDeliveryByKode, updateDelivery } from "@/services/delivery";
 import { getMrByKode } from "@/services/material-request";
 import { EditDeliveryDialog } from "@/components/dialog/edit-delivery";
 import { ConfirmDialog } from "@/components/dialog/edit-status-delivery";
-import { getCurrentUser } from "@/services/auth";
-import type { UserComplete } from "@/types";
+import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Printer } from "lucide-react";
-
-
 
 export function DeliveryDetail() {
   const { kode } = useParams<{ kode: string }>();
   const [mr, setMr] = useState<MRReceive | null>(null);
   const [dlvry, setdlvry] = useState<DeliveryReceive | null>(null);
-  const [currentUser, setCurrentUser] = useState<UserComplete | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [refresh, setRefresh] = useState<boolean>(false);
+  const { user } = useAuth();
+  const [loadingDelivery, setLoadingDelivery] = useState(true);
+  const [loadingMr, setLoadingMr] = useState(true);
 
   useEffect(() => {
-    async function fetchCurrentUser() {
+    async function fetchDeliveryDetail() {
+      setLoadingDelivery(true);
       try {
-        const user = await getCurrentUser();
-        setCurrentUser(user);
-      } catch (error) {
-        console.error("Gagal mengambil user login", error);
-      }
-    }
-
-    fetchCurrentUser();
-  }, []);
-
-  useEffect(() => {
-    async function fetchDeliveryDetail(kode: string) {
-      setIsLoading(true);
-      try {
-        const res = await getDeliveryByKode(kode);
-        if (res) {
-          setdlvry(res);
-        } else {
-          toast.error(`Delivery dengan kode ${kode} tidak ditemukan.`);
-          setdlvry(null);
-        }
-      } catch (error) {
-        console.error("Gagal mengambil detail Delivery:", error);
-        if (error instanceof Error) {
-          toast.error(`Gagal mengambil detail Delivery: ${error.message}`);
-        } else {
-          toast.error(
-            "Terjadi kesalahan saat mengambil detail Material Request."
-          );
-        }
+        const res = await getDeliveryByKode(kode!);
+        setdlvry(res ?? null);
+      } catch {
         setdlvry(null);
       } finally {
-        setIsLoading(false);
+        setLoadingDelivery(false);
       }
     }
-    if (kode) {
-      fetchDeliveryDetail(kode);
-    }
+
+    if (kode) fetchDeliveryDetail();
   }, [kode, refresh]);
 
+
   useEffect(() => {
-    async function fetchMrDetail(kode: string) {
-      setIsLoading(true);
+    async function fetchMrDetail() {
+      if (!dlvry?.mr?.mr_kode) return;
+
+      setLoadingMr(true);
       try {
-        const res = await getMrByKode(kode);
-        if (res) {
-          setMr(res);
-        } else {
-          toast.error(`MR dengan kode ${kode} tidak ditemukan.`);
-          setMr(null);
-        }
-      } catch (error) {
-        console.error("Gagal mengambil detail MR:", error);
-        if (error instanceof Error) {
-          toast.error(`Gagal mengambil detail MR: ${error.message}`);
-        } else {
-          toast.error(
-            "Terjadi kesalahan saat mengambil detail Material Request."
-          );
-        }
+        const res = await getMrByKode(dlvry.mr.mr_kode);
+        setMr(res ?? null);
+      } catch {
         setMr(null);
       } finally {
-        setIsLoading(false);
+        setLoadingMr(false);
       }
     }
 
-    if (dlvry) {
-      fetchMrDetail(dlvry.mr?.mr_kode ?? "");
-    }
+    fetchMrDetail();
   }, [dlvry]);
+
 
   async function updateDeliveryStatus(status: "on delivery" | "delivered") {
     if (!dlvry) {
@@ -153,7 +113,7 @@ export function DeliveryDetail() {
     }
   }
 
-  if (isLoading) {
+  if (loadingDelivery) {
     return (
       <WithSidebar>
         <SectionContainer span={12}>
@@ -288,7 +248,7 @@ export function DeliveryDetail() {
             <Printer />
           </Button>
           {dlvry.dlv_status === "on delivery" &&
-  currentUser?.lokasi === dlvry.dlv_ke_gudang && (
+    user?.lokasi === dlvry.dlv_ke_gudang && (
     <ConfirmDialog
       text="Selesaikan delivery"
       onClick={() => {

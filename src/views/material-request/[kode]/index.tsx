@@ -19,7 +19,6 @@ import {
 } from "@/components/ui/table";
 import { Label } from "@/components/ui/label"; // Import Label
 import { formatTanggal } from "@/lib/utils";
-import { parse } from "date-fns";
 import { getMrByKode } from "@/services/material-request";
 import { Button } from "@/components/ui/button";
 import { Printer } from "lucide-react";
@@ -132,9 +131,7 @@ export function MaterialRequestDetail() {
                 </Label>
                 {/* Pastikan mr.tanggal_mr adalah Timestamp sebelum memanggil toDate() */}
                 <p className="font-medium text-base">
-                  {formatTanggal(
-                    parse(mr.mr_tanggal, "d/M/yyyy", new Date())
-                  )}
+                  {formatTanggal(mr.mr_due_date)}
                 </p>
               </div>
               <div>
@@ -143,9 +140,7 @@ export function MaterialRequestDetail() {
                 </Label>
                 {/* Pastikan mr.tanggal_estimasi adalah Timestamp sebelum memanggil toDate() */}
                 <p className="font-medium text-base">
-                  {formatTanggal(
-                    parse(mr.mr_due_date, "d/M/yyyy", new Date())
-                  )}
+                  {formatTanggal(mr.mr_due_date)}
                 </p>
               </div>
               <div>

@@ -29,9 +29,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { getCurrentUser } from "@/services/auth";
+import { useAuth } from "@/context/AuthContext";
 import { getAllDelivery } from "@/services/delivery";
-import type { DeliveryReceive, UserComplete } from "@/types";
+import type { DeliveryReceive} from "@/types";
 import { PagingSize } from "@/types/enum";
 import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -40,7 +40,7 @@ import { toast } from "sonner";
 
 export default function DeliveryPage() {
   const [refresh, setRefresh] = useState<boolean>(false);
-  const [user, setUser] = useState<UserComplete | null>(null);
+  const { user } = useAuth();
   const [deliveries, setDeliveries] = useState<DeliveryReceive[]>([]);
   const [filteredDeliveries, setFilteredDeliveries] = useState<DeliveryReceive[]>([]);
   const [deliveriesToShow, setDeliveriesToShow] = useState<DeliveryReceive[]>([]);
@@ -53,14 +53,6 @@ export default function DeliveryPage() {
   const [dariGudang, setDariGudang] = useState<string>("");
   const [keGudang, setKeGudang] = useState<string>("");
   const [resi, setResi] = useState<string>("");
-
-  useEffect(() => {
-    async function fetchUser() {
-      const user = await getCurrentUser();
-      setUser(user);
-    }
-    fetchUser();
-  }, []);
 
   useEffect(() => {
     async function fetchAllDeliveries() {

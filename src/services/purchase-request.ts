@@ -1,6 +1,6 @@
 import api from "@/lib/axios";
 import type { PurchaseRequest } from "@/types";
-const BASE_URL = "http://localhost:8000/api/mr";
+const BASE_URL = "http://localhost:8000/api/pr";
 
 /**
  * ROLE

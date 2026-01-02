@@ -221,6 +221,7 @@ export interface MRReceive {
 
 export interface PRItemReceive {
   part_id?: string;
+  pr_id?: string;
   dtl_pr_part_number: string;
   dtl_pr_part_name: string;
   dtl_pr_satuan: string;

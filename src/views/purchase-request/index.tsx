@@ -269,8 +269,7 @@ export default function PurchaseRequest() {
                       <TableCell className="p-2 border">
                         <Button size="sm" variant="outline" asChild>
                           <Link
-                            to={`/pr/${encodeURIComponent(pr.pr_kode)}`}
-                          >
+                            to={`/pr/kode/${encodeURIComponent(pr.pr_kode)}`}>
                             Detail
                           </Link>
                         </Button>

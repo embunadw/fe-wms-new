@@ -116,11 +116,11 @@ export default function CreatePRForm({ user, setRefresh }: CreatePRFormProps) {
     const kodePR = formData.get("kodePR") as string;
 
     const data: PurchaseRequest = {
-  pr_kode: kodePR,
-  pr_status: "open",
-  pr_lokasi: user.lokasi,
-  pr_pic: user.nama,
-  pr_tanggal: toMysqlDatetime(tanggalPR),
+    pr_kode: kodePR,
+    pr_status: "open",
+    pr_lokasi: user.lokasi,
+    pr_pic: user.nama,
+    pr_tanggal: toMysqlDatetime(tanggalPR),
 
   details: prItems.map((item) => ({
     part_id: item.part_id,

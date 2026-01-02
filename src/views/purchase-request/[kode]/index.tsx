@@ -1,4 +1,3 @@
-// pages/material-request/[kode].tsx atau sesuai routing Anda
 import SectionContainer, {
   SectionBody,
   SectionFooter,
@@ -20,6 +19,8 @@ import {
 import { Label } from "@/components/ui/label";
 import { formatTanggal } from "@/lib/utils";
 import { getPrByKode } from "@/services/purchase-request";
+import { Button } from "@/components/ui/button";
+import { Printer } from "lucide-react";
 
 export function PurchaseRequestDetail() {
   const { kode } = useParams<{ kode: string }>();
@@ -36,7 +37,6 @@ export function PurchaseRequestDetail() {
       setIsLoading(true);
       try {
         const res = await getPrByKode(kode);
-        console.log(res);
         if (res) {
           setPr(res);
         } else {
@@ -59,8 +59,7 @@ export function PurchaseRequestDetail() {
     }
     fetchMrDetail();
   }, [kode]);
-
-  if (isLoading) {
+  if (isLoading && !pr) {
     return (
       <WithSidebar>
         <SectionContainer span={12}>
@@ -147,6 +146,13 @@ export function PurchaseRequestDetail() {
         </SectionBody>
         <SectionFooter>
           {/* <EditMRDialog mr={mr} refresh={setRefresh} onSubmit={handleEditMR} /> */}
+                    <Button
+            variant={"outline"}
+            onClick={() => window.print()}
+            className="print:hidden"
+          >
+            <Printer />
+          </Button>
         </SectionFooter>
       </SectionContainer>
 
@@ -158,23 +164,20 @@ export function PurchaseRequestDetail() {
             <div className="w-full border border-border rounded-sm overflow-x-auto">
               <Table className="w-full">
                 <TableHeader>
-                  <TableRow className="[&>th]:border">
-                    <TableHead className="w-[50px] text-center">No</TableHead>
+                  <TableRow>
+                    <TableHead>No</TableHead>
                     <TableHead>Part Number</TableHead>
                     <TableHead>Nama Part</TableHead>
                     <TableHead>Satuan</TableHead>
                     <TableHead>Jumlah</TableHead>
                     <TableHead>Berdasarkan MR</TableHead>
-                    {/* <TableHead>Aksi</TableHead> */}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {pr.details && pr.details.length > 0 ? (
+                  {pr.details.length > 0 ? (
                     pr.details.map((item, index) => (
-                      <TableRow key={index} className="[&>td]:border">
-                        <TableCell className="w-[50px] text-center">
-                          {index + 1}
-                        </TableCell>
+                      <TableRow key={item.pr_id}>
+                        <TableCell>{index + 1}</TableCell>
                         <TableCell>{item.dtl_pr_part_number}</TableCell>
                         <TableCell>{item.dtl_pr_part_name}</TableCell>
                         <TableCell>{item.dtl_pr_satuan}</TableCell>
@@ -183,12 +186,9 @@ export function PurchaseRequestDetail() {
                       </TableRow>
                     ))
                   ) : (
-                    <TableRow className="[&>td]:border">
-                      <TableCell
-                        colSpan={5}
-                        className="text-center text-muted-foreground py-4"
-                      >
-                        Tidak ada barang dalam Material Request ini.
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center">
+                        Tidak ada barang
                       </TableCell>
                     </TableRow>
                   )}

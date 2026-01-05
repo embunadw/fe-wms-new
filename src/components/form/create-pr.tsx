@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
 import { getAllMr } from "@/services/material-request";
-import type { MasterPart, MRReceive, PR, PRItem, PRItemReceive, PurchaseRequest, UserComplete, UserDb } from "@/types";
+import type { MasterPart, MRReceive, PRItemReceive, PurchaseRequest, UserComplete, UserDb } from "@/types";
 import { DatePicker } from "../date-picker";
 import {
   Select,
@@ -51,7 +51,7 @@ function toMysqlDatetime(date: Date) {
 export default function CreatePRForm({ user, setRefresh }: CreatePRFormProps) {
   const [tanggalPR, setTanggalPR] = useState<Date | undefined>(new Date());
   const [prItems, setPRItems] = useState<PRItemReceive[]>([]);
-  const [mrIncluded, setMrIncluded] = useState<string[]>([]);
+  const [mrInluded, setMrIncluded] = useState<string[]>([]);
 
   // Pencarian master part
   const [open, setOpen] = useState<boolean>(false);

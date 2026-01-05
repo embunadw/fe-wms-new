@@ -81,7 +81,7 @@ export default function ReceiveItem() {
     }
     if (kodePr) {
       filtered = filtered.filter((p) =>
-        p.purchase_request.pr_kode?.toLowerCase().includes(kodePr.toLowerCase())
+        p.purchase_request?.pr_kode.toLowerCase().includes(kodePr.toLowerCase())
       );
     }
     if (statusPo) {
@@ -242,7 +242,7 @@ export default function ReceiveItem() {
                         {PagingSize * (currentPagePo - 1) + (index + 1)}
                       </TableCell>
                       <TableCell className="p-2 border">{po.po_kode}</TableCell>
-                      <TableCell className="p-2 border">{po.purchase_request.pr_kode}</TableCell>
+                      <TableCell className="p-2 border">{po.purchase_request?.pr_kode ?? "-"}</TableCell>
                       <TableCell className="p-2 border">
                         {formatTanggal(po.created_at)}
                       </TableCell>
@@ -253,10 +253,7 @@ export default function ReceiveItem() {
                       <TableCell className="p-2 border">
                         <Button size="sm" variant="outline" asChild>
                           <Link
-                            to={`/purchase-order/${encodeURIComponent(
-                              po.po_kode
-                            )}`}
-                          >
+                            to={`/po/kode/${encodeURIComponent(po.po_kode)}`}>
                             Detail
                           </Link>
                         </Button>

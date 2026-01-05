@@ -31,8 +31,8 @@ import {
 } from "@/components/ui/table";
 import { formatTanggal } from "@/lib/utils";
 import { getCurrentUser } from "@/services/auth";
-import { getAllPo } from "@/services/purchase-order";
-import type { PO, UserComplete } from "@/types";
+import { getPo } from "@/services/purchase-order";
+import type { POHeader, UserComplete } from "@/types";
 import { PagingSize } from "@/types/enum";
 import { Plus } from "lucide-react";
 import { useEffect, useState, Component } from "react";
@@ -85,9 +85,9 @@ class ErrorBoundary extends Component<
 export default function PurchaseOrder() {
   const [refresh, setRefresh] = useState<boolean>(false);
   const [user, setUser] = useState<UserComplete | null>(null);
-  const [pos, setPos] = useState<PO[]>([]);
-  const [filteredPos, setFilteredPos] = useState<PO[]>([]);
-  const [poToShow, setPoToShow] = useState<PO[]>([]);
+  const [pos, setPos] = useState<POHeader[]>([]);
+  const [filteredPos, setFilteredPos] = useState<POHeader[]>([]);
+  const [poToShow, setPoToShow] = useState<POHeader[]>([]);
   const [currentPage, setCurrentPage] = useState<number>(1);
 
   // State untuk Filtering
@@ -112,7 +112,7 @@ export default function PurchaseOrder() {
   useEffect(() => {
     async function fetchAllPOs() {
       try {
-        const poResult = await getAllPo();
+        const poResult = await getPo();
         setPos(poResult || []);
         setFilteredPos(poResult || []);
       } catch (error) {
@@ -140,7 +140,7 @@ export default function PurchaseOrder() {
 
     if (kodePr) {
       filtered = filtered.filter((po) =>
-        po.kode_pr?.toLowerCase().includes(kodePr.toLowerCase())
+        po.kode_pr.toLowerCase().includes(kodePr.toLowerCase())
       );
     }
 
@@ -306,10 +306,7 @@ export default function PurchaseOrder() {
                       <TableCell className="p-2 border">
                         <Button size="sm" variant="outline" asChild>
                           <Link
-                            to={`/purchase-order/${encodeURIComponent(
-                              po.kode
-                            )}`}
-                          >
+                            to={`/po/kode/${encodeURIComponent(po.kode)}`}>
                             Detail
                           </Link>
                         </Button>

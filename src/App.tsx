@@ -14,9 +14,11 @@ import DeliveryPage from "@/views/delivery";
 import { DeliveryDetail } from "@/views/delivery/[kode]";
 import PurchaseRequest from "@/views/purchase-request";
 import PurchaseOrder from "@/views/purchase-order";
+import PurchaseOrderDetail from "@/views/purchase-order/[kode]";
 import UserManagement from "@/views/user-management";
 import NotFound from "@/views/not-found";
 import { PurchaseRequestDetail } from "./views/purchase-request/[kode]";
+import Setting from "./views/setting/index.tsx";
 
 export default function App() {
   return (
@@ -28,6 +30,7 @@ export default function App() {
           <Route path="/register" element={<Register />} />
           {/* <Route path="/verify-email" element={<VerifyEmail />} /> */}
           <Route path="/forgot-password" element={<ForgotPassword />} />
+          
 
           {/* ================= ROOT ================= */}
           <Route
@@ -138,6 +141,14 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/po/kode/:kode"
+            element={
+              <ProtectedRoute>
+                <PurchaseOrderDetail />
+              </ProtectedRoute>
+            }
+          />
 
           {/* ================= USER MANAGEMENT ================= */}
           <Route
@@ -148,6 +159,7 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+          <Route path="/setting" element={<Setting />} />
 
           {/* ================= FALLBACK ================= */}
           <Route path="*" element={<NotFound />} />

@@ -1,39 +1,100 @@
+import api from "@/lib/axios";
+import type { PO, POHeader, POReceive } from "@/types";
+
+const BASE_URL = "http://localhost:8000/api/po";
+
 /**
- * TODO
- * 1. Create PO : Purchasing, Warehouse
- * 2. Update PO : Purchasing, Warehouse
- * 3. Get all PO : All
- * 4. Get PO by kode : All
+ * ROLE
+ * - Create PO : Purchasing, Warehouse
+ * - Update PO : Purchasing, Warehouse
+ * - Get All PO : All
+ * - Get PO By ID : All
  */
 
-import api from "@/lib/axios";
-import type { PO } from "@/types";
 
-/* ===================== GET ALL PO ===================== */
-export async function getAllPo(): Promise<PO[]> {
+export async function getAllPo(): Promise<POReceive[]> {
   const res = await api.get("/po");
-  return res.data.data as PO[];
+
+  if (Array.isArray(res.data)) {
+    return res.data;
+  }
+
+  if (Array.isArray(res.data?.data)) {
+    return res.data.data;
+  }
+
+  console.error("Unexpected PO response shape:", res.data);
+  return [];
 }
 
-/* ===================== GET PO BY KODE ===================== */
-export async function getPoByKode(kode: string): Promise<PO | null> {
-  const res = await api.get(`/po/${kode}`);
-  return res.data?.data ?? null;
+export async function getPo(): Promise<POHeader[]> {
+  const res = await api.get("/po");
+
+  if (Array.isArray(res.data)) {
+    return res.data;
+  }
+
+  if (Array.isArray(res.data?.data)) {
+    return res.data.data;
+  }
+
+  console.error("Unexpected PO response shape:", res.data);
+  return [];
 }
 
-/* ===================== CREATE PO ===================== */
-export async function createPO(
-  payload: Omit<PO, "id" | "created_at" | "updated_at">
-): Promise<boolean> {
-  const res = await api.post("/po", payload);
-  return res.data.status === true;
+export async function getPoByKode(
+  po_kode: string
+): Promise<POReceive | null> {
+  try {
+    const res = await api.get(
+      `${BASE_URL}/kode/${encodeURIComponent(po_kode)}`
+    );
+
+    return res.data ?? null;
+  } catch (error: any) {
+    if (error.response?.status === 404) return null;
+    console.error("Error fetching PR by kode:", error);
+    throw new Error("Failed to fetch PR by kode");
+  }
 }
 
-/* ===================== UPDATE PO ===================== */
+export async function getPoById(po_id: number): Promise<PO | null> {
+  try {
+    const res = await api.get(`${BASE_URL}/${po_id}`);
+    return res.data ?? null;
+  } catch (error: any) {
+    if (error.response?.status === 404) return null;
+    console.error("Error fetching PO by id:", error);
+    throw new Error("Failed to fetch PO by id");
+  }
+}
+
+export async function createPO(data: PO) {
+  const payload = {
+    po_kode: data.po_kode,
+    pr_id: data.pr_id,
+    po_tanggal: data.po_tanggal,
+    po_estimasi: data.po_estimasi,
+    po_keterangan: data.po_keterangan,
+    po_status: data.po_status,
+    po_pic: data.po_pic,
+
+    details: data.details.map((d) => ({
+      part_id: d.part_id,
+      dtl_po_part_number: d.dtl_po_part_number,
+      dtl_po_part_name: d.dtl_po_part_name,
+      dtl_po_satuan: d.dtl_po_satuan,
+      dtl_po_qty: d.dtl_po_qty,
+    })),
+  };
+
+  return api.post("/po", payload);
+}
+
 export async function updatePO(
-  id: number,
-  payload: Partial<Omit<PO, "id" | "created_at">>
+  po_id: number,
+  payload: Partial<Omit<PO, "po_id" | "created_at" | "details">>
 ): Promise<boolean> {
-  const res = await api.put(`/po/${id}`, payload);
+  const res = await api.put(`/po/${po_id}`, payload);
   return res.data.status === true;
 }

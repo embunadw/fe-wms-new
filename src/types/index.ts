@@ -49,8 +49,6 @@ export interface MRItem {
 }
 
 
-
-
 export interface MRDetail {
   dtl_mr_id?: string;
   mr_id?: string;
@@ -103,17 +101,29 @@ export interface PR {
 }
 
 export interface PO {
-  id?: string;
-  kode: string;
-  kode_pr: string;
-  tanggal_estimasi: string;
-  status: string;
-  pic: string;
-  keterangan?: string;
-  created_at: Timestamp;
-  updated_at: Timestamp;
+  po_id?: string;
+  po_kode: string;
+  pr_id?: string;
+  po_tanggal: string;
+  po_estimasi: string;
+  po_status: string;
+  po_pic: string;
+  po_keterangan?: string;
+  created_at: string;
+  updated_at: string;
+  details: PODetail[];
 }
 
+
+export interface PODetail {
+  po_id?: string;
+  part_id?: string;
+  dtl_po_part_number: string;
+  dtl_po_part_name: string;
+  dtl_po_satuan: string;
+  dtl_po_qty: number;
+  dtl_qty_received?: number;
+}
 
 
 //Diyah Edit
@@ -176,6 +186,19 @@ export interface POReceive {
   created_at: string;
   updated_at: string;
   purchase_request: PurchaseRequest;
+  details: PODetail[]
+}
+
+export interface POHeader {
+  id?: string;
+  kode: string;
+  kode_pr: string;
+  tanggal_estimasi: string;
+  status: string;
+  pic: string;
+  keterangan?: string;
+  created_at: Timestamp;
+  updated_at: Timestamp;
 }
 
 export interface RI {
@@ -196,7 +219,6 @@ export interface RIDetail {
   dtl_ri_id?: string;
   ri_id: number;
   po_id: number;
-  mr_id: number;
   part_id: number;
   dtl_ri_part_number: string;
   dtl_ri_part_name: string;
@@ -204,6 +226,7 @@ export interface RIDetail {
   dtl_ri_qty: number;
   created_at: string;
   updated_at: string;
+  mr?: MRReceive;
 }
 
 export interface MRReceive {

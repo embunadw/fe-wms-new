@@ -6,7 +6,7 @@ import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { Textarea } from "../ui/textarea";
 
-import type { PO, PR, UserComplete, UserDb } from "@/types";
+import type { PO, PurchaseRequest, UserComplete, UserDb } from "@/types";
 
 import {
   Select,
@@ -38,7 +38,7 @@ import {
 } from "../ui/command";
 
 import { cn } from "@/lib/utils";
-import { getAllPr } from "@/services/purchase-request";
+import { getPr } from "@/services/purchase-request";
 import { createPO } from "@/services/purchase-order";
 import { DatePicker } from "../date-picker";
 
@@ -46,12 +46,18 @@ interface CreatePOFormProps {
   user: UserComplete | UserDb;
   setRefresh: Dispatch<SetStateAction<boolean>>;
 }
+function toMysqlDatetime(date: Date) {
+  return date.toISOString().slice(0, 19).replace("T", " ");
+}
 
 export default function CreatePOForm({ user, setRefresh }: CreatePOFormProps) {
   const [open, setOpen] = useState(false);
-  const [prList, setPrList] = useState<PR[]>([]);
-  const [selectedPR, setSelectedPR] = useState<PR | undefined>();
+  const [prList, setPrList] = useState<PurchaseRequest[]>([]);
+  const [selectedPR, setSelectedPR] = useState<PurchaseRequest | undefined>();
   const [estimasi, setEstimasi] = useState<Date | undefined>();
+  const [status, setStatus] = useState("pending");
+  const [kode, setKode] = useState(""); // ✅ Controlled input
+  const [keterangan, setKeterangan] = useState(""); // ✅ Controlled textarea
 
   // ===============================
   // FETCH PR
@@ -59,13 +65,13 @@ export default function CreatePOForm({ user, setRefresh }: CreatePOFormProps) {
   useEffect(() => {
     async function fetchPR() {
       try {
-        const res = await getAllPr();
-        // Pastikan res adalah array, jika tidak set ke empty array
+        const res = await getPr(); // ✅ Ganti dari getAllPr ke getPr
+        console.log("📦 Data PR dari API:", res);
         setPrList(Array.isArray(res) ? res : []);
       } catch (err) {
         console.error("Error fetching PR:", err);
         toast.error("Gagal mengambil data PR");
-        setPrList([]); // Set ke empty array jika error
+        setPrList([]);
       }
     }
     fetchPR();
@@ -87,29 +93,52 @@ export default function CreatePOForm({ user, setRefresh }: CreatePOFormProps) {
       return;
     }
 
-    const formData = new FormData(e.currentTarget);
+    if (!kode.trim()) {
+      toast.error("Kode PO wajib diisi");
+      return;
+    }
 
+    // ✅ Tidak perlu FormData lagi, ambil dari state
     const payload: PO = {
-      kode: formData.get("kode") as string,
-      kode_pr: selectedPR.kode,
-      tanggal_estimasi: estimasi.toISOString(),
-      pic: user.nama,
-      status: formData.get("status") as string,
-      keterangan: (formData.get("keterangan") as string) || "",
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+      po_kode: kode.trim(),
+      pr_id: selectedPR.pr_id!,
+      po_tanggal: toMysqlDatetime(new Date()),
+      po_estimasi: toMysqlDatetime(estimasi),
+      po_keterangan: keterangan.trim(),
+      po_status: status,
+      po_pic: user.nama,
+
+      details: selectedPR.details.map((d) => ({
+        part_id: d.part_id,
+        dtl_po_part_number: d.dtl_pr_part_number,
+        dtl_po_part_name: d.dtl_pr_part_name,
+        dtl_po_satuan: d.dtl_pr_satuan,
+        dtl_po_qty: d.dtl_pr_qty,
+      })),
+       created_at: toMysqlDatetime(new Date()),
+       updated_at: toMysqlDatetime(new Date()),
     };
+
+    console.log("📤 Payload yang dikirim:", payload);
 
     try {
       await createPO(payload);
       toast.success("Purchase Order berhasil dibuat");
-      setRefresh((prev) => !prev);
-      e.currentTarget.reset();
+      
+      // ✅ Reset semua state (tidak pakai e.currentTarget.reset())
+      setKode("");
+      setKeterangan("");
       setSelectedPR(undefined);
       setEstimasi(undefined);
+      setStatus("pending");
+      setOpen(false);
+      
+      // ✅ Refresh tabel setelah reset
+      setRefresh((prev) => !prev);
     } catch (err: any) {
       console.error("Error creating PO:", err);
-      toast.error(err?.message || "Gagal membuat PO");
+      const errorMsg = err?.response?.data?.message || err?.message || "Gagal membuat PO";
+      toast.error(errorMsg);
     }
   }
 
@@ -126,7 +155,13 @@ export default function CreatePOForm({ user, setRefresh }: CreatePOFormProps) {
       <div className="col-span-12 lg:col-span-6 flex flex-col gap-4">
         <div className="flex flex-col gap-2">
           <Label>Kode PO</Label>
-          <Input name="kode" placeholder="Masukkan kode PO" required />
+          <Input 
+            name="kode" 
+            placeholder="Masukkan kode PO" 
+            value={kode}
+            onChange={(e) => setKode(e.target.value)}
+            required 
+          />
         </div>
 
         <div className="flex flex-col gap-2">
@@ -138,7 +173,8 @@ export default function CreatePOForm({ user, setRefresh }: CreatePOFormProps) {
                 role="combobox"
                 className="justify-between"
               >
-                {selectedPR ? selectedPR.kode : "Pilih PR"}
+                {/* ✅ Ubah dari selectedPR.kode menjadi selectedPR.pr_kode */}
+                {selectedPR ? selectedPR.pr_kode : "Pilih PR"}
                 <ChevronsUpDownIcon className="h-4 w-4 opacity-50" />
               </Button>
             </PopoverTrigger>
@@ -149,12 +185,13 @@ export default function CreatePOForm({ user, setRefresh }: CreatePOFormProps) {
                 <CommandList>
                   <CommandEmpty>Tidak ada PR tersedia</CommandEmpty>
                   <CommandGroup>
-                    {prList && prList.length > 0 ? (
+                    {prList.length > 0 ? (
                       prList.map((pr) => (
                         <CommandItem
-                          key={pr.kode}
-                          value={pr.kode}
-                          onSelect={() => {
+                          key={pr.pr_id || pr.pr_kode}
+                          value={pr.pr_kode}
+                          onSelect={(currentValue) => {
+                            console.log("✅ Selected:", currentValue, pr);
                             setSelectedPR(pr);
                             setOpen(false);
                           }}
@@ -162,15 +199,24 @@ export default function CreatePOForm({ user, setRefresh }: CreatePOFormProps) {
                           <CheckIcon
                             className={cn(
                               "mr-2 h-4 w-4",
-                              selectedPR?.kode === pr.kode
+                              selectedPR?.pr_kode === pr.pr_kode
                                 ? "opacity-100"
                                 : "opacity-0"
                             )}
                           />
-                          {pr.kode}
+                          <div className="flex flex-col">
+                            <span className="font-medium">{pr.pr_kode}</span>
+                            <span className="text-xs text-muted-foreground">
+                              {pr.pr_lokasi} • {pr.pr_tanggal}
+                            </span>
+                          </div>
                         </CommandItem>
                       ))
-                    ) : null}
+                    ) : (
+                      <div className="py-6 text-center text-sm text-muted-foreground">
+                        Memuat data PR...
+                      </div>
+                    )}
                   </CommandGroup>
                 </CommandList>
               </Command>
@@ -183,7 +229,12 @@ export default function CreatePOForm({ user, setRefresh }: CreatePOFormProps) {
       <div className="col-span-12 lg:col-span-6 flex flex-col gap-4">
         <div className="flex flex-col gap-2">
           <Label>Status</Label>
-          <Select name="status" required defaultValue="pending">
+          <Select 
+            name="status" 
+            required 
+            value={status} 
+            onValueChange={setStatus}
+          >
             <SelectTrigger>
               <SelectValue placeholder="Pilih status" />
             </SelectTrigger>
@@ -205,13 +256,19 @@ export default function CreatePOForm({ user, setRefresh }: CreatePOFormProps) {
       {/* KETERANGAN */}
       <div className="col-span-12">
         <Label>Keterangan</Label>
-        <Textarea name="keterangan" placeholder="Keterangan (opsional)..." />
+        <Textarea 
+          name="keterangan" 
+          placeholder="Keterangan (opsional)..."
+          value={keterangan}
+          onChange={(e) => setKeterangan(e.target.value)}
+        />
       </div>
 
       {/* TABLE ITEM PR */}
       <div className="col-span-12">
         <Label className="mb-2 block">
-          Item dari PR {selectedPR ? `(${selectedPR.kode})` : ""}
+          {/* ✅ Ubah dari selectedPR.kode */}
+          Item dari PR {selectedPR ? `(${selectedPR.pr_kode})` : ""}
         </Label>
         <div className="border rounded-sm overflow-x-auto">
           <Table>
@@ -225,14 +282,16 @@ export default function CreatePOForm({ user, setRefresh }: CreatePOFormProps) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {selectedPR?.order_item && selectedPR.order_item.length > 0 ? (
-                selectedPR.order_item.map((item, i) => (
+              {/* ✅ Ubah dari order_item menjadi details */}
+              {selectedPR?.details && selectedPR.details.length > 0 ? (
+                selectedPR.details.map((item, i) => (
                   <TableRow key={i} className="border [&>*]:border">
                     <TableCell className="text-center">{i + 1}</TableCell>
-                    <TableCell className="text-start">{item.part_number}</TableCell>
-                    <TableCell className="text-start">{item.part_name}</TableCell>
-                    <TableCell className="text-center">{item.satuan}</TableCell>
-                    <TableCell className="text-center">{item.qty}</TableCell>
+                    {/* ✅ Sesuaikan field names dengan PurchaseRequest */}
+                    <TableCell className="text-start">{item.dtl_pr_part_number}</TableCell>
+                    <TableCell className="text-start">{item.dtl_pr_part_name}</TableCell>
+                    <TableCell className="text-center">{item.dtl_pr_satuan}</TableCell>
+                    <TableCell className="text-center">{item.dtl_pr_qty}</TableCell>
                   </TableRow>
                 ))
               ) : (

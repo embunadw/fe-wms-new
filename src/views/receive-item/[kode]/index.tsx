@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Printer } from "lucide-react";
 
 
+
 export function ReceiveDetail() {
   const { kode } = useParams<{ kode: string }>();
   const [ri, setRi] = useState<RI | null>(null);
@@ -156,7 +157,7 @@ export function ReceiveDetail() {
                   <TableHead>Nama Part</TableHead>
                   <TableHead>Satuan</TableHead>
                   <TableHead>Qty Diterima</TableHead>
-                  <TableHead>Untuk MR</TableHead>
+                  {/* <TableHead>Untuk MR</TableHead> */}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -170,7 +171,7 @@ export function ReceiveDetail() {
                       <TableCell>{d.dtl_ri_part_name}</TableCell>
                       <TableCell>{d.dtl_ri_satuan}</TableCell>
                       <TableCell>{d.dtl_ri_qty}</TableCell>
-                      <TableCell>{d.mr_id}</TableCell>
+                      {/* <TableCell>{d.mr?.mr_kode}</TableCell> */}
                     </TableRow>
                   ))
                 ) : (

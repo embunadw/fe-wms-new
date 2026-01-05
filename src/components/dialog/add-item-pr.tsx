@@ -79,7 +79,7 @@ export function AddItemPRDialog({
             <Input
               id="satuan"
               placeholder="Satuan (contoh: Pcs, Kg)"
-              value={selectedPart?.satuan}
+              value={selectedPart?.part_satuan}
               disabled
               required
             />

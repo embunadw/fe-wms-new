@@ -32,7 +32,7 @@ import {
   CommandList,
 } from "../ui/command";
 import { cn } from "@/lib/utils";
-import { getPrByKode } from "@/services/purchase-request";
+import { getPrById } from "@/services/purchase-request";
 import { Textarea } from "../ui/textarea";
 import { createRI, getPurchasedPO } from "@/services/receive-item";
 import { LokasiList } from "@/types/enum";
@@ -55,24 +55,18 @@ export default function CreateRIForm({ user, setRefresh }: CreatePOFormProps) {
   useEffect(() => {
     async function fetchPR(kode: string) {
       try {
-        const res = await getPrByKode(kode);
-        if (!res) {
-          toast.error(`PR dengan kode ${kode} tidak ditemukan.`);
-          return;
-        }
+        const res = await getPrById(kode);
+        if (!res) return; 
         setSelectedPR(res);
       } catch (error) {
-        if (error instanceof Error) {
-          toast.error(`Gagal mengambil data PR: ${error.message}`);
-        } else {
-          toast.error("Terjadi kesalahan saat mengambil data PR.");
-        }
+        console.warn("Fetch PR gagal", error); 
       }
     }
 
     if (!selectedPO) return;
     fetchPR(selectedPO.pr_id);
   }, [selectedPO]);
+
 
   // Fetch PR
   useEffect(() => {
@@ -147,19 +141,20 @@ export default function CreateRIForm({ user, setRefresh }: CreatePOFormProps) {
   };
 
   try {
-    const res = await createRI(payload);
+    await createRI(payload);
 
-    if (res) {
-      toast.success("Receive item berhasil dibuat.");
-      setRefresh((p) => !p);
-      event.currentTarget.reset();
-      setSelectedPO(undefined);
-      setSelectedPR(undefined);
-    } else {
-      toast.error("Gagal membuat RI.");
-    }
+    toast.success("Receive item berhasil dibuat.");
+
+    setRefresh((p) => !p);
+    event.currentTarget.reset();
+    setSelectedPO(undefined);
+    setSelectedPR(undefined);
+
   } catch (err: any) {
-    toast.error(err.response?.data?.message ?? "Gagal create RI.");
+    toast.error(
+      err?.response?.data?.message ??
+      "Gagal membuat Receive Item."
+    );
   }
 }
 

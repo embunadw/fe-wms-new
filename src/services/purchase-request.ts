@@ -29,6 +29,19 @@ export async function getPr(): Promise<PurchaseRequest[]> {
   return [];
 }
 
+export async function getPrById(
+  pr_id: number | string
+): Promise<PurchaseRequest | null> {
+  try {
+    const res = await api.get(`/pr/${pr_id}`);
+    return res.data as PurchaseRequest;
+  } catch (error: any) {
+    if (error.response?.status === 404) return null;
+    console.error("Error fetching PR by id:", error);
+    throw new Error("Failed to fetch PR by id");
+  }
+}
+
 export async function getPrByKode(
   pr_kode: string
 ): Promise<PurchaseRequest | null> {
@@ -58,6 +71,7 @@ export async function createPR(data: PurchaseRequest) {
       dtl_pr_part_number: d.dtl_pr_part_number,
       dtl_pr_part_name: d.dtl_pr_part_name,
       dtl_pr_satuan: d.dtl_pr_satuan,
+      dtl_pr_qty: d.dtl_pr_qty,
     })),
   };
 

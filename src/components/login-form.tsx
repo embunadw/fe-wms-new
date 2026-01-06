@@ -81,6 +81,7 @@ export function LoginForm({ className, ...props }: LoginFormProps) {
             disabled={loading}
             type="password"
             name="password"
+            placeholder="masukkan password anda"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required

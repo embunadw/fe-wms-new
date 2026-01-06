@@ -6,6 +6,7 @@ interface Register {
   email: string;
   nama: string;
   password: string;
+   lokasi: string;
 }
 
 interface SignIn {

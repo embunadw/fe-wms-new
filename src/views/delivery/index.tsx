@@ -329,9 +329,9 @@ export default function DeliveryPage() {
             <Button
               className="w-full flex gap-4"
               type="submit"
-              form="create-delivery-form"
-            >
-              Tambah<Plus />
+              form="create-delivery-form">
+              Tambah
+              <Plus />
             </Button>
           </SectionFooter>
         </SectionContainer>

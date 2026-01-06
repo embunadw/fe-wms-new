@@ -38,7 +38,7 @@ import {
 } from "../ui/command";
 
 import { cn } from "@/lib/utils";
-import { getPr } from "@/services/purchase-request";
+import { getOpenPr, getPr } from "@/services/purchase-request";
 import { createPO } from "@/services/purchase-order";
 import { DatePicker } from "../date-picker";
 
@@ -56,16 +56,13 @@ export default function CreatePOForm({ user, setRefresh }: CreatePOFormProps) {
   const [selectedPR, setSelectedPR] = useState<PurchaseRequest | undefined>();
   const [estimasi, setEstimasi] = useState<Date | undefined>();
   const [status, setStatus] = useState("pending");
-  const [kode, setKode] = useState(""); // ✅ Controlled input
-  const [keterangan, setKeterangan] = useState(""); // ✅ Controlled textarea
+  const [kode, setKode] = useState(""); 
+  const [keterangan, setKeterangan] = useState(""); 
 
-  // ===============================
-  // FETCH PR
-  // ===============================
   useEffect(() => {
     async function fetchPR() {
       try {
-        const res = await getPr(); // ✅ Ganti dari getAllPr ke getPr
+        const res = await getOpenPr(); 
         console.log("📦 Data PR dari API:", res);
         setPrList(Array.isArray(res) ? res : []);
       } catch (err) {
@@ -77,9 +74,6 @@ export default function CreatePOForm({ user, setRefresh }: CreatePOFormProps) {
     fetchPR();
   }, []);
 
-  // ===============================
-  // SUBMIT
-  // ===============================
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 

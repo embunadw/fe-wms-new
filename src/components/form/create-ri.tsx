@@ -87,7 +87,7 @@ export default function CreateRIForm({ user, setRefresh }: CreatePOFormProps) {
     fetchPR();
   }, []);
 
- async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
   event.preventDefault();
 
   if (!selectedPO) {
@@ -140,23 +140,21 @@ export default function CreateRIForm({ user, setRefresh }: CreatePOFormProps) {
     details,
   };
 
-  try {
-    await createRI(payload);
+  const success = await createRI(payload);
 
-    toast.success("Receive item berhasil dibuat.");
-
-    setRefresh((p) => !p);
-    event.currentTarget.reset();
-    setSelectedPO(undefined);
-    setSelectedPR(undefined);
-
-  } catch (err: any) {
-    toast.error(
-      err?.response?.data?.message ??
-      "Gagal membuat Receive Item."
-    );
+  if (!success) {
+    toast.error("Gagal membuat Receive Item.");
+    return;
   }
+
+  toast.success("Receive item berhasil dibuat.");
+
+  setRefresh((p) => !p);
+  event.currentTarget.reset();
+  setSelectedPO(undefined);
+  setSelectedPR(undefined);
 }
+
 
 
   return (

@@ -52,7 +52,7 @@ export function RegisterForm({
             id="email"
             type="email"
             name="email"
-            placeholder="m@example.com"
+            placeholder="username@gmail.com"
             required
             disabled={loading} // Disable input saat loading
           />
@@ -64,6 +64,7 @@ export function RegisterForm({
             id="name"
             type="text"
             name="nama"
+                 placeholder="nama lengkap anda"
             required
             disabled={loading}
           />
@@ -75,6 +76,7 @@ export function RegisterForm({
             id="password"
             type="password"
             name="password"
+                 placeholder="minimal 6 karakter"
             required
             disabled={loading}
           />
@@ -86,10 +88,27 @@ export function RegisterForm({
             id="password-confirm"
             type="password"
             name="confirm-password"
+            placeholder="ulangi password"
             required
             disabled={loading} // Disable input saat loading
           />
         </div>
+
+
+
+{/* Lokasi */}
+{/* Lokasi */}
+<div className="grid gap-3">
+  <Label htmlFor="lokasi">Lokasi</Label>
+  <Input 
+    id="lokasi"
+    name="lokasi" 
+    type="text"
+    placeholder="contoh: Jakarta / Bekasi"
+    required 
+    disabled={loading}
+  />
+</div>
         {/* Login Button */}
         <Button type="submit" className="w-full" disabled={loading}>
           {loading ? "Loading..." : "Daftar"}{" "}

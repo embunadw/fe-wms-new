@@ -136,7 +136,6 @@ export default function CreatePRForm({ user, setRefresh }: CreatePRFormProps) {
   updated_at: toMysqlDatetime(new Date()),
 };
 
-
     try {
       const res = await createPR(data);
       if (res) {

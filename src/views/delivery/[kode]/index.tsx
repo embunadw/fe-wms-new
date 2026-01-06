@@ -21,6 +21,7 @@ import { formatTanggal } from "@/lib/utils";
 import { getDeliveryByKode, updateDelivery } from "@/services/delivery";
 import { getMrByKode } from "@/services/material-request";
 import { EditDeliveryDialog } from "@/components/dialog/edit-delivery";
+import { DeliveryTimeline } from "@/views/delivery/delivery-timeline";
 import { ConfirmDialog } from "@/components/dialog/edit-status-delivery";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -156,6 +157,9 @@ export function DeliveryDetail() {
         <SectionHeader>Detail Delivery: {dlvry.dlv_kode}
         </SectionHeader>
         <SectionBody className="grid grid-cols-12 gap-6">
+          <div className="col-span-12">
+          <DeliveryTimeline status={dlvry.dlv_status as "pending" | "on delivery" | "delivered"} />
+        </div>
           {/* Informasi Umum Delivery */}
           <div className="col-span-12 space-y-4">
             <h3 className="text-lg font-semibold border-b pb-2 mb-4">
@@ -227,36 +231,35 @@ export function DeliveryDetail() {
           </div>
         </SectionBody>
         <SectionFooter className="flex gap-2">
-          {/* {dlvry.status !== "completed" && (
+          { user?.role === "logistik" &&  dlvry.dlv_status !== "pending" && (
             <EditDeliveryDialog delivery={dlvry} refresh={setRefresh} />
-          )} */}
-           
-          <EditDeliveryDialog delivery={dlvry} refresh={setRefresh} />
-          {dlvry.dlv_status === "pending" && (
-            <ConfirmDialog
-              text="Naikkan status ke on delivery"
-              onClick={() => {
-                updateDeliveryStatus("on delivery");
-              }}
-            />
           )}
-          <Button
-            variant={"outline"}
-            onClick={() => window.print()}
-            className="print:hidden"
-          >
-            <Printer />
-          </Button>
-          {dlvry.dlv_status === "on delivery" &&
-    user?.lokasi === dlvry.dlv_ke_gudang && (
-    <ConfirmDialog
-      text="Selesaikan delivery"
-      onClick={() => {
-        updateDeliveryStatus("delivered");
-      }}
-    />
-)}
-
+              <EditDeliveryDialog delivery={dlvry} refresh={setRefresh} />
+                {user?.role === "logistik" && dlvry.dlv_status === "pending" && 
+                  user?.lokasi === dlvry.dlv_dari_gudang && (
+                  <ConfirmDialog
+                    text="Naikkan status ke on delivery"
+                    onClick={() => {
+                      updateDeliveryStatus("on delivery");
+                    }}
+                  />
+                )}
+                <Button
+                  variant={"outline"}
+                  onClick={() => window.print()}
+                  className="print:hidden"
+                >
+                  <Printer />
+                </Button>
+                {user?.role === "user" && dlvry.dlv_status === "on delivery" &&
+            user?.lokasi === dlvry.dlv_ke_gudang && (
+            <ConfirmDialog
+              text="Selesaikan delivery"
+              onClick={() => {
+                updateDeliveryStatus("delivered");
+              }}
+          />
+      )}
         </SectionFooter>
       </SectionContainer>
 

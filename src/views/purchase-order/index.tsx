@@ -338,10 +338,8 @@ export default function PurchaseOrder() {
           />
         </SectionFooter>
       </SectionContainer>
-
-      {/* Tambah PO - DENGAN ERROR HANDLING */}
+            {/* Tambah PO - DENGAN ERROR HANDLING */}
       {!user ? (
-        // Loading state
         <SectionContainer span={12}>
           <SectionHeader>Tambah PO Baru</SectionHeader>
           <SectionBody className="grid grid-cols-12 gap-2">
@@ -351,8 +349,7 @@ export default function PurchaseOrder() {
             </div>
           </SectionBody>
         </SectionContainer>
-      ) : user.role === "warehouse" || user.role === "purchasing" ? (
-        // User memiliki akses
+      ) : user.role === "purchasing" ? (
         <SectionContainer span={12}>
           <SectionHeader>Tambah PO Baru</SectionHeader>
           <SectionBody className="grid grid-cols-12 gap-2">
@@ -372,25 +369,7 @@ export default function PurchaseOrder() {
             </Button>
           </SectionFooter>
         </SectionContainer>
-      ) : (
-        // User tidak memiliki akses
-        <SectionContainer span={12}>
-          <SectionHeader>Tambah PO Baru</SectionHeader>
-          <SectionBody className="grid grid-cols-12 gap-2">
-            <div className="col-span-12 p-8 text-center border border-dashed rounded-sm">
-              <p className="text-muted-foreground mb-2">
-                Anda tidak memiliki akses untuk menambah PO
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Role Anda: <span className="font-mono font-semibold">{user.role}</span>
-              </p>
-              <p className="text-xs text-muted-foreground mt-2">
-                (Hanya warehouse dan purchasing yang dapat menambah PO)
-              </p>
-            </div>
-          </SectionBody>
-        </SectionContainer>
-      )}
+      ) : null}
     </WithSidebar>
   );
 }

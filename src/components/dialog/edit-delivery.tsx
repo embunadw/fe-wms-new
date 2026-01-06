@@ -64,12 +64,12 @@ export function EditDeliveryDialog({ delivery, refresh }: MyDialogProps) {
 
   return (
     <Dialog>
-      <DialogTrigger asChild>
+      {/* <DialogTrigger asChild>
         <Button variant="outline" size={"sm"}>
           Edit Cepat
         </Button>
         
-      </DialogTrigger>
+      </DialogTrigger> */}
 
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>

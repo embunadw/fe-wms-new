@@ -26,23 +26,24 @@ import { Button } from "@/components/ui/button";
 import { MyPagination } from "@/components/my-pagination";
 import { Printer } from "lucide-react";
 
-/* =========================
+/* =====================
  STATUS COLOR
-========================= */
+===================== */
 const STATUS_COLOR: Record<string, string> = {
   open: "#facc15",
   pending: "#facc15",
   close: "#22c55e",
   delivered: "#22c55e",
   "on delivery": "#3b82f6",
+  received: "#22c55e",
 };
 
-/* =========================
+/* =====================
  STATUS BADGE
-========================= */
+===================== */
 function StatusBadge({ status }: { status: string }) {
   const color =
-    status === "close" || status === "delivered"
+    status === "close" || status === "delivered" || status === "received"
       ? "bg-green-100 text-green-700"
       : status === "on delivery"
       ? "bg-blue-100 text-blue-700"
@@ -55,9 +56,9 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-/* =========================
- ALERT CARD (CLICKABLE)
-========================= */
+/* =====================
+ ALERT CARD
+===================== */
 function AlertCard({
   icon,
   title,
@@ -71,14 +72,13 @@ function AlertCard({
   title: string;
   value: number;
   desc: string;
-  color: "yellow" | "blue" | "red";
+  color: "yellow" | "blue";
   active: boolean;
   onClick: () => void;
 }) {
   const map = {
     yellow: "bg-yellow-50 border-yellow-300 text-yellow-800",
     blue: "bg-blue-50 border-blue-300 text-blue-800",
-    red: "bg-red-50 border-red-300 text-red-800",
   };
 
   return (
@@ -98,9 +98,9 @@ function AlertCard({
   );
 }
 
-/* =========================
- DASHBOARD TABLE (FULL WIDTH, STABIL)
-========================= */
+/* =====================
+ TABLE GENERIC
+===================== */
 function DashboardTable({ title, data }: { title: string; data: any[] }) {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -153,7 +153,6 @@ function DashboardTable({ title, data }: { title: string; data: any[] }) {
         />
       </div>
 
-      {/* ⚠️ PENTING: overflow-x-auto + w-full */}
       <div className="w-full overflow-x-auto">
         <table className="w-full min-w-[900px] text-sm border">
           <thead className="bg-gray-50">
@@ -161,22 +160,18 @@ function DashboardTable({ title, data }: { title: string; data: any[] }) {
               {headers.map((h) => (
                 <th
                   key={h}
-                  className="border px-3 py-2 text-left text-xs text-muted-foreground whitespace-nowrap"
+                  className="border px-3 py-2 text-left text-xs text-muted-foreground"
                 >
                   {h.replace(/_/g, " ").toUpperCase()}
                 </th>
               ))}
             </tr>
           </thead>
-
           <tbody>
             {pageData.map((row, i) => (
               <tr key={i} className="border-b hover:bg-gray-50">
                 {headers.map((k) => (
-                  <td
-                    key={k}
-                    className="border px-3 py-2 whitespace-nowrap"
-                  >
+                  <td key={k} className="border px-3 py-2">
                     {k.includes("status") ? (
                       <StatusBadge status={String(row[k]).toLowerCase()} />
                     ) : (
@@ -203,14 +198,14 @@ function DashboardTable({ title, data }: { title: string; data: any[] }) {
   );
 }
 
-/* =========================
+/* =====================
  DASHBOARD PAGE
-========================= */
+===================== */
 export default function Dashboard() {
   const { user } = useAuth();
   const [dashboard, setDashboard] = useState<DashboardResponse | null>(null);
   const [activeAlert, setActiveAlert] = useState<
-    "mr" | "delivery" | "stock" | null
+    "mr" | "delivery" | null
   >(null);
 
   useEffect(() => {
@@ -218,7 +213,6 @@ export default function Dashboard() {
       const d = await getDashboardData();
       setDashboard(d);
     }
-
     if (user) loadDashboard();
   }, [user]);
 
@@ -230,7 +224,7 @@ export default function Dashboard() {
     );
   }
 
-  /* ===== FILTER LOKASI ===== */
+  /* ===== FILTER BY LOKASI ===== */
   const mrData = dashboard.details.latest_mr.filter(
     (m: any) =>
       m.mr_lokasi?.toLowerCase() === user.lokasi?.toLowerCase()
@@ -243,7 +237,7 @@ export default function Dashboard() {
 
   const receiveData = dashboard.details.latest_receive.filter(
     (r: any) =>
-      r.stk_location?.toLowerCase() === user.lokasi?.toLowerCase()
+      r.ri_lokasi?.toLowerCase() === user.lokasi?.toLowerCase()
   );
 
   const now = new Date();
@@ -259,18 +253,10 @@ export default function Dashboard() {
     (d: any) => d.dlv_status === "on delivery"
   ).length;
 
-  const stockMin = receiveData.filter(
-    (s: any) => s.stk_qty < s.stk_min
-  ).length;
-
-  /* ===== AUTO FILTER DARI ALERT ===== */
+  /* ===== AUTO FILTER ===== */
   const filteredMR =
     activeAlert === "mr"
-      ? mrData.filter((m: any) => {
-          if (m.mr_status !== "open") return false;
-          const due = new Date(m.mr_due_date);
-          return (due.getTime() - now.getTime()) / 86400000 <= 2;
-        })
+      ? mrData.filter((m: any) => m.mr_status === "open")
       : mrData;
 
   const filteredDelivery =
@@ -278,16 +264,13 @@ export default function Dashboard() {
       ? deliveryData.filter((d: any) => d.dlv_status === "on delivery")
       : deliveryData;
 
-  const filteredStock =
-    activeAlert === "stock"
-      ? receiveData.filter((s: any) => s.stk_qty < s.stk_min)
-      : receiveData;
+  const filteredReceive = receiveData;
 
   /* ===== CHART ===== */
   const chartData = [
     { name: "MR Open", value: filteredMR.length, status: "open" },
     { name: "Delivery", value: filteredDelivery.length, status: "on delivery" },
-    { name: "Recive", value: filteredStock.length, status: "close" },
+    { name: "Receive", value: filteredReceive.length, status: "received" },
   ];
 
   return (
@@ -301,7 +284,7 @@ export default function Dashboard() {
       {/* ALERT */}
       <SectionContainer span={12}>
         <SectionHeader>Perlu Perhatian</SectionHeader>
-        <SectionBody className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <SectionBody className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <AlertCard
             icon="⚠️"
             title="MR Hampir Jatuh Tempo"
@@ -324,23 +307,12 @@ export default function Dashboard() {
               setActiveAlert(activeAlert === "delivery" ? null : "delivery")
             }
           />
-          <AlertCard
-            icon="🔴"
-            title="Stock di Bawah Minimum"
-            value={stockMin}
-            desc="Perlu restock"
-            color="red"
-            active={activeAlert === "stock"}
-            onClick={() =>
-              setActiveAlert(activeAlert === "stock" ? null : "stock")
-            }
-          />
         </SectionBody>
       </SectionContainer>
 
       {/* CHART */}
       <SectionContainer span={12}>
-        <SectionHeader>Status Ringkas (Lokasi Anda)</SectionHeader>
+        <SectionHeader>Status Ringkas</SectionHeader>
         <SectionBody className="h-[260px]">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData}>
@@ -369,7 +341,7 @@ export default function Dashboard() {
         <SectionHeader>Delivery & Receive</SectionHeader>
         <SectionBody>
           <DashboardTable title="Latest Delivery" data={filteredDelivery} />
-          <DashboardTable title="Latest Receive" data={filteredStock} />
+          <DashboardTable title="Latest Receive" data={filteredReceive} />
         </SectionBody>
       </SectionContainer>
     </WithSidebar>

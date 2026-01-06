@@ -1,5 +1,5 @@
 import api from "@/lib/axios";
-import type { PO, POHeader, POReceive } from "@/types";
+import type { PO, POHeader, POReceive, UpdatePOPayload } from "@/types";
 
 const BASE_URL = "http://localhost:8000/api/po";
 
@@ -92,9 +92,10 @@ export async function createPO(data: PO) {
 }
 
 export async function updatePO(
-  po_id: number,
-  payload: Partial<Omit<PO, "po_id" | "created_at" | "details">>
-): Promise<boolean> {
+  po_id?: string,
+  payload?: UpdatePOPayload
+) {
   const res = await api.put(`/po/${po_id}`, payload);
-  return res.data.status === true;
+  return res.data?.status === true;
 }
+

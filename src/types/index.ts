@@ -319,3 +319,9 @@ export interface DashboardResponse {
   summary: DashboardSummary;
   details: DashboardDetails;
 }
+
+export interface UpdatePOPayload {
+  po_status: "pending" | "purchased";
+  po_keterangan?: string;
+}
+

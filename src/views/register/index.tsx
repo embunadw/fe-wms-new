@@ -20,9 +20,10 @@ export default function Register() {
     const nama = formData.get("nama") as string;
     const password = formData.get("password") as string;
     const passwordConfirm = formData.get("confirm-password") as string;
+    const lokasi = formData.get("lokasi") as string;
 
     // --- Validasi Sisi Klien ---
-    if (!email || !nama || !password || !passwordConfirm) {
+    if (!email || !nama || !password || !passwordConfirm || !lokasi) {
       setError("Semua kolom harus diisi.");
       setLoading(false);
       return;
@@ -43,7 +44,7 @@ export default function Register() {
     }
 
     try {
-      await registerUser({ email, nama, password });
+      await registerUser({ email, nama, password, lokasi });
       navigate("/login");
     } catch (err: any) {
       console.error("Failed to register:", err);

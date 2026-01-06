@@ -15,6 +15,11 @@ export async function getAllPr(): Promise<PurchaseRequest[]> {
   return res.data.data as PurchaseRequest[];
 }
 
+export async function getOpenPr() {
+  const res = await api.get( `${BASE_URL}/open`);
+  return res.data.data;
+}
+
 export async function getPr(): Promise<PurchaseRequest[]> {
   const res = await api.get("/pr");
 
@@ -78,10 +83,5 @@ export async function createPR(data: PurchaseRequest) {
   return api.post("/pr", payload);
 }
 
-export async function updatePR(
-  id: number,
-  payload: Partial<Omit<PurchaseRequest, "id" | "created_at">>
-): Promise<boolean> {
-  const res = await api.put(`/pr/${id}`, payload);
-  return res.data.status === true;
-}
+
+

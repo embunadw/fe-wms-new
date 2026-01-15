@@ -95,12 +95,16 @@ export function EditUserDialog({ user, refresh }: MyDialogProps) {
                 <SelectContent>
                   <SelectGroup>
                     <SelectLabel>Daftar Role</SelectLabel>
+                    <SelectItem value="logistik">Direktur</SelectItem>
+                    <SelectItem value="logistik">Manajer</SelectItem>
                     <SelectItem value="admin">Admin</SelectItem>
-                    <SelectItem value="warehouse">Warehouse</SelectItem>
+                    <SelectItem value="warehouse">Warehouse HO</SelectItem>
+                    <SelectItem value="warehouse">Warehouse Site</SelectItem>
                     <SelectItem value="purchasing">Purchasing</SelectItem>
                     <SelectItem value="logistik">Logistik</SelectItem>
                     <SelectItem value="user">User</SelectItem>
-                    <SelectItem value="unassigned">Unassigned</SelectItem>
+                    <SelectItem value="user">Marketing</SelectItem>
+                    <SelectItem value="user">Finance</SelectItem>
                   </SelectGroup>
                 </SelectContent>
               </Select>

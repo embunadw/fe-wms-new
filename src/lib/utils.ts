@@ -50,3 +50,29 @@ export function formatDateTime(
     minute: "2-digit",
   });
 }
+
+export function formatRupiah(value: number) {
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    minimumFractionDigits: 2,
+  }).format(value);
+}
+
+// export function formatRupiahInput(value: number | string) {
+//   const number = typeof value === "string"
+//     ? Number(value.replace(/\D/g, ""))
+//     : value;
+
+//   if (!number) return "";
+
+//   return new Intl.NumberFormat("id-ID", {
+//     style: "currency",
+//     currency: "IDR",
+//     minimumFractionDigits: 2,
+//   }).format(number);
+// }
+
+export function parseRupiah(value: string) {
+  return Number(value.replace(/\D/g, ""));
+}

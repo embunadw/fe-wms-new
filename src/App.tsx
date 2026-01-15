@@ -19,7 +19,11 @@ import UserManagement from "@/views/user-management";
 import NotFound from "@/views/not-found";
 import { PurchaseRequestDetail } from "./views/purchase-request/[kode]";
 import Setting from "./views/setting/index.tsx";
-
+import MasterVendorPage from "@/views/vendor";
+import MasterCustomerPage from "@/views/customer";
+import MRSign from "@/views/mr-sign";
+import PRSign from "@/views/pr-sign";
+import POSign from "@/views/po-sign";
 export default function App() {
   return (
     <BrowserRouter>
@@ -30,7 +34,7 @@ export default function App() {
           <Route path="/register" element={<Register />} />
           {/* <Route path="/verify-email" element={<VerifyEmail />} /> */}
           <Route path="/forgot-password" element={<ForgotPassword />} />
-          
+         
 
           {/* ================= ROOT ================= */}
           <Route
@@ -79,6 +83,7 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+<Route path="/mr-sign/:kode" element={<MRSign />} />
 
           {/* ================= RECEIVE ================= */}
           <Route
@@ -149,7 +154,27 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+          <Route path="/po-sign/:kode" element={<POSign />} />
+          <Route path="/pr-sign/:kode" element={<PRSign />} />
+   {/* ================= Vendor ================= */}
+          <Route
+            path="/vendors"
+            element={
+              <ProtectedRoute>
+                <MasterVendorPage />
+              </ProtectedRoute>
+            }
+          />
 
+            {/* ================= Customer ================= */}
+          <Route
+            path="/customers"
+            element={
+              <ProtectedRoute>
+                <MasterCustomerPage/>
+              </ProtectedRoute>
+            }
+          />
           {/* ================= USER MANAGEMENT ================= */}
           <Route
             path="/user-management"

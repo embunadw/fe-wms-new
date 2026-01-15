@@ -155,17 +155,19 @@ useEffect(() => {
       return;
     }
 
-    const data: MRReceive = {
-      mr_kode: kodeMR,
-      mr_tanggal: toMysqlDatetime(tanggalMR),
-      mr_due_date: toMysqlDatetime(duedate),
-      mr_lokasi: lokasi,
-      mr_pic: user.nama,
-      mr_status: status,
-      details: mrItems,
-      created_at: toMysqlDatetime(new Date()),
-      updated_at: toMysqlDatetime(new Date()),
-    };
+  const data: MRReceive = {
+  mr_kode: kodeMR,
+  mr_tanggal: toMysqlDatetime(tanggalMR),
+  mr_due_date: toMysqlDatetime(duedate),
+  mr_lokasi: lokasi,
+  mr_pic: user.nama,
+  mr_status: status,
+  details: mrItems,
+  created_at: toMysqlDatetime(new Date()),
+  updated_at: toMysqlDatetime(new Date()),
+  mr_last_edit_at: toMysqlDatetime(new Date()),
+  mr_last_edit_by: user.nama,
+};
 
     try {
       const res = await createMR(data);

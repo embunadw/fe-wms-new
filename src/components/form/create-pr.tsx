@@ -52,12 +52,11 @@ export default function CreatePRForm({ user, setRefresh }: CreatePRFormProps) {
   const [tanggalPR, setTanggalPR] = useState<Date | undefined>(new Date());
   const [prItems, setPRItems] = useState<PRItemReceive[]>([]);
   const [mrInluded, setMrIncluded] = useState<string[]>([]);
+const [kodePR, setKodePR] = useState<string>("");
 
   // Pencarian master part
-  const [open, setOpen] = useState<boolean>(false);
   const [open2, setOpen2] = useState<boolean>(false);
   const [masterParts, setMasterParts] = useState<MasterPart[]>([]);
-  const [filteredParts, setFilteredParts] = useState<MasterPart[]>([]);
   const [mr, setMR] = useState<MRReceive[]>([]);
   const [filteredMr, setFilteredMR] = useState<MRReceive[]>([]);
   const [selectedPart, setSelectedPart] = useState<MasterPart>();
@@ -69,7 +68,6 @@ export default function CreatePRForm({ user, setRefresh }: CreatePRFormProps) {
       try {
         const parts = await getMasterParts();
         setMasterParts(parts);
-        setFilteredParts(parts);
       } catch (error) {
         if (error instanceof Error) {
           toast.error(`Gagal mengambil data master part: ${error.message}`);
@@ -116,25 +114,25 @@ export default function CreatePRForm({ user, setRefresh }: CreatePRFormProps) {
     const kodePR = formData.get("kodePR") as string;
 
     const data: PurchaseRequest = {
-    pr_kode: kodePR,
-    pr_status: "open",
-    pr_lokasi: user.lokasi,
-    pr_pic: user.nama,
-    pr_tanggal: toMysqlDatetime(tanggalPR),
+      pr_kode: kodePR,
+      pr_status: "open",
+      pr_lokasi: user.lokasi,
+      pr_pic: user.nama,
+      pr_tanggal: toMysqlDatetime(tanggalPR),
 
-  details: prItems.map((item) => ({
-    part_id: item.part_id,
-     mr_id: item.mr_id,  
+      details: prItems.map((item) => ({
+        part_id: item.part_id,
+        mr_id: item.mr_id,  
 
-    dtl_pr_part_number: item.dtl_pr_part_number,
-    dtl_pr_part_name: item.dtl_pr_part_name,
-    dtl_pr_satuan: item.dtl_pr_satuan,
-    dtl_pr_qty: Number(item.dtl_pr_qty),
-  })),
+        dtl_pr_part_number: item.dtl_pr_part_number,
+        dtl_pr_part_name: item.dtl_pr_part_name,
+        dtl_pr_satuan: item.dtl_pr_satuan,
+        dtl_pr_qty: Number(item.dtl_pr_qty),
+      })),
 
-  created_at: toMysqlDatetime(new Date()),
-  updated_at: toMysqlDatetime(new Date()),
-};
+      created_at: toMysqlDatetime(new Date()),
+      updated_at: toMysqlDatetime(new Date()),
+    };
 
     try {
       const res = await createPR(data);
@@ -149,7 +147,7 @@ export default function CreatePRForm({ user, setRefresh }: CreatePRFormProps) {
       }
     } catch (error) {
       if (error instanceof Error) {
-        toast.error(`Gagal membuat PR: ${error.message}`);
+        toast.error(`Gagal membuat PR! Kode PR tidak boleh sama.`);
       } else {
         toast.error("Terjadi kesalahan saat membuat PR.");
       }
@@ -164,7 +162,10 @@ export default function CreatePRForm({ user, setRefresh }: CreatePRFormProps) {
       );
       return;
     }
-
+  // ✅ AMBIL DETAIL MR SESUAI PART
+  const mrDetail = selectedMr.details?.find(
+    (d) => d.part_id === part.part_id
+  );
     const newItem: PRItemReceive = {
       part_id: part.part_id,
       mr_id: selectedMr.mr_id,
@@ -172,6 +173,7 @@ export default function CreatePRForm({ user, setRefresh }: CreatePRFormProps) {
       dtl_pr_part_number: part.part_number,
       dtl_pr_satuan: part.part_satuan,
       dtl_pr_qty: qty,
+      dtl_mr_qty_request: mrDetail?.dtl_mr_qty_request ?? 0, 
       mr: selectedMr,
     };
 
@@ -179,7 +181,6 @@ export default function CreatePRForm({ user, setRefresh }: CreatePRFormProps) {
     setMrIncluded((prev) => [...prev, selectedMr.mr_kode]);
     setSelectedPart(undefined);
     setSelectedMr(undefined);
-    setOpen(false);
     setOpen2(false);
     toast.success("Item berhasil ditambahkan ke daftar.");
   }
@@ -199,7 +200,15 @@ export default function CreatePRForm({ user, setRefresh }: CreatePRFormProps) {
         {/* Kode PR */}
         <div className="flex flex-col gap-2">
           <Label htmlFor="kodePR">Kode PR</Label>
-          <Input name="kodePR" className="lg:tracking-wider" required />
+          <Input
+  name="kodePR"
+  placeholder="Input Kode PR"
+  className="lg:tracking-wider"
+  value={kodePR}
+  onChange={(e) => setKodePR(e.target.value)}
+  required
+/>
+
         </div>
 
         {/* Tanggal PR */}
@@ -248,71 +257,19 @@ export default function CreatePRForm({ user, setRefresh }: CreatePRFormProps) {
 
       {/* Tambah Item PR */}
       <div className="col-span-12 grid grid-cols-12 gap-4">
-        {/* Combobox Item */}
-        <Popover open={open} onOpenChange={setOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              role="combobox"
-              aria-expanded={open}
-              className={cn("col-span-12 lg:col-span-4 justify-between")}
-            >
-              {selectedPart
-                ? masterParts.find(
-                    (part: MasterPart) =>
-                      part.part_number === selectedPart.part_number
-                  )?.part_number
-                : "Cari part number..."}
-              <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-(--radix-popover-trigger-width) p-0">
-            <Command>
-              <CommandInput placeholder="Cari part number..." />
-              <CommandList>
-                <CommandEmpty>Tidak ada.</CommandEmpty>
-                <CommandGroup>
-                  {filteredParts?.map((part) => (
-                    <CommandItem
-                      key={part.part_number}
-                      value={part.part_number}
-                      onSelect={(currentValue) => {
-                        setSelectedPart(
-                          masterParts.find(
-                            (part) => part.part_number === currentValue
-                          )
-                        );
-                        setOpen(false);
-                      }}
-                    >
-                      <CheckIcon
-                        className={cn(
-                          "mr-2 h-4 w-4",
-                          selectedPart?.part_number === part.part_number
-                            ? "opacity-100"
-                            : "opacity-0"
-                        )}
-                      />
-                      {`${part.part_number} | ${part.part_name}`}
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              </CommandList>
-            </Command>
-          </PopoverContent>
-        </Popover>
-
         {/* Combobox Referensi MR */}
         <Popover open={open2} onOpenChange={setOpen2}>
           <PopoverTrigger asChild>
             <Button
-              variant="outline"
-              role="combobox"
-              aria-expanded={open2}
-              className={cn("col-span-12 lg:col-span-4 justify-between")}
-            >
+  variant="outline"
+  role="combobox"
+  aria-expanded={open2}
+  disabled={!kodePR.trim()}   // ⬅️ KUNCI UTAMA
+  className={cn("col-span-12 lg:col-span-8 justify-between")}
+>
+
               {selectedMr
-                ? mr.find((mr: MRReceive) => mr.mr_kode === selectedMr?.mr_kode)?.mr_kode
+                ? `${mr.find((m: MRReceive) => m.mr_kode === selectedMr?.mr_kode)?.mr_kode} | Part: ${selectedPart?.part_number || 'Loading...'}`
                 : "Cari kode mr..."}
               <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
             </Button>
@@ -328,7 +285,18 @@ export default function CreatePRForm({ user, setRefresh }: CreatePRFormProps) {
                       key={m.mr_kode}
                       value={m.mr_kode}
                       onSelect={(currentValue) => {
-                        setSelectedMr(mr.find((m) => m.mr_kode === currentValue));
+                        const selectedMrData = mr.find((mrItem) => mrItem.mr_kode === currentValue);
+                        setSelectedMr(selectedMrData);
+                        
+                        // Auto-set part berdasarkan MR
+                        if (selectedMrData && selectedMrData.details && selectedMrData.details.length > 0) {
+                          const partId = selectedMrData.details[0].part_id;
+                          const part = masterParts.find(p => p.part_id === partId);
+                          if (part) {
+                            setSelectedPart(part);
+                          }
+                        }
+                        
                         setOpen2(false);
                       }}
                     >
@@ -381,7 +349,8 @@ export default function CreatePRForm({ user, setRefresh }: CreatePRFormProps) {
               <TableHead className="font-semibold text-center">
                 Satuan
               </TableHead>
-              <TableHead className="font-semibold text-center">Qty</TableHead>
+              <TableHead className="font-semibold text-center">Qty PR</TableHead>
+              <TableHead className="font-semibold text-center">Qty MR</TableHead>
               <TableHead className="font-semibold text-center">
                 Berdasarkan MR
               </TableHead>
@@ -399,6 +368,7 @@ export default function CreatePRForm({ user, setRefresh }: CreatePRFormProps) {
                   <TableCell className="text-start">{item.dtl_pr_part_name}</TableCell>
                   <TableCell>{item.dtl_pr_satuan}</TableCell>
                   <TableCell>{item.dtl_pr_qty}</TableCell>
+                  <TableCell>{item.dtl_mr_qty_request}</TableCell>
                   <TableCell>{item.mr?.mr_kode}</TableCell>
                   <TableCell>
                     <Button

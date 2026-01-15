@@ -24,9 +24,10 @@ import {
   SelectValue,
 } from "../ui/select";
 import { Textarea } from "../ui/textarea";
+import { useState } from "react";
 
 interface MyDialogProps {
-  po: POReceive; 
+  po: POReceive;
   refresh: Dispatch<SetStateAction<boolean>>;
 }
 
@@ -38,6 +39,7 @@ export function EditPODialog({ po, refresh }: MyDialogProps) {
 
     const payload: UpdatePOPayload = {
       po_status: formData.get("status") as "pending" | "purchased",
+      po_detail_status: formData.get("detail_status") as string, // ✅ SUB STATUS
       po_keterangan: formData.get("keterangan") as string,
     };
 
@@ -49,11 +51,14 @@ export function EditPODialog({ po, refresh }: MyDialogProps) {
       toast.error("Gagal mengupdate PO");
     }
   }
+const [status, setStatus] = useState<"pending" | "purchased">(
+  po.po_status as "pending" | "purchased"
+);
 
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline" size={"sm"}>
+        <Button variant="outline" size="sm">
           Edit PO
         </Button>
       </DialogTrigger>
@@ -62,28 +67,75 @@ export function EditPODialog({ po, refresh }: MyDialogProps) {
         <DialogHeader>
           <DialogTitle>Edit PO</DialogTitle>
           <DialogDescription>
-            Ubah informasi PO yang dipilih.
+            Ubah status dan detail status PO.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} id="edit-po-form">
           <div className="grid gap-4">
-            {/* Status */}
+
+            {/* Status Utama */}
             <div className="grid gap-3">
               <Label>Status PO</Label>
-              <Select name="status" defaultValue={po.po_status} required>
+            <Select
+  name="status"
+  value={status}
+  onValueChange={(val) => setStatus(val as "pending" | "purchased")}
+  required
+>
+
                 <SelectTrigger>
                   <SelectValue placeholder="Pilih status" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
-                    <SelectLabel>Daftar Status</SelectLabel>
+                    <SelectLabel>Status</SelectLabel>
                     <SelectItem value="pending">Pending</SelectItem>
                     <SelectItem value="purchased">Purchased</SelectItem>
                   </SelectGroup>
                 </SelectContent>
               </Select>
             </div>
+
+            {/* SUB STATUS */}
+ <div className="grid gap-3">
+  <Label>Detail Status</Label>
+  <Select
+    name="detail_status"
+    required
+    defaultValue={po.po_detail_status || ""}
+  >
+    <SelectTrigger>
+      <SelectValue placeholder="Pilih detail status" />
+    </SelectTrigger>
+
+    <SelectContent>
+      <SelectGroup>
+        <SelectLabel>Detail Status</SelectLabel>
+
+        {/* PENDING */}
+        {status === "pending" && (
+          <>
+            <SelectItem value="OPEN 3A">
+              OPEN 3A – Barang belum dikirim (No Payment Issue)
+            </SelectItem>
+            <SelectItem value="OPEN 3B">
+              OPEN 3B – Barang belum dikirim (Ada Payment Issue)
+            </SelectItem>
+          </>
+        )}
+
+        {/* PURCHASED */}
+        {status === "purchased" && (
+          <SelectItem value="OPEN 4">
+            OPEN 4 – Barang sudah dikirim, belum sampai WH
+          </SelectItem>
+        )}
+      </SelectGroup>
+    </SelectContent>
+  </Select>
+</div>
+
 
             {/* Keterangan */}
             <div className="grid gap-3">
@@ -102,7 +154,7 @@ export function EditPODialog({ po, refresh }: MyDialogProps) {
             <Button variant="outline">Batalkan</Button>
           </DialogClose>
           <Button type="submit" form="edit-po-form">
-            Edit
+            Simpan
           </Button>
         </DialogFooter>
       </DialogContent>

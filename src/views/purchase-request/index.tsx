@@ -38,6 +38,22 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 
+// Fungsi untuk format tanggal ke bahasa Indonesia
+function formatTanggalIndonesia(tanggal: string | Date): string {
+  const bulanIndonesia = [
+    "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+    "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+  ];
+
+  const date = typeof tanggal === 'string' ? new Date(tanggal) : tanggal;
+  
+  const hari = date.getDate();
+  const bulan = bulanIndonesia[date.getMonth()];
+  const tahun = date.getFullYear();
+
+  return `${hari} ${bulan} ${tahun}`;
+}
+
 export default function PurchaseRequest() {
   const [refresh, setRefresh] = useState<boolean>(false);
   const [user, setUser] = useState<UserComplete | null>(null);
@@ -248,6 +264,7 @@ export default function PurchaseRequest() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="p-2 border">No</TableHead>
+                  <TableHead className="p-2 border">Tanggal</TableHead>
                   <TableHead className="p-2 border">Kode</TableHead>
                   <TableHead className="p-2 border">Status</TableHead>
                   <TableHead className="p-2 border">Lokasi</TableHead>
@@ -261,6 +278,9 @@ export default function PurchaseRequest() {
                     <TableRow key={pr.pr_id}>
                       <TableCell className="p-2 border">
                         {PagingSize * (currentPage - 1) + (index + 1)}
+                      </TableCell>
+                      <TableCell className="p-2 border">
+                        {formatTanggalIndonesia(pr.pr_tanggal)}
                       </TableCell>
                       <TableCell className="p-2 border">{pr.pr_kode}</TableCell>
                       <TableCell className="p-2 border">{pr.pr_status}</TableCell>
@@ -279,7 +299,7 @@ export default function PurchaseRequest() {
                 ) : (
                   <TableRow>
                     <TableCell
-                      colSpan={6} // Disesuaikan dengan jumlah kolom
+                      colSpan={7}
                       className="p-4 text-center text-muted-foreground"
                     >
                       Tidak ada Purchase Request ditemukan.

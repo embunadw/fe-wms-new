@@ -121,3 +121,26 @@ button {
     @apply bg-background text-foreground;
   }
 }
+
+@media print {
+  body {
+    margin: 0;
+  }
+
+  table {
+    page-break-inside: avoid;
+  }
+
+  .no-page-break {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .print\:flex {
+    display: flex !important;
+  }
+
+  .print\:hidden {
+    display: none !important;
+  }
+}

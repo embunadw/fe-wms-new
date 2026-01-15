@@ -50,3 +50,4 @@ export const DeliveryEkspedisi = [
   "Belum ditentukan",
 ];
 export const PagingSize = 10;
+

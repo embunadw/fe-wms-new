@@ -14,6 +14,8 @@ import {
   ShoppingCart,
   Truck,
   Warehouse,
+  Building2,
+  User,
 } from "lucide-react";
 
 import { NavMain } from "@/components/nav-main";
@@ -59,6 +61,16 @@ const data = {
       title: "Dashboard",
       url: "/dashboard",
       icon: LayoutDashboard,
+    },
+      {
+      title: "Vendor",
+      url: "/vendors",
+      icon: Building2,
+    },
+         {
+      title: "Customer",
+      url: "/customers",
+      icon: User,
     },
     {
       title: "Material Request",

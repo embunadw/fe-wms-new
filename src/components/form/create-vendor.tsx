@@ -1,9 +1,10 @@
-import { type Dispatch, type SetStateAction } from "react";
+import { type Dispatch, type SetStateAction, useRef, useState } from "react";
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
 import type { MasterVendor } from "@/types";
 import { toast } from "sonner";
 import { createMasterVendor } from "@/services/vendor";
+import axios from "axios";
 
 interface CreateVendorFormProps {
   setRefresh: Dispatch<SetStateAction<boolean>>;
@@ -12,14 +13,21 @@ interface CreateVendorFormProps {
 export default function CreateVendorForm({
   setRefresh,
 }: CreateVendorFormProps) {
+  const formRef = useRef<HTMLFormElement | null>(null);
+
+  // ✅ STATE TELEPON (WAJIB)
+  const [telephone, setTelephone] = useState<string>("");
+
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const formData = new FormData(event.currentTarget);
+    const form = formRef.current;
+    if (!form) return;
+
+    const formData = new FormData(form);
 
     const vendorNo = formData.get("vendor_no") as string;
     const vendorName = formData.get("vendor_name") as string;
-    const telephone = formData.get("telephone") as string;
     const contactName = formData.get("contact_name") as string;
 
     if (!vendorNo || !vendorName) {
@@ -27,43 +35,58 @@ export default function CreateVendorForm({
       return;
     }
 
+    // ✅ VALIDASI TELEPON (FINAL SAFETY)
+    if (telephone) {
+      if (!/^[0-9]+$/.test(telephone)) {
+        toast.error("Nomor telepon hanya boleh angka");
+        return;
+      }
+
+      if (telephone.length > 13) {
+        toast.error("Nomor telepon maksimal 13 digit");
+        return;
+      }
+    }
+
+    const payload: MasterVendor = {
+      vendor_no: vendorNo,
+      vendor_name: vendorName,
+      telephone,
+      contact_name: contactName,
+    };
+
     try {
-      const data = {
-        vendor_no: vendorNo,
-        vendor_name: vendorName,
-        telephone,
-        contact_name: contactName,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      } satisfies MasterVendor;
+      await createMasterVendor(payload);
 
-      const res = await createMasterVendor(data);
+      toast.success("Master vendor berhasil dibuat!");
+      setRefresh((prev) => !prev);
 
-      if (res) {
-        toast.success("Master vendor berhasil dibuat!");
-        setRefresh((prev) => !prev);
-        event.currentTarget.reset();
-      } else {
-        toast.error("No vendor sudah digunakan.");
-      }
+      form.reset();
+      setTelephone(""); // ✅ reset state
     } catch (error: any) {
-      if (error instanceof Error) {
-        toast.error(`Gagal membuat master vendor: ${error.message}`);
-      } else {
-        toast.error(
-          "Gagal membuat master vendor: Terjadi kesalahan yang tidak diketahui."
-        );
+      if (axios.isAxiosError(error) && error.response?.status === 422) {
+        const errors = error.response.data.errors;
+
+        if (errors?.vendor_no) toast.error(errors.vendor_no[0]);
+        if (errors?.vendor_name) toast.error(errors.vendor_name[0]);
+        if (errors?.telephone) toast.error(errors.telephone[0]);
+
+        return;
       }
+
+      toast.error("Gagal membuat master vendor");
+      console.error(error);
     }
   }
 
   return (
     <form
+      ref={formRef}
       onSubmit={handleSubmit}
       id="create-vendor-form"
       className="grid grid-cols-12 gap-4"
     >
-      {/* Vendor No */}
+      {/* No Vendor */}
       <div className="flex flex-col col-span-12 lg:col-span-3 gap-2">
         <Label>No Vendor</Label>
         <Input
@@ -73,7 +96,7 @@ export default function CreateVendorForm({
         />
       </div>
 
-      {/* Vendor Name */}
+      {/* Nama Vendor */}
       <div className="flex flex-col col-span-12 lg:col-span-5 gap-2">
         <Label>Nama Vendor</Label>
         <Input
@@ -83,16 +106,22 @@ export default function CreateVendorForm({
         />
       </div>
 
-      {/* Telephone */}
+      {/* Telepon (NUMERIC ONLY) */}
       <div className="flex flex-col col-span-12 lg:col-span-2 gap-2">
         <Label>Telepon</Label>
         <Input
           name="telephone"
+          value={telephone}
+          onChange={(e) => {
+            const onlyNumber = e.target.value.replace(/\D/g, "");
+            setTelephone(onlyNumber.slice(0, 13));
+          }}
+          inputMode="numeric"
           placeholder="08xxxxxxxx"
         />
       </div>
 
-      {/* Contact Name */}
+      {/* Nama Kontak */}
       <div className="flex flex-col col-span-12 lg:col-span-2 gap-2">
         <Label>Nama Kontak</Label>
         <Input

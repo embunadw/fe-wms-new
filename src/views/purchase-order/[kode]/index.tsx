@@ -27,7 +27,7 @@ import { getCurrentUser } from "@/services/auth";
 import type {UserComplete } from "@/types";
 import { formatRupiah } from "@/lib/utils";
 import { QRCodeCanvas } from "qrcode.react";
-import { useAuth } from "@/context/AuthContext";
+// import { useAuth } from "@/context/AuthContext";
 
 
 export default function PurchaseOrderDetail() {
@@ -271,77 +271,76 @@ const isPurchasing = user?.role === "purchasing";
           <div className="w-full border border-border rounded-sm overflow-x-auto">
             <Table className="w-full">
 <TableHeader>
-  <TableRow>
-    <TableHead className="w-[50px] text-center">No</TableHead>
-    <TableHead className="w-[180px]">Part Number</TableHead>
+  <TableRow className="[&>th]:border">
+    <TableHead className="text-center w-[50px]">No</TableHead>
+    <TableHead>Part Number</TableHead>
     <TableHead>Nama</TableHead>
-    <TableHead className="w-[80px] text-center">Qty PR</TableHead>
-    <TableHead className="w-[80px] text-center">Qty PO</TableHead>
+    <TableHead className="text-center">Qty PR</TableHead>
+    <TableHead className="text-center">Qty PO</TableHead>
 
     {isPurchasing && (
       <>
-        <TableHead className="w-[120px] text-right">Harga</TableHead>
-        <TableHead className="w-[220px]">Vendor</TableHead>
+        <TableHead className="text-right">Harga</TableHead>
+        <TableHead>Vendor</TableHead>
       </>
     )}
   </TableRow>
 </TableHeader>
 
 
-              <TableBody>
-           {pr?.details?.length ? (
-  pr.details.map((item, index) => {
-    const poDetail = po.details?.find(
-      (d) => d.dtl_po_part_number === item.dtl_pr_part_number
-    );
 
-    return (
-<TableRow key={index}>
-  <TableCell className="text-center">
-    {index + 1}
-  </TableCell>
+<TableBody>
+  {pr?.details?.length ? (
+    pr.details.map((item, index) => {
+      const poDetail = po.details?.find(
+        (d) => d.dtl_po_part_number === item.dtl_pr_part_number
+      );
 
-  <TableCell>{item.dtl_pr_part_number}</TableCell>
-  <TableCell>{item.dtl_pr_part_name}</TableCell>
+      return (
+        <TableRow key={index} className="[&>td]:border">
+          <TableCell className="text-center">
+            {index + 1}
+          </TableCell>
 
-  <TableCell className="text-center">
-    {item.dtl_pr_qty}
-  </TableCell>
+          <TableCell>{item.dtl_pr_part_number}</TableCell>
+          <TableCell>{item.dtl_pr_part_name}</TableCell>
 
-  <TableCell className="text-center">
-    {poDetail?.dtl_po_qty ?? "-"}
-  </TableCell>
+          <TableCell className="text-center">
+            {item.dtl_pr_qty}
+          </TableCell>
 
-  {isPurchasing && (
-    <>
-      <TableCell className="text-right">
-        {poDetail?.dtl_po_harga
-          ? formatRupiah(poDetail.dtl_po_harga)
-          : "-"}
+          <TableCell className="text-center">
+            {poDetail?.dtl_po_qty ?? "-"}
+          </TableCell>
+
+          {isPurchasing && (
+            <>
+              <TableCell className="text-right">
+                {poDetail?.dtl_po_harga
+                  ? formatRupiah(poDetail.dtl_po_harga)
+                  : "-"}
+              </TableCell>
+
+              <TableCell>
+                {poDetail?.vendor?.vendor_name ?? "-"}
+              </TableCell>
+            </>
+          )}
+        </TableRow>
+      );
+    })
+  ) : (
+    <TableRow>
+      <TableCell
+        colSpan={isPurchasing ? 7 : 5}
+        className="text-center text-muted-foreground"
+      >
+        Tidak ada barang
       </TableCell>
-
-      <TableCell className="whitespace-nowrap">
-        {poDetail?.vendor?.vendor_name ?? "-"}
-      </TableCell>
-    </>
+    </TableRow>
   )}
-</TableRow>
+</TableBody>
 
-    );
-  })
-) : (
-  <TableRow>
-    <TableCell
-      colSpan={isPurchasing ? 7 : 5}
-      className="text-center text-muted-foreground py-6"
-    >
-      Tidak ada barang dalam PR.
-    </TableCell>
-  </TableRow>
-)}
-
-          
-              </TableBody>
             </Table>
 
                {po.signature_url && (

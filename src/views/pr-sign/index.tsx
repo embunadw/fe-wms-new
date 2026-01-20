@@ -1,6 +1,6 @@
 
 import { useParams } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import SignaturePad from "@/components/signature-pad";
 import { Button } from "@/components/ui/button";
 import { submitSignature } from "@/services/purchase-request";

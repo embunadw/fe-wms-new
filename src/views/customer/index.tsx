@@ -19,11 +19,30 @@ import {
 } from "@/services/customer";
 import type { MasterCustomer } from "@/types";
 import { PagingSize } from "@/types/enum";
-import { HousePlus } from "lucide-react";
+import { Filter, Search, X, UserX, UserCheck, ClipboardPlus } from "lucide-react";
 import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
 import { toast } from "sonner";
 import CreateCustomerForm from "@/components/form/create-customer";
 import { EditCustomerDialog } from "@/components/dialog/edit-customer";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
+import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
+
 
 export default function MasterCustomerPage() {
   const [customers, setCustomers] = useState<MasterCustomer[]>([]);
@@ -61,16 +80,28 @@ export default function MasterCustomerPage() {
           <div className="col-span-12 rounded-sm">
             <CreateCustomerForm setRefresh={setRefresh} />
           </div>
-        </SectionBody>
-        <SectionFooter>
-          <Button
-            className="w-full flex gap-4"
-            type="submit"
-            form="create-customer-form"
-          >
-            Tambah <HousePlus />
-          </Button>
-        </SectionFooter>
+</SectionBody>
+
+<SectionFooter>
+  <TooltipProvider>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button 
+          type="submit"
+          form="create-customer-form"
+          className="w-full !bg-green-600 hover:!bg-green-700 !text-white flex items-center justify-center gap-2 h-11"
+        >
+  
+           <ClipboardPlus className="h-4 w-4" />
+          <span>Tambah</span>
+        </Button>
+      </TooltipTrigger>
+
+    </Tooltip>
+  </TooltipProvider>
+</SectionFooter>
+
+
       </SectionContainer>
     </WithSidebar>
   );
@@ -104,37 +135,150 @@ function CustomerColumnsGenerator(
       accessorKey: "is_active",
       cell: (value: boolean) => (
         <span
-          className={`px-2 py-1 rounded-full text-xs font-semibold
+          className={`px-2 py-1 rounded-full text-xs font-semibold inline-flex items-center gap-1
             ${
               value
                 ? "bg-green-100 text-green-700"
                 : "bg-red-100 text-red-700"
             }`}
         >
-          {value ? "AKTIF" : "NON AKTIF"}
+          {value ? (
+            <>
+              <UserCheck className="h-3 w-3" />
+              AKTIF
+            </>
+          ) : (
+            <>
+              <UserX className="h-3 w-3" />
+              NON AKTIF
+            </>
+          )}
         </span>
       ),
     },
-    {
-      header: "Aksi",
-      accessorKey: "aksi",
-      cell: (_: any, row: MasterCustomer) => (
-        <div className="flex gap-2">
-          <EditCustomerDialog customer={row} refresh={setRefresh} />
+{
+  header: "Aksi",
+  accessorKey: "aksi",
+  cell: (_: any, row: MasterCustomer) => (
+    <div className="flex gap-2">
 
-          <Button
-            size="sm"
-            variant={row.is_active ? "destructive" : "outline"}
-            onClick={async () => {
-              await toggleMasterCustomerStatus(row.customer_id!);
-              setRefresh((prev) => !prev);
-            }}
-          >
-            {row.is_active ? "Non Aktif" : "Aktifkan"}
-          </Button>
-        </div>
-      ),
-    },
+      {/* =====================
+          EDIT
+      ====================== */}
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div>
+              <EditCustomerDialog customer={row} refresh={setRefresh} />
+            </div>
+          </TooltipTrigger>
+        </Tooltip>
+      </TooltipProvider>
+
+      {/* =====================
+          AKTIF / NONAKTIF (PAKAI KONFIRMASI)
+      ====================== */}
+      {row.is_active ? (
+        /* ---------- NONAKTIFKAN ---------- */
+        <AlertDialog>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="border-red-600 text-red-600 hover:bg-red-50"
+                  >
+                    <UserX className="h-4 w-4 mr-1" />
+                  </Button>
+                </AlertDialogTrigger>
+              </TooltipTrigger>
+              
+            </Tooltip>
+          </TooltipProvider>
+
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Nonaktifkan Customer?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Customer <b>{row.customer_name}</b> akan dinonaktifkan dan
+                tidak bisa digunakan untuk transaksi.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+
+            <AlertDialogFooter>
+              <AlertDialogCancel>Batal</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-red-600 hover:bg-red-700 text-white"
+               onClick={async () => {
+  try {
+    await toggleMasterCustomerStatus(row.customer_id!);
+    toast.success("Customer berhasil dinonaktifkan");
+    setRefresh((prev) => !prev);
+  } catch {
+    toast.error("Gagal menonaktifkan customer");
+  }
+}}
+
+              >
+                Ya, Nonaktifkan
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      ) : (
+        /* ---------- AKTIFKAN ---------- */
+        <AlertDialog>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    size="sm"
+                    className="!bg-green-600 hover:!bg-green-700 text-white"
+                  >
+                    <UserCheck className="h-4 w-4 mr-1 text-white" />
+                  </Button>
+                </AlertDialogTrigger>
+              </TooltipTrigger>
+            
+            </Tooltip>
+          </TooltipProvider>
+
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Aktifkan Customer?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Customer <b>{row.customer_name}</b> akan diaktifkan kembali.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+
+            <AlertDialogFooter>
+              <AlertDialogCancel>Batal</AlertDialogCancel>
+              <AlertDialogAction
+                className="!bg-green-600 hover:!bg-green-700 text-white"
+               onClick={async () => {
+  try {
+    await toggleMasterCustomerStatus(row.customer_id!);
+    toast.success("Customer berhasil diaktifkan kembali");
+    setRefresh((prev) => !prev);
+  } catch {
+    toast.error("Gagal mengaktifkan customer");
+  }
+}}
+
+              >
+                Ya, Aktifkan
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
+    </div>
+  ),
+},
+
   ];
 }
 
@@ -203,54 +347,123 @@ function DataMasterCustomerSection({
       <SectionHeader>Daftar Customer</SectionHeader>
       <SectionBody className="grid grid-cols-12 gap-2">
         <div className="flex flex-col gap-4 col-span-12">
-          {/* FILTER */}
-          <div className="grid grid-cols-12 gap-4 items-end">
-            <div className="col-span-12 md:col-span-5">
-              <Input
-                placeholder="Cari berdasarkan no customer"
-                value={customerNo}
-                onChange={(e) => setCustomerNo(e.target.value)}
-              />
-            </div>
+{/* FILTER */}
+<div className="flex flex-col md:flex-row md:items-end gap-3">
+  {/* INPUT SEARCH */}
+  <div className="flex-1">
+    <Input
+      placeholder="Cari berdasarkan no customer"
+      value={customerNo}
+      onChange={(e) => setCustomerNo(e.target.value)}
+      onKeyDown={(e) => e.key === "Enter" && filterCustomer()}
+    />
+  </div>
 
-            <div className="col-span-12 md:col-span-2">
-              <Button className="w-full" onClick={filterCustomer}>
-                Cari
-              </Button>
-            </div>
+  {/* BUTTON GROUP */}
+  <div className="flex items-center gap-2">
+    {/* SEARCH */}
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            size="icon"
+            onClick={filterCustomer}
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            <Search className="h-4 w-4" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Cari Customer</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
 
-            <div className="col-span-12 md:col-span-3">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full">
-                    Filter Tambahan
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-80 space-y-4">
-                  <div>
-                    <label className="text-sm font-medium">
-                      Nama Customer
-                    </label>
-                    <Input
-                      placeholder="nama customer"
-                      value={customerName}
-                      onChange={(e) => setCustomerName(e.target.value)}
-                    />
-                  </div>
-                </PopoverContent>
-              </Popover>
-            </div>
+    {/* FILTER */}
+    <Popover>
+      <PopoverTrigger asChild>
+<TooltipProvider>
+  <Tooltip>
+    <Popover>
+      <PopoverTrigger asChild>
+        <TooltipTrigger asChild>
+          <Button variant="outline" size="icon">
+            <Filter className="h-4 w-4" />
+          </Button>
+        </TooltipTrigger>
+      </PopoverTrigger>
 
-            <div className="col-span-12 md:col-span-2">
-              <Button
-                className="w-full"
-                variant="destructive"
-                onClick={resetFilter}
-              >
-                Hapus Filter
-              </Button>
-            </div>
-          </div>
+      <PopoverContent className="w-80 space-y-4">
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Nama Customer</label>
+          <Input
+            placeholder="Cari nama customer"
+            value={customerName}
+            onChange={(e) => setCustomerName(e.target.value)}
+          />
+        </div>
+      </PopoverContent>
+    </Popover>
+
+    <TooltipContent>Filter Tambahan</TooltipContent>
+  </Tooltip>
+</TooltipProvider>
+
+      </PopoverTrigger>
+<PopoverContent className="w-80 space-y-4">
+  <div className="space-y-2">
+    <label className="text-sm font-medium">Nama Customer</label>
+    <Input
+      placeholder="Cari nama customer"
+      value={customerName}
+      onChange={(e) => setCustomerName(e.target.value)}
+    />
+  </div>
+
+  {/* ACTION */}
+  <div className="flex justify-end gap-2 pt-2">
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={() => {
+        setCustomerName("");
+        setFilteredCustomers(customers);
+        setCurrentPage(1);
+      }}
+    >
+      Reset
+    </Button>
+
+    <Button
+      size="sm"
+      onClick={() => {
+        filterCustomer();
+      }}
+    >
+      Terapkan
+    </Button>
+  </div>
+</PopoverContent>
+
+    </Popover>
+
+    {/* RESET */}
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={resetFilter}
+            className="border-red-300 text-red-600 hover:bg-red-50"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Reset Filter</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  </div>
+</div>
+
 
           <QuickTable
             data={tableCustomers}

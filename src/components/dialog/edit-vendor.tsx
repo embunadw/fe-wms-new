@@ -7,17 +7,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
-
 import type { MasterVendor } from "@/types";
 import { toast } from "sonner";
 import type { Dispatch, SetStateAction } from "react";
 import { useState } from "react";
 import { updateMasterVendor } from "@/services/vendor";
 import axios from "axios";
+import { Pencil } from "lucide-react";
 
 interface EditVendorDialogProps {
   vendor: MasterVendor;
@@ -30,7 +29,6 @@ export function EditVendorDialog({
 }: EditVendorDialogProps) {
   const [open, setOpen] = useState(false);
 
-  // ✅ STATE TELEPON (WAJIB)
   const [telephone, setTelephone] = useState<string>(
     vendor.telephone ?? ""
   );
@@ -48,17 +46,16 @@ export function EditVendorDialog({
     const payload = {
       vendor_no: formData.get("vendor_no") as string,
       vendor_name: formData.get("vendor_name") as string,
-      telephone: telephone,
+      telephone,
       contact_name: formData.get("contact_name") as string,
     };
 
-    // ✅ VALIDASI FINAL (DOUBLE SAFETY)
+    // VALIDASI TELEPON
     if (payload.telephone) {
       if (!/^[0-9]+$/.test(payload.telephone)) {
         toast.error("Nomor telepon hanya boleh angka");
         return;
       }
-
       if (payload.telephone.length > 13) {
         toast.error("Nomor telepon maksimal 13 digit");
         return;
@@ -67,30 +64,27 @@ export function EditVendorDialog({
 
     try {
       await updateMasterVendor(vendor.vendor_id, payload);
-
-      toast.success("Data vendor berhasil diupdate");
+      toast.success("Data vendor berhasil diedit!");
       refresh((prev) => !prev);
-      setOpen(false); // ✅ AUTO CLOSE
+      setOpen(false);
     } catch (error: any) {
       if (axios.isAxiosError(error) && error.response?.status === 422) {
         const errors = error.response.data.errors;
-
         if (errors?.vendor_name) toast.error(errors.vendor_name[0]);
         if (errors?.vendor_no) toast.error(errors.vendor_no[0]);
         if (errors?.telephone) toast.error(errors.telephone[0]);
-
         return;
       }
-
       toast.error("Terjadi kesalahan saat update data vendor");
     }
   }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
+      {/* ===== TRIGGER (SAMA DENGAN CUSTOMER) ===== */}
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          Edit
+        <Button variant="edit" size="sm">
+          <Pencil className="h-4 w-4" />
         </Button>
       </DialogTrigger>
 
@@ -105,12 +99,10 @@ export function EditVendorDialog({
         <form onSubmit={handleSubmit} id="edit-vendor-form">
           <div className="grid gap-4">
 
-            {/* No Vendor (TIDAK BOLEH EDIT) */}
+            {/* No Vendor (IMMUTABLE) */}
             <div className="grid gap-3">
-              <Label>No Vendor</Label>
+              <Label>No Vendor<span className="text-red-500">*</span></Label>
               <Input value={vendor.vendor_no} disabled />
-
-              {/* hidden input supaya terkirim */}
               <input
                 type="hidden"
                 name="vendor_no"
@@ -120,7 +112,7 @@ export function EditVendorDialog({
 
             {/* Nama Vendor */}
             <div className="grid gap-3">
-              <Label>Nama Vendor</Label>
+              <Label>Nama Vendor<span className="text-red-500">*</span></Label>
               <Input
                 name="vendor_name"
                 defaultValue={vendor.vendor_name}
@@ -128,9 +120,9 @@ export function EditVendorDialog({
               />
             </div>
 
-            {/* Telepon (NUMERIC ONLY) */}
+            {/* Telepon */}
             <div className="grid gap-3">
-              <Label>Telepon</Label>
+              <Label>Telepon<span className="text-red-500">*</span></Label>
               <Input
                 name="telephone"
                 value={telephone}
@@ -145,7 +137,7 @@ export function EditVendorDialog({
 
             {/* Nama Kontak */}
             <div className="grid gap-3">
-              <Label>Nama Kontak</Label>
+              <Label>Nama Kontak<span className="text-red-500">*</span></Label>
               <Input
                 name="contact_name"
                 defaultValue={vendor.contact_name}
@@ -156,12 +148,20 @@ export function EditVendorDialog({
         </form>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>
+          <Button
+            variant="outline"
+            onClick={() => setOpen(false)}
+            className="border-slate-300"
+          >
             Batal
           </Button>
 
-          <Button type="submit" form="edit-vendor-form">
-            Simpan
+          <Button
+            type="submit"
+            form="edit-vendor-form"
+            className="!bg-orange-600 hover:!bg-orange-700 text-white"
+          >
+            Edit
           </Button>
         </DialogFooter>
       </DialogContent>

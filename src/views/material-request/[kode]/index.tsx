@@ -6,7 +6,7 @@ import SectionContainer, {
   SectionHeader,
 } from "@/components/content-container";
 import WithSidebar from "@/components/layout/WithSidebar";
-import type { MRReceive, Stock, MRDetail } from "@/types";
+import type { MRReceive, Stock } from "@/types";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -26,8 +26,8 @@ import { Button } from "@/components/ui/button";
 import { Printer } from "lucide-react";
 import { EditMRDetailDialog } from "@/components/dialog/edit-mr";
 import { useAuth } from "@/context/AuthContext";
-import { Trash2 } from "lucide-react";
-import { deleteMRDetail } from "@/services/material-request";
+// import { Trash2 } from "lucide-react";
+// import { deleteMRDetail } from "@/services/material-request";
 import { QRCodeCanvas } from "qrcode.react";
 
 export function MaterialRequestDetail() {
@@ -118,27 +118,27 @@ const [hasPrinted, setHasPrinted] = useState(false);
     };
   };
 
-  async function handleDeleteDetail(detail: MRDetail) {
-    if (!mr) return;
+  // async function handleDeleteDetail(detail: MRDetail) {
+  //   if (!mr) return;
 
-    if (detail.dtl_mr_qty_received > 0) {
-      toast.error("Barang sudah diterima, tidak bisa dihapus");
-      return;
-    }
+  //   if (detail.dtl_mr_qty_received > 0) {
+  //     toast.error("Barang sudah diterima, tidak bisa dihapus");
+  //     return;
+  //   }
 
-    const confirm = window.confirm(
-      `Yakin hapus item ${detail.dtl_mr_part_number}?`
-    );
-    if (!confirm) return;
+  //   const confirm = window.confirm(
+  //     `Yakin hapus item ${detail.dtl_mr_part_number}?`
+  //   );
+  //   if (!confirm) return;
 
-    try {
-      await deleteMRDetail(detail.dtl_mr_id!);
-      toast.success("Detail MR berhasil dihapus");
-      setRefresh((prev) => !prev);
-    } catch (error) {
-      toast.error("Gagal menghapus detail MR");
-    }
-  }
+  //   try {
+  //     await deleteMRDetail(detail.dtl_mr_id!);
+  //     toast.success("Detail MR berhasil dihapus");
+  //     setRefresh((prev) => !prev);
+  //   } catch (error) {
+  //     toast.error("Gagal menghapus detail MR");
+  //   }
+  // }
 
 
 const handlePrintClick = async () => {
@@ -383,14 +383,14 @@ const handlePrintClick = async () => {
                                 mrLokasi={mr.mr_lokasi}
                                 onSuccess={() => setRefresh((prev) => !prev)}
                               />
-                              <Button
+                              {/* <Button
                                 size="sm"
                                 variant="destructive"
                                 disabled={!isEditable}
                                 onClick={() => handleDeleteDetail(item)}
                               >
                                 <Trash2 size={16} />
-                              </Button>
+                              </Button> */}
                             </div>
                           </TableCell>
                         </TableRow>

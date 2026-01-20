@@ -23,7 +23,6 @@ import { Button } from "@/components/ui/button";
 import { Printer } from "lucide-react";
 import { QRCodeCanvas } from "qrcode.react";
 import { useAuth } from "@/context/AuthContext";
-import { submitSignature } from "@/services/purchase-request";
 
 export function PurchaseRequestDetail() {
     const { user } = useAuth();
@@ -31,7 +30,7 @@ export function PurchaseRequestDetail() {
   const [pr, setPr] = useState<PurchaseRequest | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 const [hasPrinted, setHasPrinted] = useState(false);
-  const [refresh, setRefresh] = useState<boolean>(false);
+  // const [refresh, setRefresh] = useState<boolean>(false);
   const [showSignature, setShowSignature] = useState(false);
 
 
@@ -259,27 +258,29 @@ const handlePrintClick = async () => {
           <div className="col-span-12 space-y-4">
             <div className="w-full border border-border rounded-sm overflow-x-auto">
               <Table className="w-full">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>No</TableHead>
-                    <TableHead>Part Number</TableHead>
-                    <TableHead>Nama Part</TableHead>
-                    <TableHead>Satuan</TableHead>
-                    <TableHead>Jumlah</TableHead>
-                    <TableHead>Berdasarkan MR</TableHead>
-                  </TableRow>
-                </TableHeader>
+<TableHeader>
+  <TableRow className="[&>th]:border">
+    <TableHead>No</TableHead>
+    <TableHead>Part Number</TableHead>
+    <TableHead>Nama Part</TableHead>
+    <TableHead>Satuan</TableHead>
+    <TableHead>Jumlah</TableHead>
+    <TableHead>Berdasarkan MR</TableHead>
+  </TableRow>
+</TableHeader>
+
                 <TableBody>
                   {pr.details.length > 0 ? (
                     pr.details.map((item, index) => (
-                      <TableRow key={item.pr_id}>
-                        <TableCell>{index + 1}</TableCell>
-                        <TableCell>{item.dtl_pr_part_number}</TableCell>
-                        <TableCell>{item.dtl_pr_part_name}</TableCell>
-                        <TableCell>{item.dtl_pr_satuan}</TableCell>
-                        <TableCell>{item.dtl_pr_qty}</TableCell>
-                        <TableCell>{item.mr?.mr_kode}</TableCell>
-                      </TableRow>
+                 <TableRow key={item.pr_id} className="[&>td]:border">
+  <TableCell>{index + 1}</TableCell>
+  <TableCell>{item.dtl_pr_part_number}</TableCell>
+  <TableCell>{item.dtl_pr_part_name}</TableCell>
+  <TableCell>{item.dtl_pr_satuan}</TableCell>
+  <TableCell>{item.dtl_pr_qty}</TableCell>
+  <TableCell>{item.mr?.mr_kode}</TableCell>
+</TableRow>
+
                     ))
                   ) : (
                     <TableRow>

@@ -25,7 +25,7 @@ import {
 import { Button } from "../ui/button";
 import { LokasiList } from "@/types/enum";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
-import { CheckIcon, ChevronsUpDownIcon } from "lucide-react";
+import { CheckIcon, ChevronsUpDownIcon, ClipboardPlus, Trash2 } from "lucide-react";
 import {
   Command,
   CommandEmpty,
@@ -51,7 +51,7 @@ function toMysqlDatetime(date: Date) {
 export default function CreatePRForm({ user, setRefresh }: CreatePRFormProps) {
   const [tanggalPR, setTanggalPR] = useState<Date | undefined>(new Date());
   const [prItems, setPRItems] = useState<PRItemReceive[]>([]);
-  const [mrInluded, setMrIncluded] = useState<string[]>([]);
+  const [, setMrIncluded] = useState<string[]>([]);
 const [kodePR, setKodePR] = useState<string>("");
 
   // Pencarian master part
@@ -199,7 +199,7 @@ const [kodePR, setKodePR] = useState<string>("");
       <div className="flex flex-col col-span-12 lg:col-span-6 gap-4">
         {/* Kode PR */}
         <div className="flex flex-col gap-2">
-          <Label htmlFor="kodePR">Kode PR</Label>
+          <Label htmlFor="kodePR">Kode PR<span className="text-red-500">*</span></Label>
           <Input
   name="kodePR"
   placeholder="Input Kode PR"
@@ -213,7 +213,7 @@ const [kodePR, setKodePR] = useState<string>("");
 
         {/* Tanggal PR */}
         <div className="flex flex-col gap-2">
-          <Label>Tanggal PR</Label>
+          <Label>Tanggal PR<span className="text-red-500">*</span></Label>
           <div className="flex items-center">
             <DatePicker value={tanggalPR} onChange={setTanggalPR} />
           </div>
@@ -270,7 +270,7 @@ const [kodePR, setKodePR] = useState<string>("");
 
               {selectedMr
                 ? `${mr.find((m: MRReceive) => m.mr_kode === selectedMr?.mr_kode)?.mr_kode} | Part: ${selectedPart?.part_number || 'Loading...'}`
-                : "Cari kode mr..."}
+                : "Cari kode material request"}
               <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
             </Button>
           </PopoverTrigger>
@@ -317,19 +317,24 @@ const [kodePR, setKodePR] = useState<string>("");
           </PopoverContent>
         </Popover>
 
-        <AddItemPRDialog
-          selectedPart={selectedPart}
-          onAddItem={handleAddItem}
-          triggerButton={
-            <Button
-              className="col-span-12 md:col-span-4"
-              variant={"outline"}
-              disabled={!selectedPart || !selectedMr}
-            >
-              Tambah Barang
-            </Button>
-          }
-        />
+<AddItemPRDialog
+  selectedPart={selectedPart}
+  onAddItem={handleAddItem}
+  triggerButton={
+    <Button
+      type="button"
+      className="col-span-12 md:col-span-4
+                 !bg-green-600 hover:!bg-green-700 text-white"
+               
+      disabled={!selectedPart || !selectedMr}
+    >
+      <ClipboardPlus className="h-4 w-4" />
+      <span>Tambah Barang</span>
+    </Button>
+  }
+/>
+
+
       </div>
 
       {/* Item yang masuk PR */}
@@ -371,14 +376,15 @@ const [kodePR, setKodePR] = useState<string>("");
                   <TableCell>{item.dtl_mr_qty_request}</TableCell>
                   <TableCell>{item.mr?.mr_kode}</TableCell>
                   <TableCell>
-                    <Button
-                      type="button"
-                      size={"sm"}
-                      variant={"outline"}
-                      onClick={() => handleRemoveItem(index)}
-                    >
-                      Hapus
-                    </Button>
+                   <Button
+  type="button"
+  size="sm"
+  variant="delete"
+  onClick={() => handleRemoveItem(index)}
+  className="flex items-center gap-2"
+>
+  <Trash2/>
+</Button>
                   </TableCell>
                 </TableRow>
               ))

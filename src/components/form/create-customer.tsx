@@ -88,7 +88,7 @@ export default function CreateCustomerForm({
     >
       {/* No Customer */}
       <div className="flex flex-col col-span-12 lg:col-span-3 gap-2">
-        <Label>No Customer</Label>
+        <Label>No Customer<span className="text-red-500">*</span></Label>
         <Input
           name="customer_no"
           placeholder="Input no customer"
@@ -98,7 +98,7 @@ export default function CreateCustomerForm({
 
       {/* Nama Customer */}
       <div className="flex flex-col col-span-12 lg:col-span-5 gap-2">
-        <Label>Nama Customer</Label>
+        <Label>Nama Customer<span className="text-red-500">*</span></Label>
         <Input
           name="customer_name"
           placeholder="Input nama customer"
@@ -108,7 +108,7 @@ export default function CreateCustomerForm({
 
       {/* Telepon */}
       <div className="flex flex-col col-span-12 lg:col-span-2 gap-2">
-        <Label>Telepon</Label>
+        <Label>Telepon<span className="text-red-500">*</span></Label>
         <Input
           name="telephone"
           value={telephone}
@@ -123,7 +123,7 @@ export default function CreateCustomerForm({
 
       {/* Nama Kontak */}
       <div className="flex flex-col col-span-12 lg:col-span-2 gap-2">
-        <Label>Nama Kontak</Label>
+        <Label>Nama Kontak <span className="text-red-500">*</span></Label>
         <Input
           name="contact_name"
           placeholder="PIC customer"

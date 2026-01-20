@@ -7,17 +7,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
-
 import type { MasterCustomer } from "@/types";
 import { toast } from "sonner";
 import type { Dispatch, SetStateAction } from "react";
 import { useState } from "react";
 import { updateMasterCustomer } from "@/services/customer";
 import axios from "axios";
+import { Pencil } from "lucide-react";
 
 interface EditCustomerDialogProps {
   customer: MasterCustomer;
@@ -30,7 +29,6 @@ export function EditCustomerDialog({
 }: EditCustomerDialogProps) {
   const [open, setOpen] = useState(false);
 
-  // ✅ STATE TELEPON (WAJIB)
   const [telephone, setTelephone] = useState<string>(
     customer.telephone ?? ""
   );
@@ -52,7 +50,6 @@ export function EditCustomerDialog({
       contact_name: formData.get("contact_name") as string,
     };
 
-    // ✅ VALIDASI TELEPON
     if (payload.telephone) {
       if (!/^[0-9]+$/.test(payload.telephone)) {
         toast.error("Nomor telepon hanya boleh angka");
@@ -68,9 +65,9 @@ export function EditCustomerDialog({
     try {
       await updateMasterCustomer(customer.customer_id, payload);
 
-      toast.success("Data customer berhasil diupdate");
+      toast.success("Data customer berhasil diedit!");
       refresh((prev) => !prev);
-      setOpen(false); // ✅ AUTO CLOSE
+      setOpen(false); 
     } catch (error: any) {
       if (axios.isAxiosError(error) && error.response?.status === 422) {
         const errors = error.response.data.errors;
@@ -89,9 +86,10 @@ export function EditCustomerDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          Edit
-        </Button>
+        <Button variant="edit" size="sm">
+  <Pencil className="h-4 w-4" />
+</Button>
+
       </DialogTrigger>
 
       <DialogContent className="sm:max-w-[425px]">
@@ -105,12 +103,12 @@ export function EditCustomerDialog({
         <form onSubmit={handleSubmit} id="edit-customer-form">
           <div className="grid gap-4">
 
-            {/* No Customer (IMMUTABLE) */}
+           
             <div className="grid gap-3">
-              <Label>No Customer</Label>
+              <Label>No Customer<span className="text-red-500">*</span></Label>
               <Input value={customer.customer_no} disabled />
 
-              {/* hidden input supaya terkirim */}
+          
               <input
                 type="hidden"
                 name="customer_no"
@@ -118,9 +116,9 @@ export function EditCustomerDialog({
               />
             </div>
 
-            {/* Nama Customer */}
+           
             <div className="grid gap-3">
-              <Label>Nama Customer</Label>
+              <Label>Nama Customer<span className="text-red-500">*</span></Label>
               <Input
                 name="customer_name"
                 defaultValue={customer.customer_name}
@@ -128,9 +126,9 @@ export function EditCustomerDialog({
               />
             </div>
 
-            {/* Telepon (NUMERIC ONLY) */}
+        
             <div className="grid gap-3">
-              <Label>Telepon</Label>
+              <Label>Telepon<span className="text-red-500">*</span></Label>
               <Input
                 name="telephone"
                 value={telephone}
@@ -143,9 +141,8 @@ export function EditCustomerDialog({
               />
             </div>
 
-            {/* Nama Kontak */}
             <div className="grid gap-3">
-              <Label>Nama Kontak</Label>
+              <Label>Nama Kontak<span className="text-red-500">*</span></Label>
               <Input
                 name="contact_name"
                 defaultValue={customer.contact_name}
@@ -156,12 +153,20 @@ export function EditCustomerDialog({
         </form>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>
+          <Button 
+            variant="outline" 
+            onClick={() => setOpen(false)}
+            className="border-slate-300"
+          >
             Batal
           </Button>
 
-          <Button type="submit" form="edit-customer-form">
-            Simpan
+          <Button 
+            type="submit" 
+            form="edit-customer-form"
+            className="!bg-orange-600 hover:!bg-orange-700 text-white"
+          >
+            Edit
           </Button>
         </DialogFooter>
       </DialogContent>

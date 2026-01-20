@@ -34,7 +34,7 @@ export function DeliveryDetail() {
   const [refresh, setRefresh] = useState<boolean>(false);
   const { user } = useAuth();
   const [loadingDelivery, setLoadingDelivery] = useState(true);
-  const [loadingMr, setLoadingMr] = useState(true);
+  const [, setLoadingMr] = useState(true);
 
   useEffect(() => {
     async function fetchDeliveryDetail() {

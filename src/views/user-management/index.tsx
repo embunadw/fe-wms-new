@@ -3,9 +3,9 @@ import SectionContainer, {
   SectionBody,
   SectionFooter,
 } from "@/components/content-container";
-import { EditUserDialog } from "@/components/dialog/edit-user";
 import WithSidebar from "@/components/layout/WithSidebar";
 import { MyPagination } from "@/components/my-pagination";
+import { QuickTable } from "@/components/quick-table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -13,215 +13,371 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+
 import { getAllUsers, updateUserStatus } from "@/services/user";
 import type { UserDb } from "@/types";
 import { PagingSize } from "@/types/enum";
+
+import {
+  UserCheck,
+  UserX,
+  Search,
+  Filter,
+  X,
+} from "lucide-react";
 import { useEffect, useState } from "react";
+import type { Dispatch, SetStateAction } from "react";
+
 import { toast } from "sonner";
+import { EditUserDialog } from "@/components/dialog/edit-user";
+
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 import {
   AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
+  AlertDialogTrigger,
   AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
 } from "@/components/ui/alert-dialog";
 
-export default function UserManagement() {
+/* =========================
+   PAGE
+========================= */
+export default function UserManagementPage() {
   const [users, setUsers] = useState<UserDb[]>([]);
-  const [filteredUsers, setFilteredUsers] = useState<UserDb[]>([]);
-  const [tableUsers, setTableUsers] = useState<UserDb[]>([]);
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const [refresh, setRefresh] = useState<boolean>(false);
-
-  // Filtering
-  const [email, setEmail] = useState<string>("");
-  const [nama, setNama] = useState<string>("");
-  const [lokasi, setLokasi] = useState<string>("");
-  const [role, setRole] = useState<string>("");
-
-  // Soft delete
-  async function handleDeactivate(userId: string) {
-    try {
-      await updateUserStatus(userId, "inactive");
-      toast.success("User berhasil dinonaktifkan");
-      setRefresh((prev) => !prev);
-    } catch (error) {
-      toast.error("Gagal menonaktifkan user");
-    }
-  }
-
-  async function handleActivate(userId: string) {
-    try {
-      await updateUserStatus(userId, "active");
-      toast.success("User berhasil diaktifkan kembali");
-      setRefresh((prev) => !prev);
-    } catch (error) {
-      toast.error("Gagal mengaktifkan user");
-    }
-  }
+  const [refresh, setRefresh] = useState(false);
 
   useEffect(() => {
     async function fetchUsers() {
-      const result = await getAllUsers();
-      if (result) {
-        setUsers(result);
-        setFilteredUsers(result);
-        setTableUsers(result.slice(0, PagingSize));
-        resetFilter();
-      } else {
-        toast.error("Gagal memuat data pengguna");
+      try {
+        const res = await getAllUsers();
+        if (res) setUsers(res);
+      } catch {
+        toast.error("Gagal mengambil data user");
       }
     }
+
     fetchUsers();
   }, [refresh]);
 
-  useEffect(() => {
-    const startIndex = (currentPage - 1) * PagingSize;
-    const endIndex = startIndex + PagingSize;
-    setTableUsers(filteredUsers.slice(startIndex, endIndex));
-  }, [filteredUsers, currentPage]);
+  return (
+    <WithSidebar>
+      <DataUserSection users={users} setRefresh={setRefresh} />
+    </WithSidebar>
+  );
+}
+
+/* =========================
+   COLUMNS
+========================= */
+function UserColumnsGenerator(
+  setRefresh: Dispatch<SetStateAction<boolean>>
+) {
+  return [
+    {
+      header: "Nama",
+      accessorKey: "nama",
+    },
+    {
+      header: "Email",
+      accessorKey: "email",
+    },
+    {
+      header: "Role",
+      accessorKey: "role",
+    },
+    {
+      header: "Lokasi",
+      accessorKey: "lokasi",
+    },
+    {
+      header: "Status",
+      accessorKey: "status",
+      cell: (value: string) => (
+        <span
+          className={`px-2 py-1 rounded-full text-xs font-semibold inline-flex items-center gap-1
+            ${
+              value === "active"
+                ? "bg-green-100 text-green-700"
+                : "bg-red-100 text-red-700"
+            }`}
+        >
+          {value === "active" ? (
+            <>
+              <UserCheck className="h-3 w-3" />
+              AKTIF
+            </>
+          ) : (
+            <>
+              <UserX className="h-3 w-3" />
+              NON AKTIF
+            </>
+          )}
+        </span>
+      ),
+    },
+    {
+      header: "Aksi",
+      accessorKey: "aksi",
+      cell: (_: any, row: UserDb) => (
+        <div className="flex gap-2">
+          {/* EDIT */}
+          <EditUserDialog user={row} refresh={setRefresh} />
+
+          {/* AKTIF / NON AKTIF */}
+          {row.status === "active" ? (
+            <AlertDialog>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="border-red-600 text-red-600 hover:bg-red-50"
+                      >
+                        <UserX className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                  </TooltipTrigger>
+                  
+                </Tooltip>
+              </TooltipProvider>
+
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Nonaktifkan User?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    User <b>{row.nama}</b> akan dinonaktifkan.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Batal</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-red-600 hover:bg-red-700 text-white"
+                    onClick={async () => {
+  try {
+    await updateUserStatus(row.id, "inactive");
+    toast.success("User berhasil dinonaktifkan");
+    setRefresh((p) => !p);
+  } catch {
+    toast.error("Gagal menonaktifkan user");
+  }
+}}
+
+                  >
+                    Ya, Nonaktifkan
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          ) : (
+            <AlertDialog>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        size="sm"
+                        className="!bg-green-600 hover:!bg-green-700 text-white"
+                      >
+                        <UserCheck className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                  </TooltipTrigger>
+                  
+                </Tooltip>
+              </TooltipProvider>
+
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Aktifkan User?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    User <b>{row.nama}</b> akan diaktifkan kembali.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Batal</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="!bg-green-600 hover:!bg-green-700 text-white"
+                   onClick={async () => {
+  try {
+    await updateUserStatus(row.id, "active");
+    toast.success("User berhasil diaktifkan kembali");
+    setRefresh((p) => !p);
+  } catch {
+    toast.error("Gagal mengaktifkan user");
+  }
+}}
+
+                  >
+                    Ya, Aktifkan
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+        </div>
+      ),
+    },
+  ];
+}
+
+/* =========================
+   SECTION TABLE
+========================= */
+function DataUserSection({
+  users,
+  setRefresh,
+}: {
+  users: UserDb[];
+  setRefresh: Dispatch<SetStateAction<boolean>>;
+}) {
+  const pageSize = PagingSize;
+  const [filteredUsers, setFilteredUsers] = useState<UserDb[]>([]);
+  const [tableUsers, setTableUsers] = useState<UserDb[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // filter
+  const [email, setEmail] = useState("");
+  const [nama, setNama] = useState("");
 
   useEffect(() => {
-    let data = users.filter((u) => u.status !== "inactive"); // default hanya tampilkan aktif
+    setFilteredUsers(users);
+    setTableUsers(users.slice(0, pageSize));
+    setCurrentPage(1);
+  }, [users]);
 
-    if (email) data = data.filter((u) => u.email.toLowerCase().includes(email.toLowerCase()));
-    if (nama) data = data.filter((u) => u.nama.toLowerCase().includes(nama.toLowerCase()));
-    if (lokasi) data = data.filter((u) => u.lokasi.toLowerCase().includes(lokasi.toLowerCase()));
-    if (role) data = data.filter((u) => u.role.toLowerCase().includes(role.toLowerCase()));
+  useEffect(() => {
+    const start = (currentPage - 1) * pageSize;
+    const end = start + pageSize;
+    setTableUsers(filteredUsers.slice(start, end));
+  }, [currentPage, filteredUsers]);
+
+  function filterUser() {
+    let data = users;
+
+    if (email)
+      data = data.filter((u) =>
+        u.email.toLowerCase().includes(email.toLowerCase())
+      );
+
+    if (nama)
+      data = data.filter((u) =>
+        u.nama.toLowerCase().includes(nama.toLowerCase())
+      );
 
     setFilteredUsers(data);
-    setTableUsers(data.slice(0, PagingSize));
     setCurrentPage(1);
-  }, [users, email, nama, lokasi, role]);
+  }
 
   function resetFilter() {
     setEmail("");
     setNama("");
-    setLokasi("");
-    setRole("");
+    setFilteredUsers(users);
+    setCurrentPage(1);
   }
 
   return (
-    <WithSidebar>
-      <SectionContainer span={12}>
-        <SectionHeader>Daftar Pengguna</SectionHeader>
-        <SectionBody className="grid grid-cols-12 gap-2">
-          <div className="flex flex-col gap-4 col-span-12 border border-border rounded-sm p-2 overflow-x-auto">
-            {/* Filtering */}
-            <div className="col-span-12 grid grid-cols-12 gap-4 items-end">
-              <div className="col-span-12 md:col-span-4 lg:col-span-5">
-                <Input
-                  placeholder="Cari berdasarkan email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-              <div className="col-span-12 md:col-span-4 lg:col-span-3">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-full">
-                      Filter Tambahan
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-80 space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Nama</label>
-                      <Input placeholder="nama" value={nama} onChange={(e) => setNama(e.target.value)} />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Role</label>
-                      <Input placeholder="role" value={role} onChange={(e) => setRole(e.target.value)} />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Lokasi</label>
-                      <Input placeholder="lokasi" value={lokasi} onChange={(e) => setLokasi(e.target.value)} />
-                    </div>
-                  </PopoverContent>
-                </Popover>
-              </div>
-              <div className="col-span-12 md:col-span-4 lg:col-span-2">
-                <Button className="w-full" variant={"destructive"} onClick={resetFilter}>
-                  Hapus Filter
+    <SectionContainer span={12}>
+      <SectionHeader>Daftar Pengguna</SectionHeader>
+
+      <SectionBody className="grid grid-cols-12 gap-2">
+        <div className="flex flex-col gap-4 col-span-12">
+          {/* FILTER */}
+          <div className="flex gap-2">
+            <Input
+              placeholder="Cari email pengguna"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && filterUser()}
+            />
+
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="icon"
+                    onClick={filterUser}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    <Search className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Cari User</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <Filter className="h-4 w-4" />
                 </Button>
-              </div>
-            </div>
+              </PopoverTrigger>
+              <PopoverContent className="w-72 space-y-3">
+                <Input
+                  placeholder="Nama"
+                  value={nama}
+                  onChange={(e) => setNama(e.target.value)}
+                />
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" size="sm" onClick={resetFilter}>
+                    Reset
+                  </Button>
+                  <Button size="sm" onClick={filterUser}>
+                    Terapkan
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
 
-            <table className="min-w-full text-sm text-left border-collapse table-auto">
-              <thead>
-                <tr className="bg-muted text-muted-foreground border-b">
-                  <th className="p-2">No</th>
-                  <th className="p-2">Nama</th>
-                  <th className="p-2">Email</th>
-                  <th className="p-2">Role</th>
-                  <th className="p-2">Lokasi</th>
-                  <th className="p-2">Status</th>
-                  <th className="p-2">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {tableUsers?.map((user, index) => (
-                  <tr key={user.id} className="border-b hover:bg-accent">
-                    <td className="p-2">{(currentPage - 1) * PagingSize + index + 1}</td>
-                    <td className="p-2">{user.nama}</td>
-                    <td className="p-2">{user.email}</td>
-                    <td className="p-2">{user.role}</td>
-                    <td className="p-2">{user.lokasi}</td>
-                    <td className="p-2">{user.status}</td>
-                    <td className="p-2 flex gap-2 items-center">
-                      <EditUserDialog user={user} refresh={setRefresh} />
-
-                      {user.status === "active" ? (
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="destructive" size="sm">Nonaktifkan</Button>
-                          </AlertDialogTrigger>
-
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Yakin ingin menonaktifkan user ini?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                User <b>{user.nama}</b> akan dinonaktifkan.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Batal</AlertDialogCancel>
-                              <AlertDialogAction
-                                className="bg-destructive text-white hover:bg-destructive/90"
-                                onClick={() => handleDeactivate(user.id)}
-                              >
-                                Ya, Nonaktifkan
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      ) : (
-                        <Button variant="secondary" size="sm" onClick={() => handleActivate(user.id)}>
-                          Aktifkan Kembali
-                        </Button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={resetFilter}
+                    className="border-red-300 text-red-600 hover:bg-red-50"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Reset Filter</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
-        </SectionBody>
 
-        <SectionFooter>
-          <MyPagination
-            data={filteredUsers}
-            currentPage={currentPage}
-            triggerNext={() => setCurrentPage((prev) => prev + 1)}
-            triggerPrevious={() => setCurrentPage((prev) => prev - 1)}
-            triggerPageChange={(page: number) => setCurrentPage(page)}
+          {/* TABLE */}
+          <QuickTable
+            data={tableUsers}
+            columns={UserColumnsGenerator(setRefresh)}
+            page={currentPage}
           />
-        </SectionFooter>
-      </SectionContainer>
-    </WithSidebar>
+        </div>
+      </SectionBody>
+
+      <SectionFooter>
+        <MyPagination
+          data={filteredUsers}
+          currentPage={currentPage}
+          triggerNext={() => setCurrentPage((p) => p + 1)}
+          triggerPrevious={() => setCurrentPage((p) => p - 1)}
+          triggerPageChange={(p) => setCurrentPage(p)}
+        />
+      </SectionFooter>
+    </SectionContainer>
   );
 }

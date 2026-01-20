@@ -34,10 +34,17 @@ import { getCurrentUser } from "@/services/auth";
 import { getPo } from "@/services/purchase-order";
 import type { POHeader, UserComplete } from "@/types";
 import { PagingSize } from "@/types/enum";
-import { Plus } from "lucide-react";
+import { ClipboardPlus, Plus } from "lucide-react";
 import { useEffect, useState, Component } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
+import { Search, Filter, X, Info } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 // Error Boundary Component
 class ErrorBoundary extends Component<
@@ -195,72 +202,110 @@ export default function PurchaseOrder() {
       <SectionContainer span={12}>
         <SectionHeader>Daftar Purchase Order</SectionHeader>
         <SectionBody className="grid grid-cols-12 gap-2">
-          {/* Filtering */}
-          <div className="col-span-12 grid grid-cols-12 gap-4 items-end">
-            <div className="col-span-12 md:col-span-6 lg:col-span-7">
-              <Input
-                id="search-kode-po"
-                placeholder="Ketik kode PO untuk memfilter..."
-                value={kodePo}
-                onChange={(e) => setKodePo(e.target.value)}
-              />
-            </div>
+          <div className="flex flex-col gap-4 col-span-12">
+<div className="col-span-12 flex items-end gap-3">
 
-            <div className="col-span-6 md:col-span-3 lg:col-span-3">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full">
-                    Filter Tambahan
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-80 space-y-4">
-                  <div className="space-y-2">
-                    <h4 className="font-medium leading-none">
-                      Filter Lanjutan
-                    </h4>
-                    <p className="text-sm text-muted-foreground">
-                      Saring data berdasarkan kriteria lain.
-                    </p>
-                  </div>
-                  <div className="grid gap-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="filter-kode-pr">Kode PR</Label>
-                      <Input
-                        id="filter-kode-pr"
-                        placeholder="Cari kode PR..."
-                        value={kodePr}
-                        onChange={(e) => setKodePr(e.target.value)}
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="filter-status">Status</Label>
-                      <Select value={status} onValueChange={setStatus}>
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Pilih Status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pending">Pending</SelectItem>
-                          <SelectItem value="purchased">Purchased</SelectItem>
-                          <SelectItem value="received">Received</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </PopoverContent>
-              </Popover>
-            </div>
+  <div className="flex-1">
+    <Input
+      placeholder="Cari berdasarkan kode PO"
+      value={kodePo}
+      onChange={(e) => setKodePo(e.target.value)}
+      onKeyDown={(e) => e.key === "Enter" && resetFilters()}
+    />
+  </div>
 
-            <div className="col-span-6 md:col-span-3 lg:col-span-2">
-              <Button
-                className="w-full"
-                variant={"destructive"}
-                onClick={resetFilters}
-              >
-                Hapus Filter
+  {/* ACTION BUTTONS */}
+  <div className="col-span-12 md:col-span-3 flex items-center gap-2">
+
+    {/* SEARCH */}
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            size="icon"
+            onClick={resetFilters}
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            <Search className="h-4 w-4" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Cari PO</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+
+    {/* FILTER */}
+    <Popover>
+      <TooltipProvider>
+        <Tooltip>
+          <PopoverTrigger asChild>
+            <TooltipTrigger asChild>
+              <Button variant="outline" size="icon">
+                <Filter className="h-4 w-4" />
               </Button>
-            </div>
-          </div>
-          
+            </TooltipTrigger>
+          </PopoverTrigger>
+          <TooltipContent>Filter Tambahan</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+
+      <PopoverContent className="w-80 space-y-4">
+        {/* KODE PR */}
+        <div className="space-y-2">
+          <Label>Kode PR</Label>
+          <Input
+            placeholder="Cari kode PR..."
+            value={kodePr}
+            onChange={(e) => setKodePr(e.target.value)}
+          />
+        </div>
+
+        {/* STATUS */}
+        <div className="space-y-2">
+          <Label>Status</Label>
+          <Select value={status} onValueChange={setStatus}>
+            <SelectTrigger>
+              <SelectValue placeholder="Pilih Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="purchased">Purchased</SelectItem>
+              <SelectItem value="received">Received</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* ACTION */}
+        <div className="flex justify-end gap-2 pt-2">
+          <Button variant="outline" size="sm" onClick={resetFilters}>
+            Reset
+          </Button>
+          <Button size="sm" onClick={resetFilters}>
+            Terapkan
+          </Button>
+        </div>
+      </PopoverContent>
+    </Popover>
+
+    {/* RESET */}
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={resetFilters}
+            className="border-red-300 text-red-600 hover:bg-red-50"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Reset Filter</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+
+  </div>
+</div>
+</div>
           <div className="col-span-12 border rounded-sm overflow-x-auto">
             <Table>
               <TableHeader>
@@ -299,17 +344,28 @@ export default function PurchaseOrder() {
                             ? 'bg-blue-100 text-blue-800'
                             : 'bg-green-100 text-green-800'
                         }`}>
-                          {po.status === 'pending' ? 'Pending' : 
-                           po.status === 'purchased' ? 'Purchased' : 'Received'}
+                          {po.status === 'pending' ? 'PENDING' : 
+                           po.status === 'purchased' ? 'PURCHASED' : 'Received'}
                         </span>
                       </TableCell>
                       <TableCell className="p-2 border">
-                        <Button size="sm" variant="outline" asChild>
-                          <Link
-                            to={`/po/kode/${encodeURIComponent(po.kode)}`}>
-                            Detail
-                          </Link>
-                        </Button>
+                      <TooltipProvider>
+  <Tooltip>
+    <TooltipTrigger asChild>
+      <Button
+        size="icon"
+        variant="outline"
+        className="border-sky-400 text-sky-600 hover:bg-sky-50"
+        asChild
+      >
+        <Link to={`/po/kode/${encodeURIComponent(po.kode)}`}>
+          <Info className="h-4 w-4" />
+        </Link>
+      </Button>
+    </TooltipTrigger>
+  </Tooltip>
+</TooltipProvider>
+
                       </TableCell>
                     </TableRow>
                   ))
@@ -360,13 +416,15 @@ export default function PurchaseOrder() {
             </div>
           </SectionBody>
           <SectionFooter>
-            <Button
-              className="w-full flex gap-4"
-              type="submit"
-              form="create-po-form"
-            >
-              Tambah <Plus />
-            </Button>
+          <Button
+  type="submit"
+  form="create-po-form"
+  className="w-full !bg-green-600 hover:!bg-green-700 !text-white"
+             
+>
+  <ClipboardPlus className="h-4 w-4" />
+  <span>Tambah PO</span>
+</Button>
           </SectionFooter>
         </SectionContainer>
       ) : null}

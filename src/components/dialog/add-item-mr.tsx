@@ -97,7 +97,7 @@ export function AddItemMRDialog({
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label htmlFor="qty">Jumlah</Label>
+            <Label htmlFor="qty">Jumlah<span className="text-red-500">*</span></Label>
             <Input
               id="qty"
               type="number"
@@ -110,7 +110,7 @@ export function AddItemMRDialog({
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label htmlFor="qty">Prioritas</Label>
+            <Label htmlFor="qty">Prioritas<span className="text-red-500">*</span></Label>
             <Select required defaultValue={priority}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Pilih prioritas" />
@@ -127,9 +127,26 @@ export function AddItemMRDialog({
           </div>
         </div>
         <DialogFooter>
-          <Button type="button" onClick={handleSaveItem}>
-            Tambahkan
-          </Button>
+<div className="flex justify-end gap-2">
+  {/* BATAL */}
+  <Button
+    type="button"
+    variant="outline"
+    onClick={() => setIsOpen(false)} // atau handler batal kamu
+  >
+    Batal
+  </Button>
+
+  {/* TAMBAH (HIJAU) */}
+  <Button
+    type="button"
+    onClick={handleSaveItem}
+    className="!bg-green-600 hover:!bg-green-700 text-white"
+  >
+    Tambah
+  </Button>
+</div>
+
         </DialogFooter>
       </DialogContent>
     </Dialog>

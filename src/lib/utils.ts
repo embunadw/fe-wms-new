@@ -76,3 +76,12 @@ export function formatRupiah(value: number) {
 export function parseRupiah(value: string) {
   return Number(value.replace(/\D/g, ""));
 }
+
+// src/lib/tooltip-variants.ts
+// tooltipVariants.ts
+export const tooltipVariants = {
+  primary: "!bg-blue-600 !text-white !border-blue-600",
+  success: "!bg-emerald-600 !text-white !border-emerald-600",
+  edit: "!bg-orange-500 !text-white !border-orange-500",
+  danger: "!bg-red-600 !text-white !border-red-600",
+};

@@ -25,6 +25,7 @@ import {
 } from "../ui/select";
 import { Textarea } from "../ui/textarea";
 import { useState } from "react";
+import { Pencil } from "lucide-react";
 
 interface MyDialogProps {
   po: POReceive;
@@ -58,9 +59,10 @@ const [status, setStatus] = useState<"pending" | "purchased">(
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          Edit PO
-        </Button>
+       <Button variant="edit" size="sm" className="flex items-center gap-4">
+  <Pencil className="h-4 w-4" />
+  Edit PO
+</Button>
       </DialogTrigger>
 
       <DialogContent className="sm:max-w-[425px]">
@@ -153,9 +155,14 @@ const [status, setStatus] = useState<"pending" | "purchased">(
           <DialogClose asChild>
             <Button variant="outline">Batalkan</Button>
           </DialogClose>
-          <Button type="submit" form="edit-po-form">
-            Simpan
-          </Button>
+        <Button
+  type="submit"
+  form="edit-po-form"
+  className="!bg-orange-600 hover:!bg-orange-700 text-white"
+>
+  Edit
+</Button>
+
         </DialogFooter>
       </DialogContent>
     </Dialog>

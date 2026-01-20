@@ -60,11 +60,11 @@ export default function CreateDeliveryForm({
   user,
   setRefresh,
 }: CreateDeliveryFormProps) {
-  const [key, setKey] = useState(+new Date());
+  const [, setKey] = useState(+new Date());
   const [open, setOpen] = useState<boolean>(false);
-  const [tanggalPR, setTanggalPR] = useState<Date | undefined>(new Date());
+  // const [, setTanggalPR] = useState<Date | undefined>(new Date());
 
-  const [mr, setMR] = useState<MRReceive[]>([]);  
+  const [, setMR] = useState<MRReceive[]>([]);  
   const [filteredMr, setFilteredMR] = useState<MRReceive[]>([]);
   const [selectedMr, setSelectedMr] = useState<MRReceive>();
   const [selectedFrom, setSelectedFrom] = useState<string>("");

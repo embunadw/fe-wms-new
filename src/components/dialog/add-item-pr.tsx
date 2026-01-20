@@ -86,7 +86,7 @@ export function AddItemPRDialog({
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label htmlFor="qty">Jumlah</Label>
+            <Label htmlFor="qty">Jumlah<span className="text-red-500">*</span></Label>
             <Input
               id="qty"
               type="number"
@@ -99,9 +99,13 @@ export function AddItemPRDialog({
           </div>
         </div>
         <DialogFooter>
-          <Button type="button" onClick={handleSaveItem}>
-            Tambahkan
-          </Button>
+           <Button
+              type="button"
+              onClick={handleSaveItem}
+              className="!bg-green-600 hover:!bg-green-700 text-white"
+            >
+              Tambah
+            </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

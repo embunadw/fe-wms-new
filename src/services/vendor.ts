@@ -1,6 +1,6 @@
 import api from "@/lib/axios";
 import type { MasterVendor } from "@/types";
-import { getCurrentUser } from "@/services/auth";
+// import { getCurrentUser } from "@/services/auth";
 
 /**
  * CREATE

@@ -88,7 +88,7 @@ export default function CreateVendorForm({
     >
       {/* No Vendor */}
       <div className="flex flex-col col-span-12 lg:col-span-3 gap-2">
-        <Label>No Vendor</Label>
+        <Label>No Vendor<span className="text-red-500">*</span></Label>
         <Input
           name="vendor_no"
           placeholder="Input no vendor"
@@ -98,7 +98,7 @@ export default function CreateVendorForm({
 
       {/* Nama Vendor */}
       <div className="flex flex-col col-span-12 lg:col-span-5 gap-2">
-        <Label>Nama Vendor</Label>
+        <Label>Nama Vendor<span className="text-red-500">*</span></Label>
         <Input
           name="vendor_name"
           placeholder="Input nama vendor"
@@ -108,7 +108,7 @@ export default function CreateVendorForm({
 
       {/* Telepon (NUMERIC ONLY) */}
       <div className="flex flex-col col-span-12 lg:col-span-2 gap-2">
-        <Label>Telepon</Label>
+        <Label>Telepon<span className="text-red-500">*</span></Label>
         <Input
           name="telephone"
           value={telephone}
@@ -123,7 +123,7 @@ export default function CreateVendorForm({
 
       {/* Nama Kontak */}
       <div className="flex flex-col col-span-12 lg:col-span-2 gap-2">
-        <Label>Nama Kontak</Label>
+        <Label>Nama Kontak<span className="text-red-500">*</span></Label>
         <Input
           name="contact_name"
           placeholder="PIC vendor"

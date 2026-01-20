@@ -38,7 +38,7 @@ import {
 } from "../ui/command";
 
 import { cn } from "@/lib/utils";
-import { getOpenPr, getPr } from "@/services/purchase-request";
+import { getOpenPr } from "@/services/purchase-request";
 import { createPO } from "@/services/purchase-order";
 import { DatePicker } from "../date-picker";
 import { getMasterVendors } from "@/services/vendor";
@@ -223,7 +223,7 @@ details: poDetails.map((d) => ({
       {/* KIRI */}
       <div className="col-span-12 lg:col-span-6 flex flex-col gap-4">
         <div className="flex flex-col gap-2">
-          <Label>Kode PO</Label>
+          <Label>Kode PO<span className="text-red-500">*</span></Label>
           <Input 
             name="kode" 
             placeholder="Masukkan kode PO" 
@@ -234,7 +234,7 @@ details: poDetails.map((d) => ({
         </div>
 
         <div className="flex flex-col gap-2">
-          <Label>Referensi PR</Label>
+          <Label>Referensi PR<span className="text-red-500">*</span></Label>
           <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
               <Button
@@ -310,7 +310,7 @@ details: poDetails.map((d) => ({
         </div>
 
         <div className="flex flex-col gap-2">
-          <Label>Tanggal Estimasi</Label>
+          <Label>Tanggal Estimasi<span className="text-red-500">*</span></Label>
           <DatePicker value={estimasi} onChange={setEstimasi} />
         </div>
       </div>
@@ -318,7 +318,7 @@ details: poDetails.map((d) => ({
       {/* KANAN */}
       <div className="col-span-12 lg:col-span-6 flex flex-col gap-4">
         <div className="flex flex-col gap-2">
-          <Label>Status Utama</Label>
+          <Label>Status Utama<span className="text-red-500">*</span></Label>
           <Select 
             name="status" 
             required 
@@ -340,7 +340,7 @@ details: poDetails.map((d) => ({
         {/* Sub Status berdasarkan Status Utama */}
         {status && (
           <div className="flex flex-col gap-2">
-            <Label>Detail Status</Label>
+            <Label>Detail Status<span className="text-red-500">*</span></Label>
             <Select 
               name="subStatus" 
               required 

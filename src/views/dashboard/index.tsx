@@ -26,9 +26,6 @@ import { Button } from "@/components/ui/button";
 import { MyPagination } from "@/components/my-pagination";
 import { Printer } from "lucide-react";
 
-/* =====================
- STATUS COLOR
-===================== */
 const STATUS_COLOR: Record<string, string> = {
   open: "#facc15",
   pending: "#facc15",
@@ -38,9 +35,6 @@ const STATUS_COLOR: Record<string, string> = {
   received: "#22c55e",
 };
 
-/* =====================
- STATUS BADGE
-===================== */
 function StatusBadge({ status }: { status: string }) {
   const color =
     status === "close" || status === "delivered" || status === "received"
@@ -56,9 +50,6 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-/* =====================
- ALERT CARD
-===================== */
 function AlertCard({
   icon,
   title,
@@ -98,9 +89,6 @@ function AlertCard({
   );
 }
 
-/* =====================
- TABLE GENERIC
-===================== */
 function DashboardTable({ title, data }: { title: string; data: any[] }) {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -198,9 +186,6 @@ function DashboardTable({ title, data }: { title: string; data: any[] }) {
   );
 }
 
-/* =====================
- DASHBOARD PAGE
-===================== */
 export default function Dashboard() {
   const { user } = useAuth();
   const [dashboard, setDashboard] = useState<DashboardResponse | null>(null);
@@ -224,7 +209,6 @@ export default function Dashboard() {
     );
   }
 
-  /* ===== FILTER BY LOKASI ===== */
   const mrData = dashboard.details.latest_mr.filter(
     (m: any) =>
       m.mr_lokasi?.toLowerCase() === user.lokasi?.toLowerCase()
@@ -242,7 +226,6 @@ export default function Dashboard() {
 
   const now = new Date();
 
-  /* ===== ALERT COUNT ===== */
   const mrNearDue = mrData.filter((m: any) => {
     if (m.mr_status !== "open") return false;
     const due = new Date(m.mr_due_date);
@@ -253,7 +236,6 @@ export default function Dashboard() {
     (d: any) => d.dlv_status === "on delivery"
   ).length;
 
-  /* ===== AUTO FILTER ===== */
   const filteredMR =
     activeAlert === "mr"
       ? mrData.filter((m: any) => m.mr_status === "open")
@@ -266,7 +248,6 @@ export default function Dashboard() {
 
   const filteredReceive = receiveData;
 
-  /* ===== CHART ===== */
   const chartData = [
     { name: "MR Open", value: filteredMR.length, status: "open" },
     { name: "Delivery", value: filteredDelivery.length, status: "on delivery" },
@@ -328,7 +309,6 @@ export default function Dashboard() {
           </ResponsiveContainer>
         </SectionBody>
       </SectionContainer>
-
       {/* TABLES */}
       <SectionContainer span={12}>
         <SectionHeader>Material Request</SectionHeader>
@@ -336,7 +316,6 @@ export default function Dashboard() {
           <DashboardTable title="Latest MR" data={filteredMR} />
         </SectionBody>
       </SectionContainer>
-
       <SectionContainer span={12}>
         <SectionHeader>Delivery & Receive</SectionHeader>
         <SectionBody>

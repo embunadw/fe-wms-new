@@ -14,6 +14,12 @@ import {
   ShoppingCart,
   Truck,
   Warehouse,
+  PackageMinus,
+  FilePlus,
+  FileBarChart,
+  ShoppingBag,
+  ReceiptText,
+  PackageCheck,
 } from "lucide-react";
 
 import { NavMain } from "@/components/nav-main";
@@ -89,6 +95,37 @@ const data = {
       title: "Delivery",
       url: "/delivery",
       icon: Truck,
+    },
+    {
+      title: "Stock Out",
+      icon: PackageMinus,
+      items: [
+        {
+          title: "Report SPB",
+          url: "/spb",
+          icon: FileBarChart,
+        },
+        {
+          title: "SPB",
+          url: "/spb/pengeluaran",
+          icon: FilePlus,
+        },
+        {
+          title: "Purchase Order",
+          url: "/spb/po",
+          icon: ShoppingBag,
+        },
+        {
+          title: "Delivery Order",
+          url: "/spb/do",
+          icon: PackageCheck,
+        },
+        {
+          title: "Invoice",
+          url: "/spb/invoice",
+          icon: ReceiptText,
+        },
+      ]
     },
     {
       title: "Setting",

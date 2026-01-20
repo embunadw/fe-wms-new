@@ -6,9 +6,7 @@ import type { POReceive, PurchaseRequest, UserComplete, UserDb } from "@/types";
 import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
@@ -22,7 +20,7 @@ import {
 } from "../ui/table";
 import { Button } from "../ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
-import { CheckIcon, ChevronsUpDownIcon } from "lucide-react";
+import { CheckIcon, ChevronsUpDownIcon, Calculator } from "lucide-react";
 import {
   Command,
   CommandEmpty,
@@ -37,6 +35,12 @@ import { Textarea } from "../ui/textarea";
 import { createRI, getPurchasedPO } from "@/services/receive-item";
 import { LokasiList } from "@/types/enum";
 import { DatePicker } from "../date-picker";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface CreatePOFormProps {
   user: UserComplete | UserDb;
@@ -44,22 +48,30 @@ interface CreatePOFormProps {
 }
 
 export default function CreateRIForm({ user, setRefresh }: CreatePOFormProps) {
-  const [open, setOpen] = useState<boolean>(false);
+  const [open, setOpen] = useState(false);
   const [po, setPO] = useState<POReceive[]>([]);
   const [filteredPO, setFilteredPO] = useState<POReceive[]>([]);
   const [selectedPO, setSelectedPO] = useState<POReceive>();
   const [selectedPR, setSelectedPR] = useState<PurchaseRequest>();
   const [tanggal, setTanggal] = useState<Date | undefined>(new Date());
 
-  // Fetch PR
+  // qty diterima (key = part_id string)
+  const [receiveQty, setReceiveQty] = useState<Record<string, number>>({});
+  const [openQtyDialog, setOpenQtyDialog] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<any>(null);
+
+  /* =======================
+   * FETCH PR BY PO
+   * ======================= */
   useEffect(() => {
     async function fetchPR(kode: string) {
       try {
         const res = await getPrById(kode);
-        if (!res) return; 
+        if (!res) return;
         setSelectedPR(res);
+        setReceiveQty({});
       } catch (error) {
-        console.warn("Fetch PR gagal", error); 
+        console.warn("Fetch PR gagal", error);
       }
     }
 
@@ -67,140 +79,120 @@ export default function CreateRIForm({ user, setRefresh }: CreatePOFormProps) {
     fetchPR(selectedPO.pr_id);
   }, [selectedPO]);
 
-
-  // Fetch PR
+  /* =======================
+   * FETCH PURCHASED PO
+   * ======================= */
   useEffect(() => {
-    async function fetchPR() {
+    async function fetchPO() {
       try {
         const res = await getPurchasedPO();
         setPO(res);
         setFilteredPO(res);
-      } catch (error) {
-        if (error instanceof Error) {
-          toast.error(`Gagal mengambil data PO: ${error.message}`);
-        } else {
-          toast.error("Terjadi kesalahan saat mengambil data PO.");
-        }
+      } catch {
+        toast.error("Gagal mengambil data PO");
       }
     }
-
-    fetchPR();
+    fetchPO();
   }, []);
 
+  /* =======================
+   * SUBMIT RI
+   * ======================= */
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-  event.preventDefault();
+    event.preventDefault();
 
-  if (!selectedPO) {
-    toast.error("Pilih PO terlebih dahulu.");
-    return;
+    if (!selectedPO || !selectedPR || !tanggal) {
+      toast.error("Data belum lengkap");
+      return;
+    }
+
+    const formData = new FormData(event.currentTarget);
+    const ri_kode = formData.get("kode") as string;
+    const ri_lokasi = formData.get("penerima") as string;
+    const ri_keterangan = formData.get("keterangan") as string;
+
+    if (!ri_kode || !ri_lokasi) {
+      toast.error("Kode & lokasi wajib diisi");
+      return;
+    }
+
+    const details = selectedPR.details.map((d) => {
+      const partId = d.part_id ?? "";
+
+      return {
+        part_id: d.part_id,
+        mr_id: d.mr_id,
+        dtl_ri_part_number: d.dtl_pr_part_number,
+        dtl_ri_part_name: d.dtl_pr_part_name,
+        dtl_ri_satuan: d.dtl_pr_satuan,
+        dtl_ri_qty: receiveQty[partId] ?? d.dtl_pr_qty,
+      };
+    });
+
+    const payload = {
+      ri_kode,
+      po_id: selectedPO.po_id,
+      ri_lokasi,
+      ri_tanggal: tanggal.toISOString().slice(0, 10),
+      ri_keterangan,
+      ri_pic: user.nama,
+      details,
+    };
+
+    const success = await createRI(payload);
+    if (!success) {
+      toast.error("Gagal membuat Receive Item");
+      return;
+    }
+
+    toast.success("Receive Item berhasil dibuat");
+    setRefresh((p) => !p);
+    event.currentTarget.reset();
+    setSelectedPO(undefined);
+    setSelectedPR(undefined);
+    setReceiveQty({});
   }
 
-  if (!selectedPR) {
-    toast.error("PR tidak ditemukan untuk PO ini.");
-    return;
+  /* =======================
+   * HELPER: QTY PO
+   * ======================= */
+  function getQtyPo(partId?: string) {
+    if (!selectedPO || !partId) return undefined;
+    const poDetail = selectedPO.details.find(
+      (d) => d.part_id === partId
+    );
+    return poDetail?.dtl_po_qty;
   }
-
-  if (!tanggal) {
-    toast.error("Tanggal harus diisi.");
-    return;
-  }
-
-  const formData = new FormData(event.currentTarget);
-
-  const ri_kode = formData.get("kode") as string;
-  const ri_lokasi = formData.get("penerima") as string;
-  const ri_keterangan = formData.get("keterangan") as string;
-
-  if (!ri_kode) {
-    toast.error("Kode RI tidak boleh kosong.");
-    return;
-  }
-
-  if (!ri_lokasi) {
-    toast.error("Lokasi tidak boleh kosong.");
-    return;
-  }
-
-  const details = selectedPR.details.map((d) => ({
-    part_id: d.part_id,
-    mr_id: d.mr_id,
-    dtl_ri_part_number: d.dtl_pr_part_number,
-    dtl_ri_part_name: d.dtl_pr_part_name,
-    dtl_ri_satuan: d.dtl_pr_satuan,
-    dtl_ri_qty: d.dtl_pr_qty,
-  }));
-
-  const payload = {
-    ri_kode,
-    po_id: selectedPO.po_id,
-    ri_lokasi,
-    ri_tanggal: tanggal.toISOString().slice(0, 10),
-    ri_keterangan,
-    ri_pic: user.nama,
-    details,
-  };
-
-  const success = await createRI(payload);
-
-  if (!success) {
-    toast.error("Gagal membuat Receive Item.");
-    return;
-  }
-
-  toast.success("Receive item berhasil dibuat.");
-
-  setRefresh((p) => !p);
-  event.currentTarget.reset();
-  setSelectedPO(undefined);
-  setSelectedPR(undefined);
-}
-
-
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      id="create-ri-form"
-      className="grid grid-cols-12 gap-4"
-    >
-      <div className="flex flex-col col-span-12 lg:col-span-6 gap-4">
-        {/* Kode PO */}
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="kode">Kode RI</Label>
-          <Input name="kode" className="lg:tracking-wider" required />
+    <form id="create-ri-form" onSubmit={handleSubmit} className="grid grid-cols-12 gap-4">
+      {/* HEADER */}
+      <div className="col-span-12 lg:col-span-6 space-y-4">
+        <div>
+          <Label>Kode RI</Label>
+          <Input name="kode" required />
         </div>
 
-        {/* Combobox Referensi PO */}
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="kodePO">Receive item dari PO</Label>
+        <div>
+          <Label>Receive dari PO</Label>
           <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                role="combobox"
-                aria-expanded={open}
-                className={cn("col-span-12 lg:col-span-4 justify-between")}
-              >
-                {selectedPO
-                  ? po.find((po: POReceive) => po.po_kode === selectedPO?.po_kode)?.po_kode
-                  : "Cari kode PO..."}
-                <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              <Button variant="outline" className="justify-between w-full">
+                {selectedPO?.po_kode ?? "Cari PO..."}
+                <ChevronsUpDownIcon className="h-4 w-4 opacity-50" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-(--radix-popover-trigger-width) p-0">
+            <PopoverContent className="p-0">
               <Command>
-                <CommandInput placeholder="Cari kode PO..." />
+                <CommandInput placeholder="Cari PO..." />
                 <CommandList>
-                  <CommandEmpty>Tidak ada.</CommandEmpty>
+                  <CommandEmpty>Tidak ada</CommandEmpty>
                   <CommandGroup>
-                    {filteredPO?.map((m) => (
+                    {filteredPO.map((m) => (
                       <CommandItem
                         key={m.po_kode}
-                        value={m.po_kode}
-                        onSelect={(currentValue) => {
-                          setSelectedPO(
-                            po.find((m) => m.po_kode === currentValue)
-                          );
+                        onSelect={() => {
+                          setSelectedPO(m);
                           setOpen(false);
                         }}
                       >
@@ -212,7 +204,7 @@ export default function CreateRIForm({ user, setRefresh }: CreatePOFormProps) {
                               : "opacity-0"
                           )}
                         />
-                        {`${m.po_kode}`}
+                        {m.po_kode}
                       </CommandItem>
                     ))}
                   </CommandGroup>
@@ -223,101 +215,144 @@ export default function CreateRIForm({ user, setRefresh }: CreatePOFormProps) {
         </div>
       </div>
 
-      <div className="flex flex-col col-span-12 lg:col-span-6 gap-4">
-        {/* Gudang Penerima */}
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="penerima">PO diterima di gudang</Label>
-          <div className="flex items-center">
-            <Select required name="penerima">
-              <SelectTrigger className="w-full" name="penerima" id="penerima">
-                <SelectValue placeholder="Pilih penerima" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  <SelectLabel>Lokasi</SelectLabel>
-                  {LokasiList.map((lokasi) => {
-                    if (lokasi.nama === "unassigned") return null;
-                    return (
-                      <SelectItem key={lokasi.kode} value={lokasi.nama}>
-                        {lokasi.nama}
-                      </SelectItem>
-                    );
-                  })}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          </div>
+      {/* LOKASI & TANGGAL */}
+      <div className="col-span-12 lg:col-span-6 space-y-4">
+        <div>
+          <Label>Gudang</Label>
+          <Select name="penerima" required>
+            <SelectTrigger>
+              <SelectValue placeholder="Pilih gudang" />
+            </SelectTrigger>
+            <SelectContent>
+              {LokasiList.map((l) =>
+                l.nama === "unassigned" ? null : (
+                  <SelectItem key={l.kode} value={l.nama}>
+                    {l.nama}
+                  </SelectItem>
+                )
+              )}
+            </SelectContent>
+          </Select>
         </div>
 
-        <div className="flex flex-col gap-2">
+        <div>
           <Label>Tanggal RI</Label>
           <DatePicker value={tanggal} onChange={setTanggal} />
         </div>
       </div>
 
-      {/* Keterangan */}
-      <div className="col-span-12 flex flex-col gap-2">
-        <Label htmlFor="keterangan">Keterangan</Label>
-        <div className="flex items-center">
-          <Textarea
-            placeholder="Masukkan keterangan..."
-            name="keterangan"
-            id="keterangan"
-          />
-        </div>
+      {/* KETERANGAN */}
+      <div className="col-span-12">
+        <Label>Keterangan</Label>
+        <Textarea name="keterangan" />
       </div>
 
-      {/* Item dari PR */}
+      {/* TABLE */}
       <div className="col-span-12">
         <Table>
           <TableHeader>
-            <TableRow className="border [&>*]:border">
-              <TableHead className="w-[50px] font-semibold text-center">
-                No
-              </TableHead>
-              <TableHead className="font-semibold text-center">
-                Part Number
-              </TableHead>
-              <TableHead className="font-semibold text-center">
-                Part Name
-              </TableHead>
-              <TableHead className="font-semibold text-center">
-                Satuan
-              </TableHead>
-              <TableHead className="font-semibold text-center">
-                Qty</TableHead>
-              <TableHead className="font-semibold text-center">
-                Untuk MR
-              </TableHead>
+            <TableRow>
+              <TableHead>No</TableHead>
+              <TableHead>Part Number</TableHead>
+              <TableHead>Part Name</TableHead>
+              <TableHead>Satuan</TableHead>
+              <TableHead className="text-center">Qty Dikirim (PO)</TableHead>
+              <TableHead className="text-center">Qty Diterima</TableHead>
+              <TableHead>MR</TableHead>
+              <TableHead>Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {selectedPR && selectedPR.details.length > 0 ? (
-              selectedPR.details.map((item, index) => (
-                <TableRow key={index} className="border [&>*]:border">
-                  <TableCell className="w-[50px]">{index + 1}</TableCell>
-                  <TableCell className="text-start">
-                    {item.dtl_pr_part_number}
-                  </TableCell>
-                  <TableCell className="text-start">{item.dtl_pr_part_name}</TableCell>
+            {selectedPR?.details.map((item, i) => {
+              const partId = item.part_id ?? "";
+              const qtyPo = getQtyPo(partId) ?? item.dtl_pr_qty;
+
+              return (
+                <TableRow key={i}>
+                  <TableCell>{i + 1}</TableCell>
+                  <TableCell>{item.dtl_pr_part_number}</TableCell>
+                  <TableCell>{item.dtl_pr_part_name}</TableCell>
                   <TableCell>{item.dtl_pr_satuan}</TableCell>
-                  <TableCell>{item.dtl_pr_qty}</TableCell>
+
+                  {/* Qty Dikirim */}
+                  <TableCell className="text-center">
+                    {qtyPo}
+                  </TableCell>
+
+                  {/* Qty Diterima */}
+                  <TableCell className="text-center">
+                    {receiveQty[partId] ?? qtyPo}
+                  </TableCell>
+
                   <TableCell>{item.mr?.mr_kode}</TableCell>
+
+                  <TableCell>
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      className="text-orange-600 hover:text-orange-700"
+                      onClick={() => {
+                        setSelectedItem(item);
+                        setOpenQtyDialog(true);
+                      }}
+                    >
+                      <Calculator className="h-4 w-4" />
+                    </Button>
+
+                  </TableCell>
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={5}
-                  className="text-center text-muted-foreground"
-                >
-                  Tidak ada item PR.
-                </TableCell>
-              </TableRow>
-            )}
+              );
+            })}
           </TableBody>
         </Table>
       </div>
+
+      {/* DIALOG */}
+      <Dialog open={openQtyDialog} onOpenChange={setOpenQtyDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Konfirmasi Qty Receive</DialogTitle>
+          </DialogHeader>
+
+          {selectedItem && (
+            <>
+              <Label>Qty Dikirim</Label>
+              <Input
+                value={
+                  getQtyPo(selectedItem.part_id) ??
+                  selectedItem.dtl_pr_qty
+                }
+                disabled
+              />
+
+              <Label>Qty Diterima</Label>
+              <Input
+                type="number"
+                min={1}
+                max={
+                  getQtyPo(selectedItem.part_id) ??
+                  selectedItem.dtl_pr_qty
+                }
+                value={
+                  receiveQty[selectedItem.part_id ?? ""] ??
+                  (getQtyPo(selectedItem.part_id) ??
+                    selectedItem.dtl_pr_qty)
+                }
+                onChange={(e) =>
+                  setReceiveQty((prev) => ({
+                    ...prev,
+                    [selectedItem.part_id ?? ""]: Number(e.target.value),
+                  }))
+                }
+              />
+            </>
+          )}
+
+          <div className="flex justify-end">
+            <Button onClick={() => setOpenQtyDialog(false)}>Simpan</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </form>
   );
 }

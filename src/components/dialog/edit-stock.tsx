@@ -14,6 +14,7 @@ import { Button } from "../ui/button";
 import type { Stock } from "@/types";
 import { toast } from "sonner";
 import type { Dispatch, SetStateAction } from "react";
+import { Pencil } from "lucide-react";
 import { saveStock } from "@/services/stock";
 
 interface MyDialogProps {
@@ -62,8 +63,12 @@ export function EditStockDialog({ stock, refresh }: MyDialogProps) {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline" size={"sm"}>
-          Edit Stock
+        <Button
+          variant="outline"
+          size="icon"
+          className="text-orange-600 hover:text-orange-700"
+        >
+          <Pencil className="h-4 w-4" />
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
@@ -81,7 +86,7 @@ export function EditStockDialog({ stock, refresh }: MyDialogProps) {
               <Input
                 id="part_number"
                 name="part_number"
-                defaultValue={stock.part_number}
+                defaultValue={stock.barang.part_number}
                 disabled
               />
             </div>
@@ -91,7 +96,7 @@ export function EditStockDialog({ stock, refresh }: MyDialogProps) {
               <Input
                 id="part_name"
                 name="part_name"
-                defaultValue={stock.part_name}
+                defaultValue={stock.barang.part_name}
                 disabled
               />
             </div>

@@ -19,6 +19,7 @@ import {
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
+import { Pencil } from "lucide-react";
 
 import type { MasterPart } from "@/types";
 import { toast } from "sonner";
@@ -85,8 +86,12 @@ export function EditPartDialog({ part, refresh }: MyDialogProps) {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline" size={"sm"}>
-          Edit Part
+        <Button
+          variant="outline"
+          size="icon"
+          className="text-orange-600 hover:text-orange-700"
+        >
+          <Pencil className="h-4 w-4" />
         </Button>
       </DialogTrigger>
 

@@ -58,15 +58,35 @@ export async function createDelivery(data: DeliveryReceive) {
   return api.post("/deliveries", payload);
 }
 
-export async function updateDelivery(kode_it: string, data: any): Promise<boolean> {
+// export async function updateDelivery(kode_it: string, data: any): Promise<boolean> {
+//   try {
+//     await api.patch(`/deliveries/kode/${encodeURIComponent(kode_it)}/status`, data);
+//     return true;
+//   } catch (error: any) {
+//     console.error("Error updating delivery:", error);
+//     throw new Error(error.response?.data?.message ?? "Failed to update delivery");
+//   }
+// }
+
+export async function updateDelivery(
+  dlv_kode: string,
+  payload: {
+    status: "packing" | "ready to pickup" | "on delivery" | "delivered";
+    pickup_plan_at?: string;
+  }
+): Promise<boolean> {
   try {
-    await api.patch(`/deliveries/kode/${encodeURIComponent(kode_it)}/status`, data);
+    await api.patch(
+      `/deliveries/kode/${encodeURIComponent(dlv_kode)}/status`,
+      payload
+    );
     return true;
   } catch (error: any) {
-    console.error("Error updating delivery:", error);
-    throw new Error(error.response?.data?.message ?? "Failed to update delivery");
+    console.error("Error updating delivery status:", error);
+    throw new Error(error.response?.data?.message ?? "Failed to update delivery status");
   }
 }
+
 
 export async function update(
   dlv_kode: string,
@@ -81,4 +101,101 @@ export async function update(
     , payload);
   return res.data;
 }
+
+export async function updatePickupPlan(
+  dlv_kode: string,
+  payload: {
+    pickup_plan_at: string;
+  }
+): Promise<boolean> {
+  try {
+    await api.patch(
+      `${BASE_URL}/kode/${encodeURIComponent(dlv_kode)}/pickup-plan`,
+      payload
+    );
+    return true;
+  } catch (error: any) {
+    throw new Error(
+      error.response?.data?.message ?? "Gagal update pickup plan"
+    );
+  }
+}
+
+
+export interface ReceiveDeliveryPayload {
+  items: {
+    part_id?: string;
+    qty_received: number;
+    receive_note?: string;
+  }[];
+}
+
+export async function deliveryReceive(
+  dlv_kode: string,
+  payload: ReceiveDeliveryPayload
+): Promise<boolean> {
+  try {
+    await api.post(
+      `${BASE_URL}/${encodeURIComponent(dlv_kode)}/receive`,
+      payload
+    );
+    return true;
+  } catch (error: any) {
+    throw new Error(
+      error.response?.data?.message ??
+        "Gagal konfirmasi penerimaan barang"
+    );
+  }
+}
+
+export async function downloadDeliveryPdf(kode: string) {
+  const res = await api.get(
+    `${BASE_URL}/${encodeURIComponent(kode)}/export/pdf`,
+    { responseType: "blob" }
+  );
+
+  const blob = new Blob([res.data], { type: "application/pdf" });
+  const url = window.URL.createObjectURL(blob);
+
+  window.open(url);
+}
+
+export async function downloadDeliveryExcel() {
+  const res = await api.get(`${BASE_URL}/export-excel`, {
+    responseType: "blob",
+  });
+
+  const blob = new Blob([res.data], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+
+  const url = window.URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "DELIVERY.xlsx";
+  document.body.appendChild(a);
+  a.click();
+
+  document.body.removeChild(a);
+  window.URL.revokeObjectURL(url);
+}
+
+export async function submitDeliverySignature(
+  kode: string,
+  signatureBase64: string
+) {
+  const res = await api.post(
+    `/deliveries/${kode}/sign-penerima`,
+    {
+      signature: signatureBase64,
+    }
+  );
+
+  return res.data;
+}
+
+
+
+
 

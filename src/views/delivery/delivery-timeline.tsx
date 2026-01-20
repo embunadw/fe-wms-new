@@ -1,32 +1,72 @@
+import {
+  FileText,
+  Package,
+  Clock,
+  Truck,
+  CheckCircle,
+  Check,
+} from "lucide-react";
+
+/* ================= TYPE ================= */
+export type DeliveryStatus =
+  | "pending"
+  | "packing"
+  | "ready to pickup"
+  | "on delivery"
+  | "delivered";
+
 interface DeliveryTimelineProps {
-  status: "pending" | "on delivery" | "delivered";
+  status: DeliveryStatus;
+  isHandCarry?: boolean;
 }
 
-const steps = [
+/* ================= BASE STEPS ================= */
+const BASE_STEPS = [
   {
     key: "pending",
     label: "Delivery dibuat",
-    desc: "Barang sedang dipersiapkan",
+    desc: "Delivery telah dibuat",
+    icon: FileText,
+  },
+  {
+    key: "packing",
+    label: "Packing",
+    desc: "Barang sedang dikemas",
+    icon: Package,
+  },
+  {
+    key: "ready to pickup",
+    label: "Siap diambil",
+    desc: "Menunggu pengambilan",
+    icon: Clock,
   },
   {
     key: "on delivery",
     label: "Dalam pengiriman",
-    desc: "Barang sedang dikirim ke lokasi tujuan",
+    desc: "Barang dikirim",
+    icon: Truck,
   },
   {
     key: "delivered",
     label: "Barang diterima",
-    desc: "Pengiriman telah selesai",
+    desc: "Pengiriman selesai",
+    icon: CheckCircle,
   },
 ];
 
-export function DeliveryTimeline({ status }: DeliveryTimelineProps) {
-  const normalizedStatus =
-    status === "on delivery" ? "on delivery" : status;
+/* ================= COMPONENT ================= */
+export function DeliveryTimeline({
+  status,
+  isHandCarry = false,
+}: DeliveryTimelineProps) {
+  /* 🔥 FILTER STEP UNTUK HAND CARRY */
+  const steps = isHandCarry
+    ? BASE_STEPS.filter(
+        (s) => s.key !== "ready to pickup" && s.key !== "on delivery"
+      )
+    : BASE_STEPS;
 
-  const currentIndex = steps.findIndex(
-    (s) => s.key === normalizedStatus
-  );
+  const currentIndex = steps.findIndex((step) => step.key === status);
 
   return (
     <div className="w-full bg-white border rounded-lg p-6">
@@ -34,13 +74,14 @@ export function DeliveryTimeline({ status }: DeliveryTimelineProps) {
         {steps.map((step, index) => {
           const isActive = index === currentIndex;
           const isDone = index < currentIndex;
+          const Icon = step.icon;
 
           return (
             <div
               key={step.key}
               className="flex-1 flex flex-col items-center relative"
             >
-              {/* GARIS KE STEP BERIKUTNYA */}
+              {/* LINE */}
               {index < steps.length - 1 && (
                 <div
                   className={`absolute top-5 right-[-50%] w-full h-[3px]
@@ -56,17 +97,21 @@ export function DeliveryTimeline({ status }: DeliveryTimelineProps) {
 
               {/* CIRCLE */}
               <div
-                className={`w-10 h-10 rounded-full flex items-center justify-center
-                  text-base font-bold z-10 shadow-sm
+                className={`w-11 h-11 rounded-full flex items-center justify-center
+                  z-10 shadow-sm
                   ${
                     isDone
                       ? "bg-green-500 text-white"
                       : isActive
                       ? "bg-blue-500 text-white"
-                      : "bg-gray-300 text-gray-600"
+                      : "bg-gray-200 text-gray-500"
                   }`}
               >
-                {index + 1}
+                {isDone ? (
+                  <Check className="w-5 h-5" />
+                ) : (
+                  <Icon className="w-5 h-5" />
+                )}
               </div>
 
               {/* TEXT */}
@@ -80,9 +125,7 @@ export function DeliveryTimeline({ status }: DeliveryTimelineProps) {
                 >
                   {step.label}
                 </p>
-                <p className="text-xs text-muted-foreground">
-                  {step.desc}
-                </p>
+                <p className="text-xs text-muted-foreground">{step.desc}</p>
               </div>
             </div>
           );
@@ -91,6 +134,3 @@ export function DeliveryTimeline({ status }: DeliveryTimelineProps) {
     </div>
   );
 }
-
-
-

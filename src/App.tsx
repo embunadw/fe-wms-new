@@ -11,14 +11,26 @@ import { MaterialRequestDetail } from "@/views/material-request/[kode]";
 import ReceiveItem from "@/views/receive-item";
 import { ReceiveDetail } from "@/views/receive-item/[kode]";
 import DeliveryPage from "@/views/delivery";
+import DeliverySignPage from "@/views/delivery";
 import { DeliveryDetail } from "@/views/delivery/[kode]";
 import PurchaseRequest from "@/views/purchase-request";
 import PurchaseOrder from "@/views/purchase-order";
 import PurchaseOrderDetail from "@/views/purchase-order/[kode]";
 import UserManagement from "@/views/user-management";
+import ReportSpb from "@/views/spb";
+import SpbPage from "@/views/spb/pengeluaran/index.tsx";
 import NotFound from "@/views/not-found";
 import { PurchaseRequestDetail } from "./views/purchase-request/[kode]";
 import Setting from "./views/setting/index.tsx";
+import MRSign from "@/views/mr-sign";
+import SpbPoPage from "./views/spb/po/index.tsx";
+import SpbDoPage from "./views/spb/do/index.tsx";
+import SpbInvoicePage from "./views/spb/invoice/index.tsx";
+import DeliverySign from "./views/dlv-sign/index.tsx";
+import PrintPartQr from "@/views/barang-dan-stok/print-qr.tsx";
+import ReceiveSign from "./views/ri-sign/index.tsx";
+import { SpbDetail } from "./views/spb/pengeluaran/[kode]/index.tsx";
+
 
 export default function App() {
   return (
@@ -61,7 +73,14 @@ export default function App() {
               </ProtectedRoute>
             }
           />
-
+          <Route
+            path="/barang-dan-stok/part-qr/:partNumber/:partName"
+            element={
+              <ProtectedRoute>
+                <PrintPartQr />
+              </ProtectedRoute>
+            }
+          />
           {/* ================= MATERIAL REQUEST ================= */}
           <Route
             path="/material-request"
@@ -79,6 +98,63 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+          
+          <Route path="/mr-sign/:kode" element={<MRSign />} />
+          <Route path="/delivery/sign/:kode" element={<DeliverySign />} />
+          <Route path="/receive/sign/:kode" element={<ReceiveSign />} />
+          
+          {/* ================= SPB ================= */}
+          <Route
+            path="/spb"
+            element={
+              <ProtectedRoute>
+                <ReportSpb/>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/spb/pengeluaran"
+            element={
+              <ProtectedRoute>
+                <SpbPage/>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/spb/kode/:kode"
+            element={
+              <ProtectedRoute>
+                <SpbDetail />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/spb/po"
+            element={
+              <ProtectedRoute>
+                <SpbPoPage/>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/spb/do"
+            element={
+              <ProtectedRoute>
+                <SpbDoPage/>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/spb/invoice"
+            element={
+              <ProtectedRoute>
+                <SpbInvoicePage/>
+              </ProtectedRoute>
+            }
+          />
+
+
 
           {/* ================= RECEIVE ================= */}
           <Route
@@ -149,6 +225,11 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/sign/delivery/:kode"
+            element={<DeliverySignPage />}
+          />
+
 
           {/* ================= USER MANAGEMENT ================= */}
           <Route

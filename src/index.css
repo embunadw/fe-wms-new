@@ -121,3 +121,32 @@ button {
     @apply bg-background text-foreground;
   }
 }
+
+@media print {
+  body {
+    margin: 0;
+  }
+
+  /* HALAMAN = A4 */
+  @page {
+    size: A4;
+    margin: 10mm;
+  }
+
+  /* LABEL SAJA YANG KECIL */
+  .label {
+    width: 6cm;
+    height: 3cm;
+    padding: 4px;
+    box-sizing: border-box;
+  }
+
+  .no-page-break {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .print\:hidden {
+    display: none !important;
+  }
+}

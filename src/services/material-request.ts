@@ -1,43 +1,144 @@
-/**
- * MR SERVICE (BACKEND)
- *
- * 1. Generate MR Code : Backend
- * 2. Create MR        : Backend
- * 3. Get all MR       : All (TIDAK DIUBAH)
- * 4. Get MR by kode   : All
- */
+// import api from "@/lib/axios";
+// import type {
+//   MRReceive,
+//   UpdateMRItemPayload,
+//   UpdateMRStatusPayload,
+// } from "@/types";
 
-import type { MRReceive } from "@/types";
+// const BASE_URL = "/mr";
+
+// /* =====================================================
+//  * GENERATE KODE MR
+//  * ===================================================== */
+// export async function generateKodeMR(lokasi: string): Promise<string> {
+//   const res = await api.get(`${BASE_URL}/generate-kode`, {
+//     params: { lokasi },
+//   });
+//   return res.data;
+// }
+
+// /* =====================================================
+//  * GET OPEN MR
+//  * ===================================================== */
+// export async function getOpenMR() {
+//   const res = await api.get(`${BASE_URL}/open`);
+//   return res.data;
+// }
+
+// /* =====================================================
+//  * CREATE MR
+//  * ===================================================== */
+// export async function createMR(data: MRReceive) {
+//   const payload = {
+//     mr_tanggal: data.mr_tanggal,
+//     mr_due_date: data.mr_due_date,
+//     mr_lokasi: data.mr_lokasi,
+//     mr_pic: data.mr_pic,
+//     details: data.details.map((d) => ({
+//       part_id: d.part_id,
+//       dtl_mr_part_number: d.dtl_mr_part_number,
+//       dtl_mr_part_name: d.dtl_mr_part_name,
+//       dtl_mr_satuan: d.dtl_mr_satuan,
+//       dtl_mr_prioritas: d.dtl_mr_prioritas,
+//       dtl_mr_qty_request: d.dtl_mr_qty_request ?? 0,
+//     })),
+//   };
+
+//   return api.post(`${BASE_URL}`, payload);
+// }
+
+// /* =====================================================
+//  * GET ALL MR
+//  * ===================================================== */
+// export async function getAllMr(): Promise<MRReceive[]> {
+//   const res = await api.get(`${BASE_URL}`);
+//   return res.data;
+// }
+
+// /* =====================================================
+//  * GET MR BY KODE
+//  * ===================================================== */
+// export async function getMrByKode(
+//   mr_kode: string
+// ): Promise<MRReceive | null> {
+//   try {
+//     const res = await api.get(
+//       `${BASE_URL}/kode/${encodeURIComponent(mr_kode)}`
+//     );
+//     return res.data ?? null;
+//   } catch (error: any) {
+//     if (error.response?.status === 404) return null;
+//     console.error("Error fetching MR by kode:", error);
+//     throw new Error("Failed to fetch MR by kode");
+//   }
+// }
+
+// /* =====================================================
+//  * UPDATE MR
+//  * - STATUS  → { mr_status }
+//  * - ITEM    → { dtl_mr_id, ... }
+//  * ===================================================== */
+// export async function updateMR(
+//   mrId: string,
+//   payload: UpdateMRItemPayload | UpdateMRStatusPayload
+// ) {
+//   const res = await api.put(`${BASE_URL}/${mrId}`, payload);
+//   return res.data;
+// }
+
+// export async function deleteMRDetail(detailId: string) {
+//   return api.delete(`${BASE_URL}/items/${detailId}`);
+// }
+
+
+// /**
+//  * Submit tanda tangan MR
+//  */
+// export async function submitSignature(kode: string, signature: string) {
+//   return api.post("/mr/sign", {
+//     kode,
+//     signature,
+//   });
+// }
+
 import api from "@/lib/axios";
 
-const BASE_URL = "http://localhost:8000/api/mr";
+import type {
+  MRReceive,
+  UpdateMRItemPayload,
+  UpdateMRStatusPayload,
+} from "@/types";
+import apiPublic from "@/lib/apiPublic";
 
+const BASE_URL = "/mr";
+
+/* =====================================================
+ * GENERATE KODE MR
+ * ===================================================== */
 export async function generateKodeMR(lokasi: string): Promise<string> {
-  const res = await api.get(
-    `${BASE_URL}/generate-kode`,
-    { params: { lokasi } }
-  );
-
-  return res.data; 
-}
-
-export async function getOpenMR() {
-  const res = await api.get( `${BASE_URL}/open`);
+  const res = await api.get(`${BASE_URL}/generate-kode`, {
+    params: { lokasi },
+  });
   return res.data;
 }
 
+/* =====================================================
+ * GET OPEN MR
+ * ===================================================== */
+export async function getOpenMR() {
+  const res = await api.get(`${BASE_URL}/open`);
+  return res.data;
+}
 
+/* =====================================================
+ * CREATE MR
+ * ===================================================== */
 export async function createMR(data: MRReceive) {
   const payload = {
-    mr_kode: data.mr_kode,
     mr_tanggal: data.mr_tanggal,
     mr_due_date: data.mr_due_date,
     mr_lokasi: data.mr_lokasi,
     mr_pic: data.mr_pic,
-    mr_status: data.mr_status,
-    created_at: data.created_at,
-    updated_at: data.updated_at,
-
     details: data.details.map((d) => ({
       part_id: d.part_id,
       dtl_mr_part_number: d.dtl_mr_part_number,
@@ -45,18 +146,23 @@ export async function createMR(data: MRReceive) {
       dtl_mr_satuan: d.dtl_mr_satuan,
       dtl_mr_prioritas: d.dtl_mr_prioritas,
       dtl_mr_qty_request: d.dtl_mr_qty_request ?? 0,
-      dtl_mr_qty_received: d.dtl_mr_qty_received ?? 0,
     })),
   };
 
-  return api.post("/mr", payload);
+  return api.post(`${BASE_URL}`, payload);
 }
 
+/* =====================================================
+ * GET ALL MR
+ * ===================================================== */
 export async function getAllMr(): Promise<MRReceive[]> {
-  const res = await api.get("/mr");
+  const res = await api.get(`${BASE_URL}`);
   return res.data;
 }
 
+/* =====================================================
+ * GET MR BY KODE
+ * ===================================================== */
 export async function getMrByKode(
   mr_kode: string
 ): Promise<MRReceive | null> {
@@ -64,7 +170,6 @@ export async function getMrByKode(
     const res = await api.get(
       `${BASE_URL}/kode/${encodeURIComponent(mr_kode)}`
     );
-
     return res.data ?? null;
   } catch (error: any) {
     if (error.response?.status === 404) return null;
@@ -73,4 +178,35 @@ export async function getMrByKode(
   }
 }
 
+/* =====================================================
+ * UPDATE MR
+ * - STATUS  → { mr_status }
+ * - ITEM    → { dtl_mr_id, ... }
+ * ===================================================== */
+export async function updateMR(
+  mrId: string,
+  payload: UpdateMRItemPayload | UpdateMRStatusPayload
+) {
+  const res = await api.put(`${BASE_URL}/${mrId}`, payload);
+  return res.data;
+}
 
+export async function deleteMRDetail(detailId: string) {
+  return api.delete(`${BASE_URL}/items/${detailId}`);
+}
+
+
+export async function submitSignature(kode: string, signatureBase64: string) {
+  const res = await api.post("/mr/sign", {
+    kode,
+    signature: signatureBase64,
+  });
+  return res.data;
+}
+
+export async function clearSignature(kode: string) {
+  const res = await api.delete(
+    `${BASE_URL}/${encodeURIComponent(kode)}/signature`
+  );
+  return res.data;
+}

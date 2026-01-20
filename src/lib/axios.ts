@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://localhost:8000/api",
+  baseURL: `${window.location.protocol}//${window.location.hostname}:8000/api`,
   headers: {
     "Content-Type": "application/json",
     Accept: "application/json",
@@ -9,7 +9,7 @@ const api = axios.create({
 });
 
 /* ===============================
-   REQUEST: kirim token (jika ada)
+   REQUEST: kirim token
 ================================ */
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
@@ -20,7 +20,7 @@ api.interceptors.request.use((config) => {
 });
 
 /* ===============================
-   RESPONSE: auto logout (AMAN)
+   RESPONSE: auto logout
 ================================ */
 const PUBLIC_ROUTES = [
   "/login",

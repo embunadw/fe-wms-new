@@ -30,13 +30,19 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAuth } from "@/context/AuthContext";
-import { getAllDelivery } from "@/services/delivery";
+import { getAllDelivery, downloadDeliveryExcel } from "@/services/delivery";
 import type { DeliveryReceive} from "@/types";
 import { PagingSize } from "@/types/enum";
-import { Plus } from "lucide-react";
+import { Plus,Trash2, FileSpreadsheet, Eye } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export default function DeliveryPage() {
   const [refresh, setRefresh] = useState<boolean>(false);
@@ -123,6 +129,46 @@ export default function DeliveryPage() {
     setKeGudang("");
     setResi("");
     toast.success("Filter telah direset.");
+  }
+  function StatusBadge({ status }: { status: string }) {
+    const map: Record<
+      string,
+      { label: string; className: string }
+    > = {
+      pending: {
+        label: "Pending",
+        className: "bg-gray-100 text-gray-700 border-gray-300",
+      },
+      packing: {
+        label: "Packing",
+        className: "bg-blue-100 text-blue-700 border-blue-300",
+      },
+      "ready to pickup": {
+        label: "Ready to Pickup",
+        className: "bg-purple-100 text-purple-700 border-purple-300",
+      },
+      "on delivery": {
+        label: "On Delivery",
+        className: "bg-orange-100 text-orange-700 border-orange-300",
+      },
+      delivered: {
+        label: "Delivered",
+        className: "bg-green-100 text-green-700 border-green-300",
+      },
+    };
+
+    const data = map[status] ?? {
+      label: status,
+      className: "bg-gray-100 text-gray-700 border-gray-300",
+    };
+
+    return (
+      <span
+        className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${data.className}`}
+      >
+        {data.label}
+      </span>
+    );
   }
 
   function nextPage() {
@@ -224,15 +270,40 @@ export default function DeliveryPage() {
               </Popover>
             </div>
 
-            <div className="col-span-6 md:col-span-3 lg:col-span-2">
-              <Button
-                className="w-full"
-                variant={"destructive"}
-                onClick={resetFilters}
-              >
-                Hapus Filter
-              </Button>
-            </div>
+            <div className="col-span-6 md:col-span-3 lg:col-span-2 flex gap-2">
+            {/* RESET FILTER */}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="destructive"
+                    size="icon"
+                    onClick={resetFilters}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Hapus Filter</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            {/* EXPORT EXCEL */}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => downloadDeliveryExcel()}
+                  >
+                    <FileSpreadsheet className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Export Excel</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+
           </div>
           <div className="col-span-12 border rounded-sm overflow-x-auto">
             <Table>
@@ -275,16 +346,22 @@ export default function DeliveryPage() {
                       <TableCell className="p-2 border">
                         {deliv.dlv_jumlah_koli}
                       </TableCell>
-                      <TableCell className="p-2 border">
-                        {deliv.dlv_status}
+                      <TableCell className="p-2 border text-center">
+                        <StatusBadge status={deliv.dlv_status} />
                       </TableCell>
                       <TableCell className="p-2 border">
-                        <Button size="sm" variant="outline" asChild>
+                        <Button
+                          size="icon"
+                          variant="outline"
+                          className="text-orange-600 hover:text-orange-700"
+                          asChild
+                        >
                           <Link
                             to={`/deliveries/kode/${encodeURIComponent(
                               deliv.dlv_kode
-                            )}`}>
-                            Detail
+                            )}`}
+                          >
+                            <Eye className="h-4 w-4" />
                           </Link>
                         </Button>
                       </TableCell>

@@ -10,7 +10,6 @@ import WithSidebar from "@/components/layout/WithSidebar";
 import { MyPagination } from "@/components/my-pagination";
 import { QuickTable } from "@/components/quick-table";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -19,19 +18,27 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { formatTanggal } from "@/lib/utils";
-import { getMasterParts } from "@/services/master-part";
-import { getAllStocks } from "@/services/stock";
+import { getMasterParts,downloadBarangExcel } from "@/services/master-part";
+import { getAllStocks,downloadStockExcel } from "@/services/stock";
 import type { MasterPart, Stock } from "@/types";
 import { PagingSize } from "@/types/enum";
-import { HousePlus } from "lucide-react";
+import { HousePlus,Trash2, FileSpreadsheet, QrCode } from "lucide-react";
 import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
 import { toast } from "sonner";
+import QRCode from "qrcode";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
+
 
 export default function BarangDanStok() {
   const [stocks, setStocks] = useState<Stock[]>([]);
   const [masterParts, setMasterParts] = useState<MasterPart[]>([]);
   const [refresh, setRefresh] = useState<boolean>(false);
-  const { user } = useAuth();
 
 useEffect(() => {
   async function fetchMasterPart() {
@@ -59,16 +66,21 @@ useEffect(() => {
 
   return (
     <WithSidebar>
-      {/* Data  */}
-      <DataStokBarangSection
+      {/* <DataStokSection
         setRefresh={setRefresh}
         stocks={stocks}
         lokasiUser={user ? user.lokasi : ""}
-      />
+      /> */}
+
+      <DataStokSection stocks={stocks as Stock[]} 
+      setRefresh={setRefresh}/>
 
       {/* Data Master Part */}
       <DataMasterPartSection masterParts={masterParts as MasterPart[]} 
       setRefresh={setRefresh}/>
+
+
+
 
       {/* Tambah */}
       <SectionContainer span={12}>
@@ -122,12 +134,129 @@ function MasterPartCollumnsGenerator(
       header: "Aksi",
       accessorKey: "aksi",
       cell: (_: any, row: MasterPart) => (
-        <EditPartDialog refresh={setRefresh} part={row} />
+        <div className="flex justify-center gap-2">
+          <EditPartDialog refresh={setRefresh} part={row} />
+          <Button
+            size="icon"
+            variant="outline"
+            className="text-orange-600 hover:text-orange-700"
+            onClick={async () => {
+            const qr = await QRCode.toDataURL(
+              `${row.part_number}|${row.part_name}`
+            );
+
+            const win = window.open("", "_blank");
+            if (!win) return;
+
+            win.document.write(`
+              <html>
+                <head>
+                  <title>Print QR</title>
+                  <style>
+                    @page {
+                      size: A4;
+                      margin: 10mm;
+                    }
+
+                    body {
+                      margin: 0;
+                      font-family: Arial, sans-serif;
+                    }
+
+                    /* LABEL SAJA YANG KECIL */
+                    .label {
+                      width: 6cm;
+                      height: 3cm;
+                      padding: 4px;
+                      box-sizing: border-box;
+                    }
+
+                    /* HEADER ATAS */
+                    .header {
+                      display: flex;
+                      justify-content: space-between;
+                      align-items: center;
+                      margin-bottom: 2px;
+                    }
+
+                    .brand {
+                      font-size: 9px;
+                      font-weight: bold;
+                    }
+
+                    .logo {
+                      height: 16px;
+                    }
+
+                    /* CONTENT */
+                    .content {
+                      display: flex;
+                      gap: 4px;
+                    }
+
+                    .qr {
+                      width: 45px;
+                      height: 45px;
+                    }
+
+                    .text-area {
+                      flex: 1;
+                      display: flex;
+                      flex-direction: column;
+                      gap: 2px;
+                    }
+
+                    .box {
+                      border: 1px solid #000;
+                      text-align: center;
+                      padding: 2px;
+                    }
+
+                    .part-no {
+                      font-size: 10px;
+                      font-weight: bold;
+                    }
+
+                    .part-name {
+                      font-size: 8px;
+                    }
+
+                  </style>
+                </head>
+
+                <body onload="window.print();window.close();">
+                <div class="label">
+                  <!-- HEADER -->
+                  <div class="header">
+                    <div class="brand">LOURDES AUTOPART</div>
+                    <img src="/Logo-Lourdes.png" class="logo" />
+                  </div>
+
+                  <!-- ISI -->
+                  <div class="content">
+                    <img src="${qr}" class="qr" />
+                    <div class="text-area">
+                      <div class="box part-no">
+                        ${row.part_number}
+                      </div>
+                      <div class="box part-name">
+                        ${row.part_name}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </body>
+              </html>
+            `);
+            win.document.close();
+            }} >
+          <QrCode className="h-4 w-4" />
+        </Button>
+        </div>
       ),
-    },
+    }
   ];
 }
-
 
 function DataMasterPartSection({  
   masterParts,
@@ -252,14 +381,38 @@ function DataMasterPartSection({
             </div>
 
             {/* Clear filter button */}
-            <div className="col-span-12 md:col-span-4 lg:col-span-2">
-              <Button
-                className="w-full"
-                variant={"destructive"}
-                onClick={resetFilters}
-              >
-                Hapus Filter
-              </Button>
+            <div className="col-span-6 md:col-span-3 lg:col-span-2">
+                {/* RESET FILTER */}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="destructive"
+                    size="icon"
+                    onClick={resetFilters}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Hapus Filter</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            {/* EXPORT EXCEL */}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => downloadBarangExcel()}
+                  >
+                    <FileSpreadsheet className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Export Excel</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             </div>
           </div>
           <QuickTable
@@ -283,139 +436,149 @@ function DataMasterPartSection({
     </SectionContainer>
   );
 }
-
-function DataStokBarangSection({
+function DataStokSection({
   stocks,
-  lokasiUser,
   setRefresh,
 }: {
   stocks: Stock[];
-  lokasiUser: string;
   setRefresh: Dispatch<SetStateAction<boolean>>;
 }) {
-  const [filteredStock, setFilteredStock] = useState<Stock[]>([]);
-  const [tableStocks, setTableStocks] = useState<Stock[]>([]);
-  const [semuaLokasi, setSemuaLokasi] = useState<boolean>(false);
+  const { user } = useAuth();
+  const lokasiUser = user?.lokasi;
 
-  const [pn, setPn] = useState<string>("");
-  const [pnm, setPnm] = useState<string>("");
-  const [uom, setUom] = useState<string>("");
-  const [lokasi, setLokasi] = useState<string>("");
+  type PivotStockRow = {
+    part_number: string;
+    part_name: string;
+    part_satuan: string;
+    [lokasi: string]: any;
+  };
 
-  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [filteredStock, setFilteredStock] = useState<PivotStockRow[]>([]);
+  const [tableStocks, setTableStocks] = useState<PivotStockRow[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
 
+  const [pn, setPn] = useState("");
+  const [pnm, setPnm] = useState("");
+  const [uom, setUom] = useState("");
+  const [lokasiFilter, setLokasiFilter] = useState("");
+
+  /* =====================
+   * PAGINATION
+   * ===================== */
   useEffect(() => {
-    const startIndex = (currentPage - 1) * PagingSize;
-    const endIndex = startIndex + PagingSize;
-    setTableStocks(filteredStock.slice(startIndex, endIndex));
-    
+    const start = (currentPage - 1) * PagingSize;
+    const end = start + PagingSize;
+    setTableStocks(filteredStock.slice(start, end));
   }, [currentPage, filteredStock]);
 
+  function getUniqueLokasi(data: Stock[]) {
+    return Array.from(
+      new Set(data.map((s) => s.stk_location).filter(Boolean))
+    );
+  }
+
+  function pivotStockByLokasi(data: Stock[]) {
+    const map = new Map<string, PivotStockRow>();
+
+    data.forEach((s) => {
+      const pn = s.barang?.part_number ?? "-";
+
+      if (!map.has(pn)) {
+        map.set(pn, {
+          part_number: pn,
+          part_name: s.barang?.part_name ?? "-",
+          part_satuan: s.barang?.part_satuan ?? "-",
+        });
+      }
+
+      map.get(pn)![s.stk_location] = s.stk_qty ?? 0;
+    });
+
+    return Array.from(map.values());
+  }
+
   useEffect(() => {
-    let data = stocks.map((s) => ({
-      ...s,
-      part_number: s.barang?.part_number ?? "-",
-      part_name: s.barang?.part_name ?? "-",
-      part_satuan: s.barang?.part_satuan ?? "-",
+    let data = [...stocks];
 
-      stk_location: s.stk_location ?? lokasiUser,
-      stk_qty: s.stk_qty ?? 0,
-      stk_min: s.stk_min ?? 0,
-      stk_max: s.stk_max ?? 0,
-    }));
-    console.log("RAW STOCKS FROM API:", stocks);
-
-    // ✅ FILTER LOKASI SESUAI LOGIN
-    if (!semuaLokasi && lokasiUser) {
-      data = data.filter(
-        (stock) =>
-          stock.stk_location?.toLowerCase() === lokasiUser.toLowerCase()
-      );
-    }
-
-    // ✅ FILTER PART NUMBER
     if (pn) {
-      data = data.filter((stock) =>
-        stock.barang.part_number
+      data = data.filter((s) =>
+        s.barang?.part_number
           ?.toLowerCase()
           .includes(pn.toLowerCase())
       );
     }
 
-    // ✅ FILTER PART NAME
     if (pnm) {
-      data = data.filter((stock) =>
-        stock.barang?.part_name
+      data = data.filter((s) =>
+        s.barang?.part_name
           ?.toLowerCase()
           .includes(pnm.toLowerCase())
       );
     }
 
-    // ✅ FILTER SATUAN
     if (uom) {
-      data = data.filter((stock) =>
-        stock.barang?.part_satuan
+      data = data.filter((s) =>
+        s.barang?.part_satuan
           ?.toLowerCase()
           .includes(uom.toLowerCase())
       );
     }
 
-    // FILTER LOKASI MANUAL
-    if (lokasi) {
-      data = data.filter((stock) =>
-        stock.stk_location?.toLowerCase().includes(lokasi.toLowerCase())
+    if (lokasiFilter) {
+      data = data.filter((s) =>
+        s.stk_location
+          ?.toLowerCase()
+          .includes(lokasiFilter.toLowerCase())
       );
     }
 
-    setFilteredStock(data);
+    setFilteredStock(pivotStockByLokasi(data));
     setCurrentPage(1);
-  }, [stocks, semuaLokasi, pn, pnm, uom, lokasi, lokasiUser]);
+  }, [stocks, pn, pnm, uom, lokasiFilter]);
 
-  function resetFilters() {
-    setPn("");
-    setPnm("");
-    setUom("");
-    setLokasi("");
-    setSemuaLokasi(false);
-    setCurrentPage(1);
+  function findStock(partNumber: string): Stock | undefined {
+    return stocks.find(
+      (s) =>
+        s.barang?.part_number === partNumber &&
+        s.stk_location === lokasiUser
+    );
   }
 
-  function StockCollumnsGenerator() {
+  function StockColumnsGenerator() {
+    const lokasiList = getUniqueLokasi(stocks);
+
     return [
-      {
-        header: "Part Number",
-        accessorKey: "part_number",
-      },
-      {
-        header: "Part Name",
-        accessorKey: "part_name",
-      },
-      {
-        header: "Satuan",
-        accessorKey: "part_satuan", 
-      },
-      {
-        header: "Lokasi",
-        accessorKey: "stk_location",
-      },
-      {
-        header: "Qty",
-        accessorKey: "stk_qty",
-      },
-      {
-        header: "Min",
-        accessorKey: "stk_min",
-      },
-      {
-        header: "Max",
-        accessorKey: "stk_max",
-      },
+      { header: "Part Number", accessorKey: "part_number" },
+      { header: "Part Name", accessorKey: "part_name" },
+      { header: "Satuan", accessorKey: "part_satuan" },
+
+      ...lokasiList.map((lok) => ({
+        header: lok,
+        accessorKey: lok,
+        cell: (_: any, row: any) => row[lok] ?? 0,
+      })),
+
       {
         header: "Aksi",
         accessorKey: "aksi",
-        cell: (_: any, row: Stock) => (
-          <EditStockDialog refresh={setRefresh} stock={row} />
-        ),
+        cell: (_: any, row: any) => {
+          const stock = findStock(row.part_number);
+
+          if (!stock) {
+            return (
+              <span className="text-xs text-muted-foreground">
+                Tidak ada stok
+              </span>
+            );
+          }
+
+          return (
+            <EditStockDialog
+              stock={stock}
+              refresh={setRefresh}
+            />
+          );
+        },
       },
     ];
   }
@@ -423,103 +586,82 @@ function DataStokBarangSection({
   return (
     <SectionContainer span={12}>
       <SectionHeader>Daftar Stok Barang</SectionHeader>
+
       <SectionBody className="grid grid-cols-12 gap-2">
-        <div className="flex flex-col gap-4 col-span-12 rounded-sm text-center">
-          <div className="col-span-12 grid grid-cols-12 gap-4 items-end">
-            <div className="col-span-12 md:col-span-4 lg:col-span-5">
-              <Input
-                placeholder="Cari berdasarkan part number"
-                value={pn}
-                onChange={(e) => setPn(e.target.value)}
-              />
+        <div className="col-span-12 flex flex-col gap-4">
+          {/* FILTER */}
+          <div className="grid grid-cols-12 gap-4 items-end">
+            <Input
+              className="col-span-12 md:col-span-4"
+              placeholder="Cari Part Number"
+              value={pn}
+              onChange={(e) => setPn(e.target.value)}
+            />
+
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="col-span-12 md:col-span-3">
+                  Filter Tambahan
+                </Button>
+              </PopoverTrigger>
+              <div className="col-span-6 md:col-span-3 lg:col-span-2">
+            {/* EXPORT EXCEL */}
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => downloadStockExcel()}
+                    >
+                      <FileSpreadsheet className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Export Excel</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
-
-            <div className="col-span-12 md:col-span-4 lg:col-span-3">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full">
-                    Filter Tambahan
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-80 space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-1">
-                      Part Name
-                    </label>
-                    <Input
-                      placeholder="part name"
-                      value={pnm}
-                      onChange={(e) => setPnm(e.target.value)}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-1">
-                      Satuan
-                    </label>
-                    <Input
-                      placeholder="uom"
-                      value={uom}
-                      onChange={(e) => setUom(e.target.value)}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-1">
-                      Lokasi
-                    </label>
-                    <Input
-                      placeholder="lokasi"
-                      value={lokasi}
-                      onChange={(e) => setLokasi(e.target.value)}
-                    />
-                  </div>
-
-                  <div className="flex gap-2 items-center">
-                    <Checkbox
-                      id="semua-lokasi"
-                      checked={semuaLokasi}
-                      onCheckedChange={(checked) =>
-                        setSemuaLokasi(checked === true)
-                      }
-                    />
-                    <label className="text-sm font-medium">
-                      Tampilkan semua lokasi
-                    </label>
-                  </div>
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            <div className="col-span-12 md:col-span-4 lg:col-span-2">
-              <Button
-                className="w-full"
-                variant={"destructive"}
-                onClick={resetFilters}
-              >
-                Hapus Filter
-              </Button>
-            </div>
+              <PopoverContent className="w-80 space-y-3">
+                <Input
+                  placeholder="Part Name"
+                  value={pnm}
+                  onChange={(e) => setPnm(e.target.value)}
+                />
+                <Input
+                  placeholder="Satuan"
+                  value={uom}
+                  onChange={(e) => setUom(e.target.value)}
+                />
+                <Input
+                  placeholder="Lokasi"
+                  value={lokasiFilter}
+                  onChange={(e) =>
+                    setLokasiFilter(e.target.value)
+                  }
+                />
+              </PopoverContent>
+            </Popover>
           </div>
-          
 
           <QuickTable
             data={tableStocks}
-            columns={StockCollumnsGenerator()}
+            columns={StockColumnsGenerator()}
             page={currentPage}
           />
         </div>
       </SectionBody>
+
       <SectionFooter>
         <MyPagination
           data={filteredStock}
           currentPage={currentPage}
-          triggerNext={() => setCurrentPage((page) => page + 1)}
-          triggerPrevious={() => setCurrentPage((page) => page - 1)}
-          triggerPageChange={(page) => setCurrentPage(page)}
+          triggerNext={() => setCurrentPage((p) => p + 1)}
+          triggerPrevious={() => setCurrentPage((p) => p - 1)}
+          triggerPageChange={setCurrentPage}
         />
       </SectionFooter>
     </SectionContainer>
   );
 }
+
 

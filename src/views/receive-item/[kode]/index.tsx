@@ -18,9 +18,10 @@ import {
 } from "@/components/ui/table";
 import { Label } from "@/components/ui/label";
 import { formatTanggal } from "@/lib/utils";
-import { getRIByKode } from "@/services/receive-item";
+import { downloadReceivePdf, getRIByKode } from "@/services/receive-item";
 import { Button } from "@/components/ui/button";
-import { Printer } from "lucide-react";
+import { QRCodeCanvas } from "qrcode.react";
+import { useAuth } from "@/context/AuthContext";
 
 
 
@@ -28,6 +29,8 @@ export function ReceiveDetail() {
   const { kode } = useParams<{ kode: string }>();
   const [ri, setRi] = useState<RI | null>(null);
   const [loading, setLoading] = useState(true);
+   const [showSignature, setShowSignature] = useState(false);
+   const { user } = useAuth();
 
   useEffect(() => {
     async function fetchDetail() {
@@ -43,6 +46,27 @@ export function ReceiveDetail() {
 
     if (kode) fetchDetail();
   }, [kode]);
+
+
+  useEffect(() => {
+      if (!showSignature || !kode) return;
+  
+      const interval = setInterval(async () => {
+        try {
+          const res = await getRIByKode(kode);
+          if (res?.signed_penerima_sign) {
+            setRi(res);
+            setShowSignature(false);
+            toast.success("Tanda tangan diterima! Siap print.");
+            clearInterval(interval);
+          }
+        } catch (err) {
+          console.error(err);
+        }
+      }, 2000);
+  
+      return () => clearInterval(interval);
+    }, [showSignature, kode]);
 
   if (loading) {
     return (
@@ -72,6 +96,35 @@ export function ReceiveDetail() {
 
   return (
     <WithSidebar>
+      {showSignature && ri && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center print:hidden">
+          <div className="bg-white p-6 rounded-md w-[350px] space-y-4 text-center">
+            <h3 className="font-semibold text-lg">
+              Scan untuk Tanda Tangan Receive
+            </h3>
+
+            <QRCodeCanvas
+              value={`http://10.10.6.175:5173/receive/sign/${encodeURIComponent(
+                ri.ri_kode
+              )}`}
+              size={200}
+              className="mx-auto"
+            />
+
+            <p className="text-sm text-muted-foreground">
+              Scan QR ini menggunakan HP
+            </p>
+
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => setShowSignature(false)}
+            >
+              Tutup
+            </Button>
+          </div>
+        </div>
+      )}
       {/* ================= HEADER ================= */}
       <SectionContainer span={12}>
         <SectionHeader>Detail Receive Item</SectionHeader>
@@ -134,17 +187,22 @@ export function ReceiveDetail() {
           </div>
         </SectionBody>
         <SectionFooter>
-          <Button
-            variant={"outline"}
-            onClick={() => window.print()}
-            className="print:hidden"
-          >
-            <Printer />
-          </Button>
+          {ri.ri_lokasi == user!.lokasi && ri.purchase_order.po_status == "purchased" &&(
+            <Button
+                variant="outline"
+                onClick={() => setShowSignature(true)}
+              >
+                Tanda Tangan
+              </Button>
+            
+          )}
+          {ri.signed_penerima_sign && ri.signed_penerima_sign !== "" && (
+            <Button onClick={() => downloadReceivePdf(ri.ri_kode)}>
+              Export PDF
+            </Button>
+          )}
         </SectionFooter>
       </SectionContainer>
-
-      {/* ================= DETAIL BARANG ================= */}
       <SectionContainer span={12}>
         <SectionHeader>Detail Barang Diterima</SectionHeader>
         <SectionBody>
@@ -157,7 +215,6 @@ export function ReceiveDetail() {
                   <TableHead>Nama Part</TableHead>
                   <TableHead>Satuan</TableHead>
                   <TableHead>Qty Diterima</TableHead>
-                  {/* <TableHead>Untuk MR</TableHead> */}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -171,7 +228,6 @@ export function ReceiveDetail() {
                       <TableCell>{d.dtl_ri_part_name}</TableCell>
                       <TableCell>{d.dtl_ri_satuan}</TableCell>
                       <TableCell>{d.dtl_ri_qty}</TableCell>
-                      {/* <TableCell>{d.mr?.mr_kode}</TableCell> */}
                     </TableRow>
                   ))
                 ) : (

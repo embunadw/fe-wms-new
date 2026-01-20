@@ -23,15 +23,21 @@ import {
 } from "@/components/ui/table";
 import { formatTanggal } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
-import { getPurchasedPO } from "@/services/receive-item";
+import { getPurchasedPO, downloadReceiveExcel } from "@/services/receive-item";
 import { getAllRi } from "@/services/receive-item";
 import type { POReceive, RI } from "@/types";
 import { PagingSize } from "@/types/enum";
-import { Plus } from "lucide-react";
+import { Plus,Trash2, FileSpreadsheet, Eye } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import CreateRIForm from "@/components/form/create-ri";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export default function ReceiveItem() {
   const {user} = useAuth();
@@ -210,15 +216,23 @@ export default function ReceiveItem() {
                 </PopoverContent>
               </Popover>
             </div>
-            <div className="col-span-6 md:col-span-3 lg:col-span-2">
-              <Button
-                className="w-full"
-                variant={"destructive"}
-                onClick={resetFiltersPo}
-              >
-                Hapus Filter
-              </Button>
-            </div>
+             <div className="col-span-6 md:col-span-3 lg:col-span-2 flex gap-2">
+            {/* RESET FILTER */}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="destructive"
+                    size="icon"
+                    onClick={resetFiltersPo}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Hapus Filter</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
           </div>
           {/* Tabel PO */}
           <div className="col-span-12 border rounded-sm overflow-x-auto">
@@ -251,10 +265,16 @@ export default function ReceiveItem() {
                       </TableCell>
                       <TableCell className="p-2 border">{po.po_status}</TableCell>
                       <TableCell className="p-2 border">
-                        <Button size="sm" variant="outline" asChild>
+                       <Button
+                          size="icon"
+                          variant="outline"
+                          className="text-orange-600 hover:text-orange-700"
+                          asChild
+                        >
                           <Link
-                            to={`/po/kode/${encodeURIComponent(po.po_kode)}`}>
-                            Detail
+                            to={`/po/kode/${encodeURIComponent(po.po_kode)}`}
+                          >
+                            <Eye className="h-4 w-4" />
                           </Link>
                         </Button>
                       </TableCell>
@@ -367,13 +387,37 @@ export default function ReceiveItem() {
               </Popover>
             </div>
             <div className="col-span-6 md:col-span-3 lg:col-span-2">
-              <Button
-                className="w-full"
-                variant={"destructive"}
-                onClick={resetFiltersRi}
-              >
-                Hapus Filter
-              </Button>
+                {/* RESET FILTER */}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="destructive"
+                    size="icon"
+                    onClick={resetFiltersRi}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Hapus Filter</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            {/* EXPORT EXCEL */}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => downloadReceiveExcel()}
+                  >
+                    <FileSpreadsheet className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Export Excel</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             </div>
           </div>
           {/* Tabel RI */}
@@ -407,13 +451,18 @@ export default function ReceiveItem() {
                       </TableCell>
                       <TableCell className="p-2 border">{ri.ri_pic}</TableCell>
                       <TableCell className="p-2 border">
-                        <Button size="sm" variant="outline" asChild>
-                          <Link
-                            to={`/receive/kode/${encodeURIComponent(ri.ri_kode)}`}
+                        <Button
+                            size="icon"
+                            variant="outline"
+                            className="text-orange-600 hover:text-orange-700"
+                            asChild
                           >
-                            Detail
-                          </Link>
-                        </Button>
+                            <Link
+                              to={`/receive/kode/${encodeURIComponent(ri.ri_kode)}`}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Link>
+                          </Button>
                       </TableCell>
                     </TableRow>
                   ))

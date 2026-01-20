@@ -61,18 +61,18 @@ export interface MRDetail {
   dtl_mr_qty_received: number;
 }
 
-export interface MRReceive {
-  mr_id?: string;
-  mr_kode: string;
-  mr_lokasi: string;
-  mr_pic: string;
-  mr_tanggal: string;
-  mr_due_date: string;
-  mr_status: string;
-  created_at: string;
-  updated_at: string;
-  details: MRDetail[];
-}
+// export interface MRReceive {
+//   mr_id?: string;
+//   mr_kode: string;
+//   mr_lokasi: string;
+//   mr_pic: string;
+//   mr_tanggal: string;
+//   mr_due_date: string;
+//   mr_status: string;
+//   created_at: string;
+//   updated_at: string;
+//   details: MRDetail[];
+// }
 
 /* ==========================
    PURCHASE REQUEST (PR)
@@ -143,6 +143,15 @@ export interface Stock {
   barang: MasterPart;
 }
 
+export interface Part {
+  part_id: string;
+  part_number: string;
+  part_name: string;
+  part_satuan: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface MasterPart {
   part_id?: string;
   part_number: string;
@@ -211,6 +220,9 @@ export interface RI {
   ri_pic: string | null;
   created_at: string;
   updated_at: string;
+  signed_penerima_name?: string | null;
+  signed_penerima_sign?: string | null;
+  signed_penerima_at?: string | null;
   purchase_order: POReceive;
   details: RIDetail[];
 }
@@ -229,6 +241,46 @@ export interface RIDetail {
   mr?: MRReceive;
 }
 
+// export interface MRReceive {
+//   mr_id?: string;
+//   mr_kode: string;
+//   mr_lokasi: string;
+//   mr_pic: string;
+//   mr_tanggal: string;
+//   mr_due_date: string;
+//   mr_status: string;
+//   created_at: string;
+//   updated_at: string;
+//   details: MRDetail[];
+// }
+
+export interface UpdateMRItemPayload {
+  dtl_mr_id: string;
+  part_id: string;
+  dtl_mr_part_number: string;
+  dtl_mr_part_name: string;
+  dtl_mr_satuan: string;
+  dtl_mr_prioritas: string;
+  dtl_mr_qty_request: number;
+}
+
+export type MRStatus = "open" | "partial" | "closed";
+
+export interface MRDetail {
+  dtl_mr_id?: string;
+  mr_id?: string;
+  part_id?: string;
+  dtl_mr_part_number: string;
+  dtl_mr_part_name: string;
+  dtl_mr_satuan: string;
+  dtl_mr_prioritas: string;
+  dtl_mr_qty_request: number;
+  dtl_mr_qty_received: number;
+} 
+export interface UpdateMRStatusPayload {
+  mr_status: MRStatus;
+}
+
 export interface MRReceive {
   mr_id?: string;
   mr_kode: string;
@@ -236,10 +288,19 @@ export interface MRReceive {
   mr_pic: string;
   mr_tanggal: string;
   mr_due_date: string;
-  mr_status: string;
+  mr_status: MRStatus;
+
+  // 🔥 audit dari BE
+  mr_last_edit_at?: string | null;
+  mr_last_edit_by?: string | null;
+
   created_at: string;
   updated_at: string;
   details: MRDetail[];
+
+    // ✅ TAMBAHAN SIGNATURE
+  signature_url?: string | null;
+  sign_at?: string | null;
 }
 
 export interface PRItemReceive {
@@ -266,9 +327,20 @@ export interface DeliveryReceive {
   dlv_pic: string;
   created_at: string;
   updated_at: string;
+
+  signed_pengirim_name?: string | null;
+  signed_pengirim_sign?: string | null;
+  signed_pengirim_at?: string | null;
+
+  signed_logistik_name?: string | null;
+  signed_logistik_sign?: string | null;
+  signed_logistik_at?: string | null;
+
+  signed_penerima_name?: string | null;
+  signed_penerima_sign?: string | null;
+  signed_penerima_at?: string | null;
   details: DeliveryDetail[];
   mr?: MRReceive;
-  
 }
 
 export interface DeliveryDetail {
@@ -279,6 +351,7 @@ export interface DeliveryDetail {
   dtl_dlv_part_name: string;
   dtl_dlv_satuan: string;
   qty: number;
+  receive_note?: string;
   qty_delivered: number;
   qty_on_delivery: number;
   qty_pending: number;
@@ -286,17 +359,17 @@ export interface DeliveryDetail {
   updated_at: string;
 }
 
-export interface MRDetail {
-  dtl_mr_id?: string;
-  mr_id?: string;
-  part_id?: string;
-  dtl_mr_part_number: string;
-  dtl_mr_part_name: string;
-  dtl_mr_satuan: string;
-  dtl_mr_prioritas: string;
-  dtl_mr_qty_request: number;
-  dtl_mr_qty_received: number;
-}
+// export interface MRDetail {
+//   dtl_mr_id?: string;
+//   mr_id?: string;
+//   part_id?: string;
+//   dtl_mr_part_number: string;
+//   dtl_mr_part_name: string;
+//   dtl_mr_satuan: string;
+//   dtl_mr_prioritas: string;
+//   dtl_mr_qty_request: number;
+//   dtl_mr_qty_received: number;
+// }
 
 export interface DashboardSummary {
   total_stock: number;
@@ -324,4 +397,137 @@ export interface UpdatePOPayload {
   po_status: "pending" | "purchased";
   po_keterangan?: string;
 }
+
+export interface SpbReport {
+  spb_id: number;
+  spb_no: string;
+  spb_tanggal: string;
+
+  spb_no_wo?: string;
+  spb_section?: string;
+  spb_pic_gmi?: string;
+  spb_pic_ppa?: string;
+
+  part_id: string;
+  dtl_spb_part_satuan: string;
+  dtl_spb_part_name : string;
+  dtl_spb_part_number : string;
+  dtl_spb_qty : number;
+
+  spb_kode_unit?: string;
+  spb_tipe_unit?: string;
+  spb_brand?: string;
+  spb_hm?: number;
+  spb_problem_remark?: string;
+
+  spb_status: string;
+  created_at?: string;
+
+  po_no?: string | null;
+  so_no?: string | null;
+  po_created_at?: string | null;
+
+  do_no?: string | null;
+  do_status_part?: string | null;
+  do_created_at?: string | null;
+
+  invoice_no?: string | null;
+  invoice_date?: string | null;
+  invoice_email_date?: string | null;
+  invoice_created_at?: string | null;
+}
+
+export interface SpbCreate {
+  spb_no: string;
+  spb_tanggal: string;
+  spb_no_wo?: string;
+  spb_section?: string;
+  spb_pic_gmi?: string;
+  spb_pic_ppa?: string;
+  spb_kode_unit?: string;
+  spb_tipe_unit?: string;
+  spb_brand?: string;
+  spb_hm?: number;
+  spb_problem_remark?: string;
+  spb_gudang?: string;
+  spb_status?: string;
+  created_at?: string;
+  updated_at?: string;
+  details: SpbDetail[];
+  po?: SpbPo;
+  do?: SpbDo;
+  invoice?: SpbInvoice;
+}
+
+export interface Spb {
+  spb_id: number;
+  spb_no: string;
+  spb_tanggal: string;
+  spb_no_wo?: string;
+  spb_section?: string;
+  spb_pic_gmi?: string;
+  spb_pic_ppa?: string;
+  spb_kode_unit?: string;
+  spb_tipe_unit?: string;
+  spb_brand?: string;
+  spb_hm?: number;
+  spb_problem_remark?: string;
+  spb_gudang?: string;
+  spb_status?: string;
+  created_at?: string;
+  updated_at?: string;
+  details: SpbDetail[];
+  po?: SpbPo;
+  do?: SpbDo;
+  invoice?: SpbInvoice;
+}
+
+export interface SpbDetail{
+  spb_detail_id: number;
+  spb_id: number;
+  part_id?: string;
+  dtl_spb_part_number: string;
+  dtl_spb_part_name: string;
+  dtl_spb_part_satuan: string;
+  dtl_spb_qty: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface SpbPo {
+  spb_po_id: number;
+  spb_id: number;
+  po_no: string;
+  so_no?: string;
+  so_date?: string;
+  created_at?: string;
+  updated_at?: string;
+  spb?:Spb;
+}
+
+
+export interface SpbDo {
+  spb_do_id: number;
+  spb_id: number;
+  do_no: string;
+  do_date?: string;
+  do_status_part?: string;
+  created_at?: string;
+  updated_at?: string;
+  spb?: Spb;
+}
+
+export interface SpbInvoice {
+  spb_invoice_id: string;
+  spb_id: string;
+
+  invoice_no: string;
+  invoice_date?: string;
+  invoice_email_date?: string;
+
+  created_at?: string;
+  updated_at?: string;
+  spb?:Spb;
+}
+
 

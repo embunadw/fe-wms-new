@@ -19,7 +19,7 @@ import { useAuth } from "@/context/AuthContext";
 import { getAllSpbDo } from "@/services/spb";
 import type { SpbDo } from "@/types";
 import { PagingSize } from "@/types/enum";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import CreateSpbDoForm from "@/components/form/create-spb-do";
@@ -105,8 +105,8 @@ export default function SpbDoPage() {
               value={noDo}
               onChange={(e) => setNoPo(e.target.value)}
             />
-            <Button variant="destructive" size="icon" onClick={resetFilter}>
-              <Trash2 className="w-4 h-4" />
+            <Button variant="outline" size="icon" onClick={resetFilter}>
+              <X className="w-4 h-4" />
             </Button>
           </div>
 
@@ -166,7 +166,8 @@ export default function SpbDoPage() {
             <CreateSpbDoForm setRefresh={setRefresh} />
           </SectionBody>
           <SectionFooter>
-            <Button type="submit" form="create-spb-do-form" className="w-full">
+            <Button type="submit" form="create-spb-do-form"              
+            className="w-full !bg-green-600 hover:!bg-green-700 !text-white flex items-center justify-center gap-2 h-11">
               Simpan DO <Plus />
             </Button>
           </SectionFooter>

@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from "react";
 import WithSidebar from "@/components/layout/WithSidebar";
 import SectionContainer, {
   SectionHeader,
@@ -5,20 +6,10 @@ import SectionContainer, {
   SectionFooter,
 } from "@/components/content-container";
 
-import {
-  Table,
-  TableHeader,
-  TableRow,
-  TableHead,
-  TableBody,
-  TableCell,
-} from "@/components/ui/table";
-
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { FileSpreadsheet, Trash2 } from "lucide-react";
+import { FileSpreadsheet, Search, X } from "lucide-react";
 
-import { useEffect, useState } from "react";
 import { downloadSpbExcel, getAllReport } from "@/services/spb";
 import type { SpbReport } from "@/types";
 import { formatTanggal } from "@/lib/utils";
@@ -28,48 +19,35 @@ import { toast } from "sonner";
 
 export default function ReportSpb() {
   const [data, setData] = useState<SpbReport[]>([]);
-  const [filtered, setFiltered] = useState<SpbReport[]>([]);
-  const [toShow, setToShow] = useState<SpbReport[]>([]);
-  const [currentPage, setCurrentPage] = useState(1);
-
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
-    getAllReport().then((res) => {
-      setData(res);
-      setFiltered(res);
-    });
+    getAllReport().then(setData);
   }, []);
 
-  useEffect(() => {
-    let temp = data;
-
+  const filtered = useMemo(() => {
+    let result = [...data];
     if (search) {
       const q = search.toLowerCase();
-      temp = temp.filter(
+      result = result.filter(
         (s) =>
-          s.spb_no.toLowerCase().includes(q) ||
-          s.dtl_spb_part_name.toLowerCase().includes(q) ||
-          s.dtl_spb_part_number.toLowerCase().includes(q) ||
+          s.spb_no?.toLowerCase().includes(q) ||
+          s.dtl_spb_part_name?.toLowerCase().includes(q) ||
+          s.dtl_spb_part_number?.toLowerCase().includes(q) ||
           s.po_no?.toLowerCase().includes(q) ||
           s.do_no?.toLowerCase().includes(q) ||
           s.invoice_no?.toLowerCase().includes(q)
       );
     }
-
-    setFiltered(temp);
-    setCurrentPage(1);
-  }, [search, data]);
-
-  /* ================= PAGING ================= */
-  useEffect(() => {
-    const start = (currentPage - 1) * PagingSize;
-    const end = start + PagingSize;
-    setToShow(filtered.slice(start, end));
-  }, [filtered, currentPage]);
+    return result;
+  }, [data, search]);
+  const start = (page - 1) * PagingSize;
+  const pageData = filtered.slice(start, start + PagingSize);
 
   function resetFilter() {
     setSearch("");
+    setPage(1);
     toast.success("Filter direset");
   }
 
@@ -77,125 +55,212 @@ export default function ReportSpb() {
     <WithSidebar>
       <SectionContainer span={12}>
         <SectionHeader>Report SPB</SectionHeader>
+        <SectionBody>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="relative flex-1 min-w-[260px]">
+              <Input
+                placeholder="Cari SPB / Part / PO / DO / Invoice"
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPage(1);
+                }}
+                className="pr-10 bg-transparent"
+              />
+              <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            </div>
 
-        <SectionBody className="space-y-3">
-          {/* FILTER + EXPORT */}
-          <div className="flex flex-wrap gap-2 items-center">
-            <Input
-              placeholder="Cari SPB / Part / PO / DO / Invoice"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="max-w-sm"
-            />
-
-            <Button variant="destructive" size="icon" onClick={resetFilter}>
-              <Trash2 className="w-4 h-4" />
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={resetFilter}
+              title="Reset filter"
+            >
+              <X className="w-4 h-4" />
             </Button>
 
             <Button
               variant="outline"
-              className="ml-auto"
+              size="icon"
               onClick={downloadSpbExcel}
+              title="Export Excel"
+              className="text-green-600 border-green-600 hover:bg-green-50"
             >
-              <FileSpreadsheet className="w-4 h-4 mr-2" />
-              Export Excel
+              <FileSpreadsheet className="w-4 h-4" />
             </Button>
           </div>
-
-          {/* TABLE */}
-          <div className="border rounded-sm overflow-x-auto">
-            <Table className="text-xs">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>NO</TableHead>
-                  <TableHead>TGL SPB</TableHead>
-                  <TableHead>NO SPB</TableHead>
-                  <TableHead>PART NUMBER</TableHead>
-                  <TableHead>PART NAME</TableHead>
-                  <TableHead>QTY</TableHead>
-                  <TableHead>UOM</TableHead>
-                  <TableHead>KODE UNIT</TableHead>
-                  <TableHead>TYPE UNIT</TableHead>
-                  <TableHead>BRAND</TableHead>
-                  <TableHead>HM</TableHead>
-                  <TableHead>PROBLEM/REMARK</TableHead>
-                  <TableHead>SECTION</TableHead>
-                  <TableHead>PIC GMI</TableHead>
-                  <TableHead>PIC PPA</TableHead>
-                  <TableHead>NO WO</TableHead>
-                  <TableHead>DATE INPUT</TableHead>
-                  <TableHead>STATUS WO</TableHead>
-                  <TableHead>TANGGAL SPB to PO</TableHead>
-                  <TableHead>NO PO</TableHead>
-                  <TableHead>NO SO</TableHead>
-                  <TableHead>DATE INPUT</TableHead>
-                  <TableHead>NO DO</TableHead>
-                  <TableHead>DATE INPUT</TableHead>
-                  <TableHead>NO INVOICE</TableHead>
-                  <TableHead>TANGGAL INVOICE</TableHead>
-                  <TableHead>TANGGAL KIRIM EMAIL</TableHead>
-                </TableRow>
-              </TableHeader>
-
-              <TableBody>
-                {toShow.length > 0 ? (
-                  toShow.map((spb, i) => (
-                    <TableRow key={`${spb.spb_id}-${spb.do_no}-${spb.invoice_no}-${i}`}>
-                      <TableCell>
-                        {PagingSize * (currentPage - 1) + (i + 1)}
-                      </TableCell>
-                      <TableCell>{formatTanggal(spb.created_at)}</TableCell>
-                      <TableCell>{spb.spb_no}</TableCell>
-                      <TableCell>{spb.dtl_spb_part_number}</TableCell>
-                      <TableCell>{spb.dtl_spb_part_name}</TableCell>
-                      <TableCell>{spb.dtl_spb_qty}</TableCell>
-                      <TableCell>{spb.dtl_spb_part_satuan}</TableCell>
-                      <TableCell>{spb.spb_kode_unit}</TableCell>
-                      <TableCell>{spb.spb_tipe_unit}</TableCell>
-                      <TableCell>{spb.spb_brand}</TableCell>
-                      <TableCell>{spb.spb_hm}</TableCell>
-                      <TableCell>{spb.spb_problem_remark}</TableCell>
-                      <TableCell>{spb.spb_section}</TableCell>
-                      <TableCell>{spb.spb_pic_gmi}</TableCell>
-                      <TableCell>{spb.spb_pic_ppa}</TableCell>
-                      <TableCell>{spb.spb_no_wo}</TableCell>
-                      <TableCell>{spb.do_created_at}</TableCell>
-                      <TableCell>{spb.spb_status}</TableCell>
-                      <TableCell>{spb.spb_tanggal}</TableCell>
-                      <TableCell>{spb.po_no ?? "-"}</TableCell>
-                      <TableCell>{spb.so_no ?? "-"}</TableCell>
-                      <TableCell>{spb.po_created_at}</TableCell>
-                      <TableCell>{spb.do_no ?? "-"}</TableCell>
-                      <TableCell>{spb.do_created_at}</TableCell>
-                      <TableCell>{spb.invoice_no}</TableCell>
-                      <TableCell>{spb.invoice_date}</TableCell>
-                      <TableCell>{spb.invoice_email_date}</TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell
-                      colSpan={20}
-                      className="text-center text-muted-foreground"
-                    >
-                      Tidak ada data
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
         </SectionBody>
+      </SectionContainer>
+      <div className="relative mt-4">
+        <div className="absolute inset-x-0">
+          <div className="px-4">
+            <div className="rounded-md border bg-white p-4 shadow-sm w-full">
+              <div className="flex justify-between items-center mb-3">
+                <p className="font-semibold">
+                  Daftar SPB
+                  <span className="ml-2 text-xs text-muted-foreground">
+                    ({filtered.length} data)
+                  </span>
+                </p>
+              </div>
 
+              {/* SCROLL AMAN */}
+              <div className="w-full overflow-x-auto">
+                <table className="w-full min-w-[2200px] text-xs border">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      {[
+                        "NO",
+                        "TGL SPB",
+                        "NO SPB",
+                        "PART NUMBER",
+                        "PART NAME",
+                        "QTY",
+                        "UOM",
+                        "KODE UNIT",
+                        "TYPE UNIT",
+                        "BRAND",
+                        "HM",
+                        "PROBLEM / REMARK",
+                        "SECTION",
+                        "PIC GMI",
+                        "PIC PPA",
+                        "NO WO",
+                        "DATE INPUT",
+                        "STATUS",
+                        "TGL SPB to PO",
+                        "NO PO",
+                        "NO SO",
+                        "DATE INPUT",
+                        "NO DO",
+                        "DATE INPUT",
+                        "NO INVOICE",
+                        "TGL INVOICE",
+                        "TGL EMAIL",
+                      ].map((h) => (
+                        <th
+                          key={h}
+                          className="border px-3 py-2 text-left whitespace-nowrap text-muted-foreground"
+                        >
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {pageData.length > 0 ? (
+                      pageData.map((spb, i) => (
+                        <tr key={i} className="border-b hover:bg-gray-50">
+                          <td className="border px-3 py-2">{start + i + 1}</td>
+                          <td className="border px-3 py-2">
+                            {formatTanggal(spb.created_at)}
+                          </td>
+                          <td className="border px-3 py-2 font-medium">
+                            {spb.spb_no}
+                          </td>
+                          <td className="border px-3 py-2">
+                            {spb.dtl_spb_part_number}
+                          </td>
+                          <td className="border px-3 py-2">
+                            {spb.dtl_spb_part_name}
+                          </td>
+                          <td className="border px-3 py-2">
+                            {spb.dtl_spb_qty}
+                          </td>
+                          <td className="border px-3 py-2">
+                            {spb.dtl_spb_part_satuan}
+                          </td>
+                          <td className="border px-3 py-2">
+                            {spb.spb_kode_unit || "-"}
+                          </td>
+                          <td className="border px-3 py-2">
+                            {spb.spb_tipe_unit || "-"}
+                          </td>
+                          <td className="border px-3 py-2">
+                            {spb.spb_brand || "-"}
+                          </td>
+                          <td className="border px-3 py-2">
+                            {spb.spb_hm ?? "-"}
+                          </td>
+                          <td className="border px-3 py-2">
+                            {spb.spb_problem_remark || "-"}
+                          </td>
+                          <td className="border px-3 py-2">
+                            {spb.spb_section}
+                          </td>
+                          <td className="border px-3 py-2">
+                            {spb.spb_pic_gmi}
+                          </td>
+                          <td className="border px-3 py-2">
+                            {spb.spb_pic_ppa}
+                          </td>
+                          <td className="border px-3 py-2">
+                            {spb.spb_no_wo}
+                          </td>
+                          <td className="border px-3 py-2">
+                            {spb.do_created_at || "-"}
+                          </td>
+                          <td className="border px-3 py-2">
+                            {spb.spb_status}
+                          </td>
+                          <td className="border px-3 py-2">
+                            {spb.spb_tanggal}
+                          </td>
+                          <td className="border px-3 py-2">
+                            {spb.po_no ?? "-"}
+                          </td>
+                          <td className="border px-3 py-2">
+                            {spb.so_no ?? "-"}
+                          </td>
+                          <td className="border px-3 py-2">
+                            {spb.po_created_at ?? "-"}
+                          </td>
+                          <td className="border px-3 py-2">
+                            {spb.do_no ?? "-"}
+                          </td>
+                          <td className="border px-3 py-2">
+                            {spb.do_created_at ?? "-"}
+                          </td>
+                          <td className="border px-3 py-2">
+                            {spb.invoice_no ?? "-"}
+                          </td>
+                          <td className="border px-3 py-2">
+                            {spb.invoice_date ?? "-"}
+                          </td>
+                          <td className="border px-3 py-2">
+                            {spb.invoice_email_date ?? "-"}
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td
+                          colSpan={27}
+                          className="text-center py-10 text-muted-foreground"
+                        >
+                          Tidak ada data
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* spacer biar pagination nggak ketimpa */}
+        <div className="h-[420px]" />
+      </div>
+      <SectionContainer span={12}>
         <SectionFooter>
           <MyPagination
             data={filtered}
-            currentPage={currentPage}
-            triggerNext={() => setCurrentPage((p) => p + 1)}
-            triggerPrevious={() =>
-              setCurrentPage((p) => (p > 1 ? p - 1 : 1))
-            }
-            triggerPageChange={setCurrentPage}
+            currentPage={page}
+            triggerNext={() => setPage((p) => p + 1)}
+            triggerPrevious={() => setPage((p) => (p > 1 ? p - 1 : 1))}
+            triggerPageChange={setPage}
           />
         </SectionFooter>
       </SectionContainer>

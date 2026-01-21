@@ -33,7 +33,7 @@ import {
 import { Button } from "../ui/button";
 import { DeliveryEkspedisi, LokasiList } from "@/types/enum";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
-import { CheckIcon, ChevronsUpDownIcon } from "lucide-react";
+import { CheckIcon, ChevronsUpDownIcon, PackagePlus } from "lucide-react";
 import {
   Command,
   CommandEmpty,
@@ -424,15 +424,23 @@ export default function CreateDeliveryForm({
                       dari={selectedFrom}
                       onAddItem={handleAddItem}
                       triggerButton={
-                        <Button
-                          size="sm"
-                          className="w-full !bg-green-600 hover:!bg-green-700 !text-white flex items-center justify-center gap-2 h-11"
-                          variant="outline"
-                          type="button"
-                          disabled={!selectedFrom}
-                        >
-                          Tambah
-                        </Button>
+                      <Button
+                        size="icon"
+                        type="button"
+                        disabled={!selectedFrom}
+                        variant="outline"
+                        className="
+                          border-green-600
+                          text-green-600
+                          bg-white
+                          hover:bg-green-50
+                          h-9 w-9
+                          rounded-md
+                          flex items-center justify-center
+                        "
+                      >
+                        <PackagePlus className="h-4 w-4" />
+                      </Button>
                       }
                     />
                   </TableCell>

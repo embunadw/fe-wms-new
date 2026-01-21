@@ -44,6 +44,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Clock, CheckCircle } from "lucide-react";
 
 // Fungsi untuk format tanggal ke bahasa Indonesia
 function formatTanggalIndonesia(tanggal: string | Date): string {
@@ -153,6 +154,35 @@ export default function PurchaseRequest() {
     setPrToShow(filteredPrs.slice(startIndex, endIndex));
   }, [filteredPrs, currentPage]);
 
+function renderPrStatus(status: string) {
+  const value = status?.toLowerCase();
+
+  switch (value) {
+    case "open":
+      return (
+        <span className="px-3 py-1 rounded-full text-xs font-semibold inline-flex items-center gap-1 bg-red-100 text-red-700">
+          <Clock className="h-3 w-3" />
+          OPEN
+        </span>
+      );
+
+    case "closed":
+    case "close":
+      return (
+        <span className="px-3 py-1 rounded-full text-xs font-semibold inline-flex items-center gap-1 bg-green-100 text-green-700">
+          <CheckCircle className="h-3 w-3" />
+          CLOSED
+        </span>
+      );
+
+    default:
+      return (
+        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600">
+          {status?.toUpperCase()}
+        </span>
+      );
+  }
+}
   function resetFilters() {
     setKode("");
     setStatus("");
@@ -329,7 +359,10 @@ export default function PurchaseRequest() {
                         {formatTanggalIndonesia(pr.pr_tanggal)}
                       </TableCell>
                       <TableCell className="p-2 border">{pr.pr_kode}</TableCell>
-                      <TableCell className="p-2 border">{pr.pr_status}</TableCell>
+                      <TableCell className="p-2 border text-center">
+  {renderPrStatus(pr.pr_status)}
+</TableCell>
+
                       <TableCell className="p-2 border">{pr.pr_lokasi}</TableCell>
                       <TableCell className="p-2 border">{pr.pr_pic}</TableCell>
                       <TableCell className="p-2 border">

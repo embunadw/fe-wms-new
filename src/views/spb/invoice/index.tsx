@@ -19,7 +19,7 @@ import { useAuth } from "@/context/AuthContext";
 import { getAllSpbInv } from "@/services/spb";
 import type { SpbInvoice } from "@/types";
 import { PagingSize } from "@/types/enum";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import CreateSpbInvoiceForm from "@/components/form/create-spb-inv";
@@ -108,8 +108,8 @@ export default function SpbInvoicePage() {
               value={noInvoice}
               onChange={(e) => setNoInvoice(e.target.value)}
             />
-            <Button variant="destructive" size="icon" onClick={resetFilter}>
-              <Trash2 className="w-4 h-4" />
+            <Button variant="outline" size="icon" onClick={resetFilter}>
+              <X className="w-4 h-4" />
             </Button>
           </div>
 
@@ -176,7 +176,7 @@ export default function SpbInvoicePage() {
             <Button
               type="submit"
               form="create-spb-invoice-form"
-              className="w-full"
+              className="w-full !bg-green-600 hover:!bg-green-700 !text-white flex items-center justify-center gap-2 h-11"
             >
               Simpan Invoice <Plus />
             </Button>

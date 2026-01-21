@@ -43,10 +43,12 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
+import { useAuth } from "@/context/AuthContext";
 
 export default function MasterVendorPage() {
   const [vendors, setVendors] = useState<MasterVendor[]>([]);
   const [refresh, setRefresh] = useState<boolean>(false);
+  const {user} = useAuth();
 
   useEffect(() => {
     async function fetchVendors() {
@@ -74,6 +76,7 @@ export default function MasterVendorPage() {
       {/* =======================
           TAMBAH VENDOR
       ======================== */}
+       {(user?.role === "purchasing") ? (
       <SectionContainer span={12}>
         <SectionHeader>Tambah Vendor</SectionHeader>
         <SectionBody className="grid grid-cols-12 gap-2">
@@ -100,6 +103,7 @@ export default function MasterVendorPage() {
 </SectionFooter>
 
       </SectionContainer>
+      ) : null}
     </WithSidebar>
   );
 }

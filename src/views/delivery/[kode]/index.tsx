@@ -49,7 +49,7 @@ export function DeliveryDetail() {
   const [, setLoadingMr] = useState(true);
 
   const [dlvry, setdlvry] = useState<DeliveryReceive | null>(null);
-  const [mr, setMr] = useState<MRReceive | null>(null);
+  const [, setMr] = useState<MRReceive | null>(null);
   const [refresh, setRefresh] = useState(false);
   // const [loadingDelivery, setLoadingDelivery] = useState(true);
   // const [,setLoadingMr] = useState(true);

@@ -43,7 +43,7 @@ export function LoginForm({ className, ...props }: LoginFormProps) {
       <div className="flex flex-col items-center gap-2 text-center">
         <h1 className="text-2xl font-bold">Masuk ke akun anda</h1>
         <p className="text-muted-foreground text-sm text-balance">
-          Masukkan email dan kata sandi anda untuk login.
+          Masukkan email dan kata sandi anda untuk masuk.
         </p>
       </div>
 
@@ -71,7 +71,7 @@ export function LoginForm({ className, ...props }: LoginFormProps) {
             </Label>
             <a
               href="/forgot-password"
-              className="ml-auto text-sm underline-offset-4 hover:underline text-red-500"
+              className="ml-auto text-sm underline underline-offset-4 text-red-500 hover:text-red-600"
             >
               Lupa kata sandi?
             </a>
@@ -81,7 +81,7 @@ export function LoginForm({ className, ...props }: LoginFormProps) {
             disabled={loading}
             type="password"
             name="password"
-            placeholder="masukkan password anda"
+            placeholder="masukkan kata sandi anda"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
@@ -95,7 +95,7 @@ export function LoginForm({ className, ...props }: LoginFormProps) {
 
       <div className="text-center text-sm">
         Belum memiliki akun?{" "}
-        <a href="/register" className="underline underline-offset-4">
+        <a href="/register" className="underline underline-offset-4 decoration-red-500 text-red-600 hover:text-red-700">
           Daftar
         </a>
       </div>

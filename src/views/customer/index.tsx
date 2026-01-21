@@ -42,11 +42,13 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
+import { useAuth } from "@/context/AuthContext";
 
 
 export default function MasterCustomerPage() {
   const [customers, setCustomers] = useState<MasterCustomer[]>([]);
   const [refresh, setRefresh] = useState<boolean>(false);
+   const { user } = useAuth();
 
   useEffect(() => {
     async function fetchCustomers() {
@@ -74,36 +76,36 @@ export default function MasterCustomerPage() {
       {/* =======================
           TAMBAH CUSTOMER
       ======================== */}
-      <SectionContainer span={12}>
-        <SectionHeader>Tambah Customer</SectionHeader>
-        <SectionBody className="grid grid-cols-12 gap-2">
-          <div className="col-span-12 rounded-sm">
-            <CreateCustomerForm setRefresh={setRefresh} />
-          </div>
-</SectionBody>
+      {(user?.role === "purchasing") ? (
+  <SectionContainer span={12}>
+    <SectionHeader>Tambah Customer</SectionHeader>
 
-<SectionFooter>
-  <TooltipProvider>
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Button 
-          type="submit"
-          form="create-customer-form"
-          className="w-full !bg-green-600 hover:!bg-green-700 !text-white flex items-center justify-center gap-2 h-11"
-        >
-  
-           <ClipboardPlus className="h-4 w-4" />
-          <span>Tambah</span>
-        </Button>
-      </TooltipTrigger>
+    <SectionBody className="grid grid-cols-12 gap-2">
+      <div className="col-span-12 rounded-sm">
+        <CreateCustomerForm setRefresh={setRefresh} />
+      </div>
+    </SectionBody>
 
-    </Tooltip>
-  </TooltipProvider>
-</SectionFooter>
-
-
-      </SectionContainer>
+    <SectionFooter>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              type="submit"
+              form="create-customer-form"
+              className="w-full !bg-green-600 hover:!bg-green-700 !text-white flex items-center justify-center gap-2 h-11"
+            >
+              <ClipboardPlus className="h-4 w-4" />
+              <span>Tambah</span>
+            </Button>
+          </TooltipTrigger>
+        </Tooltip>
+      </TooltipProvider>
+    </SectionFooter>
+  </SectionContainer>
+) : null}
     </WithSidebar>
+    
   );
 }
 

@@ -47,7 +47,7 @@ export function RegisterForm({
       <div className="grid gap-6">
         {/* Email */}
         <div className="grid gap-3">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">Email<span className="text-red-500">*</span></Label>
           <Input
             id="email"
             type="email"
@@ -59,7 +59,7 @@ export function RegisterForm({
         </div>
         {/* Full Name */}
         <div className="grid gap-3">
-          <Label htmlFor="name">Nama</Label>
+          <Label htmlFor="name">Nama<span className="text-red-500">*</span></Label>
           <Input
             id="name"
             type="text"
@@ -71,7 +71,7 @@ export function RegisterForm({
         </div>
         {/* Pass */}
         <div className="grid gap-3">
-          <Label htmlFor="password">Password</Label>
+          <Label htmlFor="password">Kata Sandi<span className="text-red-500">*</span></Label>
           <Input
             id="password"
             type="password"
@@ -83,12 +83,12 @@ export function RegisterForm({
         </div>
         {/* Konfirmasi Pass */}
         <div className="grid gap-3">
-          <Label htmlFor="password-confirm">Konfirmasi Kata Sandi</Label>
+          <Label htmlFor="password-confirm">Konfirmasi Kata Sandi<span className="text-red-500">*</span></Label>
           <Input
             id="password-confirm"
             type="password"
             name="confirm-password"
-            placeholder="ulangi password"
+            placeholder="ulangi kata sandi"
             required
             disabled={loading} // Disable input saat loading
           />
@@ -99,7 +99,7 @@ export function RegisterForm({
 {/* Lokasi */}
 {/* Lokasi */}
 <div className="grid gap-3">
-  <Label htmlFor="lokasi">Lokasi</Label>
+  <Label htmlFor="lokasi">Lokasi<span className="text-red-500">*</span></Label>
   <Input 
     id="lokasi"
     name="lokasi" 
@@ -137,7 +137,7 @@ export function RegisterForm({
       </div>
       <div className="text-center text-sm">
         Sudah memiliki akun?{" "}
-        <a href="/login" className="underline underline-offset-4">
+        <a href="/login" className="underline underline-offset-4 decoration-red-500 text-red-600 hover:text-red-700">
           Masuk
         </a>
       </div>

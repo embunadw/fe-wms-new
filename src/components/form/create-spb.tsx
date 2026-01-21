@@ -27,6 +27,7 @@ import { LokasiList } from "@/types/enum";
 
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { CheckIcon, ChevronsUpDownIcon } from "lucide-react";
+import type { MasterVendor } from "@/types";
 
 import {
   Command,
@@ -52,6 +53,7 @@ import type {
 import { getAllStocks } from "@/services/stock";
 import { AddItemSpbDialog } from "../dialog/add-item-spb";
 import { Textarea } from "../ui/textarea";
+import { getMasterVendors } from "@/services/vendor";
 
 
 interface CreateSpbFormProps {
@@ -89,6 +91,10 @@ export default function CreateSpbForm({
   const [selectedPart, setSelectedPart] = useState<MasterPart>();
   const [stocks, setStocks] = useState<Stock[]>([]);
 
+  const [vendors, setVendors] = useState<MasterVendor[]>([]);
+  const [openBrand, setOpenBrand] = useState(false);
+  const [selectedVendor, setSelectedVendor] = useState<MasterVendor | null>(null);
+
   useEffect(() => {
     async function fetchParts() {
       try {
@@ -103,6 +109,20 @@ export default function CreateSpbForm({
     fetchKodeSpbWithToast();
   }, []);
 
+  useEffect(() => {
+    async function fetchVendors() {
+      try {
+        const data = await getMasterVendors();
+        setVendors(data);
+      } catch {
+        toast.error("Gagal mengambil data vendor");
+      }
+    }
+
+    fetchVendors();
+  }, []);
+
+
    useEffect(() => {
     async function fetchStock() {
       try {
@@ -116,13 +136,13 @@ export default function CreateSpbForm({
   }, []);
 
   async function fetchKodeSpbWithToast() {
-    const toastId = toast.loading("Menghasilkan Kode SPB...");
+    //const toastId = toast.loading("Menghasilkan Kode SPB...");
     try {
       const kode = await generateSpb();
       setKodeSpb(kode);
-      toast.success("Kode SPB siap", { id: toastId });
+      //toast.success("Kode SPB siap", { id: toastId });
     } catch {
-      toast.error("Gagal generate kode SPB", { id: toastId });
+      toast.error("Gagal generate kode SPB");
     }
   }
 
@@ -159,13 +179,64 @@ export default function CreateSpbForm({
     setSpbItems((prev) => prev.filter((_, i) => i !== index));
   }
 
+  function validateForm(): boolean {
+    if (!tanggalSpb) {
+      toast.error("Tanggal SPB wajib diisi");
+      return false;
+    }
+    if (!spbGudang) {
+      toast.error("Gudang wajib dipilih");
+      return false;
+    }
+    if (!spbNoWo.trim()) {
+      toast.error("No WO wajib diisi");
+      return false;
+    }
+    if (!spbSection.trim()) {
+      toast.error("Section wajib diisi");
+      return false;
+    }
+    if (!spbPicPpa.trim()) {
+      toast.error("PIC PPA wajib diisi");
+      return false;
+    }
+    if (!spbKodeUnit.trim()) {
+      toast.error("Kode Unit wajib diisi");
+      return false;
+    }
+    if (!spbTipeUnit.trim()) {
+      toast.error("Tipe Unit wajib diisi");
+      return false;
+    }
+    if (!spbBrand.trim()) {
+      toast.error("Brand wajib diisi");
+      return false;
+    }
+    if (!spbHm || spbHm <= 0) {
+      toast.error("HM wajib diisi dan lebih dari 0");
+      return false;
+    }
+    if (spbItems.length === 0) {
+      toast.error("Minimal 1 item SPB harus ditambahkan");
+      return false;
+    }
+
+    return true;
+  }
+
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
-    if (!kodeSpb || !tanggalSpb || spbItems.length === 0) {
-      toast.warning("Data belum lengkap");
-      return;
+    // if (!kodeSpb || !tanggalSpb || spbItems.length === 0) {
+    //   toast.warning("Data belum lengkap");
+    //   return;
+    // }
+    if (!tanggalSpb) {
+      toast.error("Tanggal SPB wajib diisi");
+      return false;
     }
+    if (!validateForm()) return;
 
     const payload: SpbCreate = {
       spb_tanggal: toMysqlDatetime(tanggalSpb),
@@ -273,7 +344,53 @@ export default function CreateSpbForm({
 
       <div className="col-span-12 lg:col-span-4 space-y-2">
         <Label>Brand<span className="text-red-500">*</span></Label>
-        <Input value={spbBrand} onChange={(e) => setSpbBrand(e.target.value)} />
+
+        <Popover open={openBrand} onOpenChange={setOpenBrand}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              role="combobox"
+              className="w-full justify-between"
+            >
+              {selectedVendor
+                ? selectedVendor.vendor_name
+                : "Pilih brand..."}
+              <ChevronsUpDownIcon className="ml-2 h-4 w-4 opacity-50" />
+            </Button>
+          </PopoverTrigger>
+
+          <PopoverContent className="w-full p-0">
+            <Command>
+              <CommandInput placeholder="Cari brand..." />
+              <CommandList>
+                <CommandEmpty>Brand tidak ditemukan</CommandEmpty>
+                <CommandGroup>
+                  {vendors.map((vendor) => (
+                    <CommandItem
+                      key={vendor.vendor_id}
+                      value={vendor.vendor_name}
+                      onSelect={() => {
+                        setSelectedVendor(vendor);
+                        setSpbBrand(vendor.vendor_name); // ← INI YANG MASUK KE PAYLOAD
+                        setOpenBrand(false);
+                      }}
+                    >
+                      <CheckIcon
+                        className={cn(
+                          "mr-2 h-4 w-4",
+                          selectedVendor?.vendor_id === vendor.vendor_id
+                            ? "opacity-100"
+                            : "opacity-0"
+                        )}
+                      />
+                      {vendor.vendor_name}
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
       </div>
 
       <div className="col-span-12 lg:col-span-4 space-y-2">
@@ -294,67 +411,79 @@ export default function CreateSpbForm({
       </div>
 
       {/* ADD ITEM */}
-      <div className="col-span-12 grid grid-cols-12 gap-4">
-        <Popover open={open} onOpenChange={setOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className={cn("col-span-12 lg:col-span-8 justify-between")}
-            >
-              {selectedPart
-                ? `${selectedPart.part_number} | ${selectedPart.part_name}`
-                : "Cari part..."}
-              <ChevronsUpDownIcon className="h-4 w-4 opacity-50" />
-            </Button>
-          </PopoverTrigger>
+      <div className="col-span-12">
+        <div className="flex items-center gap-2">
 
-          <PopoverContent className="p-0">
-            <Command>
-              <CommandInput placeholder="Cari part..." />
-              <CommandList>
-                <CommandEmpty>Tidak ada.</CommandEmpty>
-                <CommandGroup>
-                  {filteredParts.map((part) => (
-                    <CommandItem
-                      key={part.part_number}
-                      value={part.part_number}
-                      onSelect={() => {
-                        setSelectedPart(part);
-                        setOpen(false);
-                      }}
-                    >
-                      <CheckIcon
-                        className={cn(
-                          "mr-2 h-4 w-4",
-                          selectedPart?.part_number === part.part_number
-                            ? "opacity-100"
-                            : "opacity-0"
-                        )}
-                      />
-                      {part.part_number} | {part.part_name}
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              </CommandList>
-            </Command>
-          </PopoverContent>
-        </Popover>
+          {/* PART SEARCH */}
+          <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className="flex-1 justify-between"
+              >
+                {selectedPart
+                  ? `${selectedPart.part_number} | ${selectedPart.part_name}`
+                  : "Cari part..."}
+                <ChevronsUpDownIcon className="h-4 w-4 opacity-50" />
+              </Button>
+            </PopoverTrigger>
 
-        <AddItemSpbDialog
-          selectedPart={selectedPart}
-          onAddItem={handleAddItem}
-          triggerButton={
-            <Button
-              className="col-span-12 md:col-span-4"
-              variant="outline"
-              disabled={!selectedPart}
-            >
-              Tambah Barang
-            </Button>
-          }
-        />
+            <PopoverContent className="p-0 w-[420px]">
+              <Command>
+                <CommandInput placeholder="Cari part..." />
+                <CommandList>
+                  <CommandEmpty>Tidak ada part.</CommandEmpty>
+                  <CommandGroup>
+                    {filteredParts.map((part) => (
+                      <CommandItem
+                        key={part.part_number}
+                        value={part.part_number}
+                        onSelect={() => {
+                          setSelectedPart(part);
+                          setOpen(false);
+                        }}
+                      >
+                        <CheckIcon
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            selectedPart?.part_number === part.part_number
+                              ? "opacity-100"
+                              : "opacity-0"
+                          )}
+                        />
+                        {part.part_number} | {part.part_name}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+
+          {/* TAMBAH BARANG (SMALL BUTTON) */}
+          <AddItemSpbDialog
+            selectedPart={selectedPart}
+            onAddItem={handleAddItem}
+            triggerButton={
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={!selectedPart}
+                className="
+                    whitespace-nowrap
+                    bg-green-600
+                    text-white
+                    hover:bg-green-700
+                    disabled:bg-green-300
+                    disabled:text-white
+                  "
+              >
+                + Tambah
+              </Button>
+            }
+          />
+        </div>
       </div>
-
       {/* TABLE */}
       <div className="col-span-12">
         <Table>

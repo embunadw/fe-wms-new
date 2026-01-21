@@ -325,7 +325,7 @@ details: poDetails.map((d) => ({
             value={status} 
             onValueChange={setStatus}
           >
-            <SelectTrigger>
+            <SelectTrigger className="w-full">
               <SelectValue placeholder="Pilih status" />
             </SelectTrigger>
             <SelectContent>
@@ -347,7 +347,7 @@ details: poDetails.map((d) => ({
               value={subStatus} 
               onValueChange={setSubStatus}
             >
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Pilih detail status" />
               </SelectTrigger>
               <SelectContent>

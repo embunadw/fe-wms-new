@@ -33,7 +33,7 @@ import { useAuth } from "@/context/AuthContext";
 import { getAllDelivery, downloadDeliveryExcel } from "@/services/delivery";
 import type { DeliveryReceive} from "@/types";
 import { PagingSize } from "@/types/enum";
-import { Plus, FileSpreadsheet, Info, Search, Filter, X } from "lucide-react";
+import { Plus, FileSpreadsheet, Info, Search, Filter, X, Clock, CheckCircle, Truck, Archive, Package } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
@@ -133,39 +133,53 @@ export default function DeliveryPage() {
   function StatusBadge({ status }: { status: string }) {
     const map: Record<
       string,
-      { label: string; className: string }
+      {
+        label: string;
+        className: string;
+        icon: React.ElementType;
+      }
     > = {
       pending: {
         label: "Pending",
         className: "bg-gray-100 text-gray-700 border-gray-300",
+        icon: Clock,
       },
       packing: {
         label: "Packing",
         className: "bg-blue-100 text-blue-700 border-blue-300",
+        icon: Package,
       },
       "ready to pickup": {
         label: "Ready to Pickup",
         className: "bg-purple-100 text-purple-700 border-purple-300",
+        icon: Archive,
       },
       "on delivery": {
         label: "On Delivery",
         className: "bg-orange-100 text-orange-700 border-orange-300",
+        icon: Truck,
       },
       delivered: {
         label: "Delivered",
         className: "bg-green-100 text-green-700 border-green-300",
+        icon: CheckCircle,
       },
     };
 
-    const data = map[status] ?? {
-      label: status,
-      className: "bg-gray-100 text-gray-700 border-gray-300",
-    };
+    const data =
+      map[status?.toLowerCase()] ?? {
+        label: status,
+        className: "bg-gray-100 text-gray-700 border-gray-300",
+        icon: Clock,
+      };
+
+    const Icon = data.icon;
 
     return (
       <span
-        className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${data.className}`}
+        className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium border ${data.className}`}
       >
+        <Icon className="h-4 w-4" />
         {data.label}
       </span>
     );
@@ -389,7 +403,6 @@ export default function DeliveryPage() {
             </Table>
           </div>
         </SectionBody>
-
         <SectionFooter>
           <MyPagination
             data={filteredDeliveries}

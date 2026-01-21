@@ -7,7 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import WithSidebar from "@/components/layout/WithSidebar";
 import { Button } from "@/components/ui/button";
 import type {MRReceive } from "@/types";
-import { ClipboardPlus, Filter, Info, Search, X } from "lucide-react";
+import { AlertTriangle, ClipboardPlus, Filter, Info, Search, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import CreateMRForm from "@/components/form/create-mr";
@@ -37,6 +37,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { CheckCircle, Clock, AlertCircle } from "lucide-react";
 
 
 export default function MaterialRequest() {
@@ -77,6 +78,43 @@ export default function MaterialRequest() {
     fetchUserDataAndMRs();
   }, [refresh]);
 
+function renderMrStatus(status: string) {
+  const value = status?.toLowerCase();
+
+  switch (value) {
+    case "open":
+      return (
+        <span className="px-3 py-1 rounded-full text-xs font-semibold inline-flex items-center gap-1 bg-red-100 text-red-700">
+          <Clock className="h-3 w-3" />
+          OPEN
+        </span>
+      );
+
+    case "partial":
+      return (
+        <span className="px-3 py-1 rounded-full text-xs font-semibold inline-flex items-center gap-1 bg-orange-100 text-orange-700">
+          <AlertTriangle className="h-3 w-3" />
+          PARTIAL
+        </span>
+      );
+
+    case "closed":
+    case "close":
+      return (
+        <span className="px-3 py-1 rounded-full text-xs font-semibold inline-flex items-center gap-1 bg-green-100 text-green-700">
+          <CheckCircle className="h-3 w-3" />
+          CLOSED
+        </span>
+      );
+
+    default:
+      return (
+        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600">
+          {status?.toUpperCase()}
+        </span>
+      );
+  }
+}
 
   function filterMrs() {
     let filtered = mrs;
@@ -350,7 +388,11 @@ export default function MaterialRequest() {
                       </TableCell>
                       <TableCell className="border p-2">{mr.mr_lokasi}</TableCell>
                       <TableCell className="border p-2">{mr.mr_pic}</TableCell>
-                      <TableCell className="border p-2">{mr.mr_status}</TableCell>
+<TableCell className="border p-2 text-center">
+  {renderMrStatus(mr.mr_status)}
+</TableCell>
+
+
                       <TableCell className="border p-2">
                         {mr.details?.length || 0}
                       </TableCell>

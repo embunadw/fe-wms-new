@@ -7,7 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import WithSidebar from "@/components/layout/WithSidebar";
 import { Button } from "@/components/ui/button";
 import type {Spb } from "@/types";
-import { ClipboardPlus } from "lucide-react";
+import { ClipboardPlus, FileSpreadsheet, Filter, Info, Search, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -30,7 +30,15 @@ import {
 import { formatTanggal } from "@/lib/utils";
 import { PagingSize } from "@/types/enum";
 import CreateSpbForm from "@/components/form/create-spb";
-import { getAllSpb } from "@/services/spb";
+import { downloadSpbExcel, getAllSpb } from "@/services/spb";
+import { Label } from "recharts";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
 
 export default function SpbPage() {
   const {user} = useAuth()
@@ -43,10 +51,8 @@ export default function SpbPage() {
   const [tanggalMr, setTanggalMr] = useState<Date>();
   const [pic, setPic] = useState<string>("");
   const [kode, setKode] = useState<string>("");
-  const [dueDate, setDueDate] = useState<Date>();
   const [lokasi, setLokasi] = useState<string>("");
   const [status, setStatus] = useState<string>("");
-  const [priority, setPriority] = useState<string>("");
   const [, setDariTanggal] = useState<Date>();
   const [, setSampaiTanggal] = useState<Date>();
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -115,10 +121,8 @@ export default function SpbPage() {
     setTanggalMr(undefined);
     setPic("");
     setKode("");
-    setDueDate(undefined);
     setLokasi("");
     setStatus("");
-    setPriority("");
     setDariTanggal(undefined);
     setSampaiTanggal(undefined);
     setFilteredMrs(mrs);
@@ -154,164 +158,174 @@ export default function SpbPage() {
       <SectionContainer span={12}>
         <SectionHeader>Daftar Surat Pengeluaran Barang ( SPB )</SectionHeader>
         <SectionBody className="grid grid-cols-12 gap-2">
-          {/* Filtering */}
-          <div className="col-span-12 grid grid-cols-12 gap-4 items-end">
-            {/* Search by kode */}
-            <div className="col-span-12 md:col-span-4 lg:col-span-5">
-              <Input
-                placeholder="Cari berdasarkan kode"
-                value={kode}
-                onChange={(e) => setKode(e.target.value)}
-              />
-            </div>
+  {/* ================= FILTER BAR ================= */}
+  <div className="col-span-12 flex flex-wrap items-center gap-2">
 
-            {/* Search button */}
-            <div className="col-span-12 md:col-span-4 lg:col-span-2">
-              <Button className="w-full" onClick={filterMrs}>
-                Cari
-              </Button>
-            </div>
+    {/* SEARCH */}
+    <div className="relative flex-1 min-w-[260px]">
+      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+      <Input
+        placeholder="Cari berdasarkan No SPB"
+        value={kode}
+        onChange={(e) => {
+          setKode(e.target.value);
+          setCurrentPage(1);
+        }}
+        className="pl-9"
+      />
+    </div>
 
-            {/* Filter popover */}
-            <div className="col-span-12 md:col-span-4 lg:col-span-3">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full">
-                    Filter Tambahan
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-80 space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-1">
-                      Tanggal MR
-                    </label>
-                    <DatePicker value={tanggalMr} onChange={setTanggalMr} />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">
-                      Due Date
-                    </label>
-                    <DatePicker value={dueDate} onChange={setDueDate} />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">
-                      Lokasi
-                    </label>
-                    <Input
-                      placeholder="Lokasi"
-                      value={lokasi}
-                      onChange={(e) => setLokasi(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">
-                      PIC
-                    </label>
-                    <Input
-                      placeholder="PIC"
-                      value={pic}
-                      onChange={(e) => setPic(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">
-                      Status
-                    </label>
-                    <Input
-                      placeholder="Status"
-                      value={status}
-                      onChange={(e) => setStatus(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">
-                      Priority
-                    </label>
-                    <Input
-                      placeholder="Priority"
-                      value={priority}
-                      onChange={(e) => setPriority(e.target.value)}
-                    />
-                  </div>
-                </PopoverContent>
-              </Popover>
-            </div>
+    {/* FILTER POPOVER */}
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="icon">
+          <Filter className="h-4 w-4" />
+        </Button>
+      </PopoverTrigger>
 
-            {/* Clear filter button */}
-            <div className="col-span-12 md:col-span-4 lg:col-span-2">
-              <Button
-                className="w-full"
-                variant={"destructive"}
-                onClick={resetFilters}
-              >
-                Hapus Filter
-              </Button>
-            </div>
+      <PopoverContent className="w-80 space-y-4">
+        <div className="space-y-1">
+          <h4 className="font-medium">Filter Tambahan</h4>
+          <p className="text-sm text-muted-foreground">
+            Saring data SPB
+          </p>
+        </div>
+
+        <div className="grid gap-3">
+          <div className="grid gap-1">
+            <Label>Tanggal SPB</Label>
+            <DatePicker value={tanggalMr} onChange={setTanggalMr} />
           </div>
-          <div className="col-span-12 border rounded-sm overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="border p-2">No</TableHead>
-                  <TableHead className="border p-2">No SPB</TableHead>
-                  <TableHead className="border p-2">Tanggal SBP</TableHead>
-                  <TableHead className="border p-2">Kode Unit</TableHead>
-                  <TableHead className="border p-2">Type Unit</TableHead>
-                  <TableHead className="border p-2">Brand</TableHead>
-                  <TableHead className="border p-2">HM</TableHead>
-                  <TableHead className="border p-2">Lokasi</TableHead>
-                  <TableHead className="border p-2">PIC GMI</TableHead>
-                  <TableHead className="border p-2">PIC PPA</TableHead>
-                  <TableHead className="border p-2">Aksi</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {mrToShow.length > 0 ? (
-                  mrToShow.map((mr, index) => (
-                    <TableRow key={mr.spb_id}>
-                      <TableCell className="border p-2">
-                        {PagingSize * (currentPage - 1) + (index + 1)}
-                      </TableCell>
-                      <TableCell className="border p-2">{mr.spb_no}</TableCell>
-                      <TableCell className="border p-2">
-                        {formatTanggal(mr.spb_tanggal)}
-                      </TableCell>
-                      <TableCell className="border p-2">{mr.spb_kode_unit}</TableCell>
-                      <TableCell className="border p-2">{mr.spb_tipe_unit}</TableCell>
-                      <TableCell className="border p-2">{mr.spb_brand}</TableCell>
-                      <TableCell className="border p-2">{mr.spb_hm}</TableCell>
-                      <TableCell className="border p-2">{mr.spb_gudang}</TableCell>
-                      <TableCell className="border p-2">{mr.spb_pic_gmi}</TableCell>
-                      <TableCell className="border p-2">{mr.spb_pic_ppa}</TableCell>
-                      <TableCell className="border p-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="mr-2"
-                          asChild
-                        >
-                          <Link
-                            to={`/spb/kode/${encodeURIComponent(mr.spb_no)}`}>
-                            Detail
-                          </Link>
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell
-                      colSpan={8}
-                      className="p-4 text-center text-muted-foreground"
-                    >
-                      Tidak ada SPB ditemukan.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+
+          <div className="grid gap-1">
+            <Label>Lokasi Gudang</Label>
+            <Input
+              placeholder="Gudang"
+              value={lokasi}
+              onChange={(e) => setLokasi(e.target.value)}
+            />
           </div>
-        </SectionBody>
+
+          <div className="grid gap-1">
+            <Label>PIC GMI</Label>
+            <Input
+              placeholder="PIC"
+              value={pic}
+              onChange={(e) => setPic(e.target.value)}
+            />
+          </div>
+
+          <div className="grid gap-1">
+            <Label>Status</Label>
+            <Input
+              placeholder="Status"
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+            />
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
+
+    {/* RESET FILTER */}
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={resetFilters}
+          >
+            <X className="h-4 w-4 text-red-500" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Hapus Filter</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+
+    {/* EXPORT EXCEL */}
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={downloadSpbExcel}
+          >
+            <FileSpreadsheet className="h-4 w-4 text-green-600" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Export Excel</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+
+  </div>
+
+  {/* ================= TABLE ================= */}
+  <div className="col-span-12 border rounded-sm overflow-x-auto">
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead className="border p-2">No</TableHead>
+          <TableHead className="border p-2">No SPB</TableHead>
+          <TableHead className="border p-2">Tanggal SPB</TableHead>
+          <TableHead className="border p-2">Kode Unit</TableHead>
+          <TableHead className="border p-2">Type Unit</TableHead>
+          <TableHead className="border p-2">Brand</TableHead>
+          <TableHead className="border p-2">HM</TableHead>
+          <TableHead className="border p-2">Lokasi</TableHead>
+          <TableHead className="border p-2">PIC GMI</TableHead>
+          <TableHead className="border p-2">PIC PPA</TableHead>
+          <TableHead className="border p-2 text-center">Aksi</TableHead>
+        </TableRow>
+      </TableHeader>
+
+      <TableBody>
+        {mrToShow.length > 0 ? (
+          mrToShow.map((mr, index) => (
+            <TableRow key={mr.spb_id}>
+              <TableCell className="border p-2">
+                {PagingSize * (currentPage - 1) + (index + 1)}
+              </TableCell>
+              <TableCell className="border p-2">{mr.spb_no}</TableCell>
+              <TableCell className="border p-2">
+                {formatTanggal(mr.spb_tanggal)}
+              </TableCell>
+              <TableCell className="border p-2">{mr.spb_kode_unit}</TableCell>
+              <TableCell className="border p-2">{mr.spb_tipe_unit}</TableCell>
+              <TableCell className="border p-2">{mr.spb_brand}</TableCell>
+              <TableCell className="border p-2">{mr.spb_hm}</TableCell>
+              <TableCell className="border p-2">{mr.spb_gudang}</TableCell>
+              <TableCell className="border p-2">{mr.spb_pic_gmi}</TableCell>
+              <TableCell className="border p-2">{mr.spb_pic_ppa}</TableCell>
+              <TableCell className="border p-2 text-center">
+                <Button 
+                size="icon"
+                variant="outline"
+                className="border-sky-400 text-sky-600 hover:bg-sky-50"
+                asChild>
+                  <Link to={`/spb/kode/${encodeURIComponent(mr.spb_no)}`}>
+                    <Info className="h-4 w-4" />
+                  </Link>
+                </Button>
+              </TableCell>
+            </TableRow>
+          ))
+        ) : (
+          <TableRow>
+            <TableCell
+              colSpan={11}
+              className="p-4 text-center text-muted-foreground"
+            >
+              Tidak ada SPB ditemukan.
+            </TableCell>
+          </TableRow>
+        )}
+      </TableBody>
+    </Table>
+  </div>
+</SectionBody>
+
 
         <SectionFooter>
           <MyPagination
@@ -337,7 +351,7 @@ export default function SpbPage() {
           </SectionBody>
           <SectionFooter>
             <Button
-              className="w-full flex gap-4"
+              className="w-full !bg-green-600 hover:!bg-green-700 !text-white flex items-center justify-center gap-2 h-11"
               type="submit"
               form="create-spb-form"
             >

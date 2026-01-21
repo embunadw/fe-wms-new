@@ -19,7 +19,7 @@ import { useAuth } from "@/context/AuthContext";
 import { getAllSpbPo } from "@/services/spb";
 import type { SpbPo } from "@/types";
 import { PagingSize } from "@/types/enum";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import CreateSpbPoForm from "@/components/form/create-spb-po";
@@ -105,8 +105,8 @@ export default function SpbPoPage() {
               value={noPo}
               onChange={(e) => setNoPo(e.target.value)}
             />
-            <Button variant="destructive" size="icon" onClick={resetFilter}>
-              <Trash2 className="w-4 h-4" />
+            <Button variant="outline" size="icon" onClick={resetFilter}>
+              <X className="w-4 h-4" />
             </Button>
           </div>
 
@@ -168,7 +168,8 @@ export default function SpbPoPage() {
             <CreateSpbPoForm setRefresh={setRefresh} />
           </SectionBody>
           <SectionFooter>
-            <Button type="submit" form="create-spb-po-form" className="w-full">
+            <Button className="w-full !bg-green-600 hover:!bg-green-700 !text-white flex items-center justify-center gap-2 h-11"
+            type="submit" form="create-spb-po-form">
               Simpan PO <Plus />
             </Button>
           </SectionFooter>

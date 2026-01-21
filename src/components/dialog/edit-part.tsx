@@ -151,7 +151,9 @@ export function EditPartDialog({ part, refresh }: MyDialogProps) {
             <Button variant="outline">Batal</Button>
           </DialogClose>
 
-          <Button type="submit" form="edit-part-form">
+          <Button 
+          className="!bg-green-600 hover:!bg-green-700 text-white"
+          type="submit" form="edit-part-form">
             Simpan
           </Button>
         </DialogFooter>

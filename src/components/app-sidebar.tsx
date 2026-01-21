@@ -1,12 +1,9 @@
-import * as React from "react";
+import * as React from "react"
 import {
-  AudioWaveform,
   BaggageClaim,
   BookOpen,
   Bot,
-  Command,
   FileBox,
-  GalleryVerticalEnd,
   Info,
   LayoutDashboard,
   PackageOpen,
@@ -22,39 +19,23 @@ import {
   PackageCheck,
   Building2,
   User,
-} from "lucide-react";
+} from "lucide-react"
 
-import { NavMain } from "@/components/nav-main";
-import { NavUser } from "@/components/nav-user";
-import { TeamSwitcher } from "@/components/team-switcher";
+import { NavMain } from "@/components/nav-main"
+import { NavUser } from "@/components/nav-user"
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
   SidebarRail,
-} from "@/components/ui/sidebar";
+} from "@/components/ui/sidebar"
 
-import { useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom"
 
 const data = {
-  teams: [
-    {
-      name: "Lourdes Autoparts",
-      logo: GalleryVerticalEnd,
-      plan: "Versi 1.0.0",
-    },
-    {
-      name: "Acme Corp.",
-      logo: AudioWaveform,
-      plan: "Startup",
-    },
-    {
-      name: "Evil Corp.",
-      logo: Command,
-      plan: "Free",
-    },
-  ],
+  logo: "/Logo Garuda Mart Indonesia.png",
+
   navAdmin: [
     {
       title: "User Management",
@@ -68,12 +49,12 @@ const data = {
       url: "/dashboard",
       icon: LayoutDashboard,
     },
-      {
+    {
       title: "Vendor",
       url: "/vendors",
       icon: Building2,
     },
-         {
+    {
       title: "Customer",
       url: "/customers",
       icon: User,
@@ -137,7 +118,7 @@ const data = {
           url: "/spb/invoice",
           icon: ReceiptText,
         },
-      ]
+      ],
     },
     {
       title: "Setting",
@@ -157,29 +138,34 @@ const data = {
       icon: Info,
     },
   ],
-};
+}
 
 export function AppSidebar({
   user,
   ...props
 }: React.ComponentProps<typeof Sidebar> & {
-  user: { avatar: string; email: string; nama: string; role?: string };
+  user: { avatar: string; email: string; nama: string; role?: string }
 }) {
-  const location = useLocation();
-  const currentPath = location.pathname;
+  const location = useLocation()
+  const currentPath = location.pathname
 
-  // Tambahkan isActive berdasarkan path saat ini
   const markActive = (items: typeof data.navMain) =>
     items.map((item) => ({
       ...item,
       isActive: currentPath === item.url,
-    }));
+    }))
 
   return (
     <Sidebar collapsible="icon" {...props}>
-      <SidebarHeader>
-        <TeamSwitcher teams={data.teams} />
+      {/* HEADER LOGO ONLY */}
+      <SidebarHeader className="flex items-center justify-center py-4">
+        <img
+          src={data.logo}
+          alt="Lourdes Autoparts"
+          className="h-10 w-auto object-contain"
+        />
       </SidebarHeader>
+
       <SidebarContent>
         {user.role === "admin" && (
           <NavMain label="Admin" items={markActive(data.navAdmin)} />
@@ -187,6 +173,7 @@ export function AppSidebar({
         <NavMain items={markActive(data.navMain)} />
         <NavMain label="About" items={markActive(data.navSecondary)} />
       </SidebarContent>
+
       <SidebarFooter>
         <NavUser
           user={{
@@ -196,7 +183,8 @@ export function AppSidebar({
           }}
         />
       </SidebarFooter>
+
       <SidebarRail />
     </Sidebar>
-  );
+  )
 }

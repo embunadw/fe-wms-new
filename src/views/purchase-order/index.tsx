@@ -34,7 +34,7 @@ import { getCurrentUser } from "@/services/auth";
 import { getPo } from "@/services/purchase-order";
 import type { POHeader, UserComplete } from "@/types";
 import { PagingSize } from "@/types/enum";
-import { ClipboardPlus, Plus } from "lucide-react";
+import { ClipboardPlus } from "lucide-react";
 import { useEffect, useState, Component } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
@@ -45,6 +45,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Clock, ShoppingCart, CheckCircle } from "lucide-react";
 
 // Error Boundary Component
 class ErrorBoundary extends Component<
@@ -188,7 +189,42 @@ export default function PurchaseOrder() {
   function pageChange(page: number) {
     setCurrentPage(page);
   }
+function renderPoStatus(status: string) {
+  const value = status?.toLowerCase();
 
+  switch (value) {
+    case "pending":
+      return (
+        <span className="px-3 py-1 rounded-full text-xs font-semibold inline-flex items-center gap-1 bg-yellow-100 text-yellow-800">
+          <Clock className="h-3 w-3" />
+          PENDING
+        </span>
+      );
+
+    case "purchased":
+      return (
+        <span className="px-3 py-1 rounded-full text-xs font-semibold inline-flex items-center gap-1 bg-blue-100 text-blue-700">
+          <ShoppingCart className="h-3 w-3" />
+          PURCHASED
+        </span>
+      );
+
+    case "received":
+      return (
+        <span className="px-3 py-1 rounded-full text-xs font-semibold inline-flex items-center gap-1 bg-green-100 text-green-700">
+          <CheckCircle className="h-3 w-3" />
+          RECEIVED
+        </span>
+      );
+
+    default:
+      return (
+        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600">
+          {status?.toUpperCase()}
+        </span>
+      );
+  }
+}
   // DEBUG: Log untuk melihat kondisi render
   console.log("🔍 Render check:", {
     userExists: !!user,
@@ -336,18 +372,10 @@ export default function PurchaseOrder() {
                       <TableCell className="p-2 border">
                         {formatTanggal(po.tanggal_estimasi)}
                       </TableCell>
-                      <TableCell className="p-2 border">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          po.status === 'pending' 
-                            ? 'bg-yellow-100 text-yellow-800' 
-                            : po.status === 'purchased'
-                            ? 'bg-blue-100 text-blue-800'
-                            : 'bg-green-100 text-green-800'
-                        }`}>
-                          {po.status === 'pending' ? 'PENDING' : 
-                           po.status === 'purchased' ? 'PURCHASED' : 'Received'}
-                        </span>
-                      </TableCell>
+                   <TableCell className="p-2 border text-center">
+  {renderPoStatus(po.status)}
+</TableCell>
+
                       <TableCell className="p-2 border">
                       <TooltipProvider>
   <Tooltip>

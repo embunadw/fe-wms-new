@@ -87,8 +87,10 @@ export function AddItemSpbDialog({
         </div>
 
         <DialogFooter>
-          <Button type="button" onClick={handleSave}>
-            Tambahkan
+          <Button 
+          className="!bg-green-600 hover:!bg-green-700 text-white"
+          type="button" onClick={handleSave}>
+            Tambah
           </Button>
         </DialogFooter>
       </DialogContent>

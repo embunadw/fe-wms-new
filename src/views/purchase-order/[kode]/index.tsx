@@ -19,21 +19,28 @@ import {
 import { Label } from "@/components/ui/label";
 import { formatTanggal } from "@/lib/utils";
 import { getPrByKode } from "@/services/purchase-request";
-import { getPoByKode } from "@/services/purchase-order";
+import { getPoByKode, clearSignature } from "@/services/purchase-order";
 import { EditPODialog } from "@/components/dialog/edit-po";
 import { Button } from "@/components/ui/button";
 import { Printer } from "lucide-react";
 import { getCurrentUser } from "@/services/auth";
 import type {UserComplete } from "@/types";
+import { formatRupiah } from "@/lib/utils";
+import { QRCodeCanvas } from "qrcode.react";
+// import { useAuth } from "@/context/AuthContext";
+
 
 export default function PurchaseOrderDetail() {
   const { kode } = useParams<{ kode: string }>();
+const [hasPrinted, setHasPrinted] = useState(false);
+  const [showSignature, setShowSignature] = useState(false);
 
   const [po, setPo] = useState<POReceive | null>(null);
   const [pr, setPr] = useState<PurchaseRequest | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [refresh, setRefresh] = useState(false);
     const [user, setUser] = useState<UserComplete | null>(null);
+const isPurchasing = user?.role === "purchasing";
 
 
   useEffect(() => {
@@ -43,6 +50,8 @@ export default function PurchaseOrderDetail() {
       setIsLoading(true);
       try {
         const res = await getPoByKode(kode);
+        console.log("📦 PO Response:", res); // DEBUG
+      console.log("📦 PO Details:", res?.details); // DEBUG
         setPo(res ?? null);
       } catch (err) {
         toast.error("Gagal mengambil detail PO");
@@ -85,6 +94,58 @@ export default function PurchaseOrderDetail() {
       fetchUser();
     }, []);
 
+   useEffect(() => {
+      if (!showSignature || !kode) return;
+  
+      const interval = setInterval(async () => {
+        try {
+          const res = await getPoByKode(kode);
+  
+          if (res?.signature_url) {
+            setPo(res);
+            setHasPrinted(false);
+            setShowSignature(false);
+            toast.success("Tanda tangan diterima! Siap untuk print.");
+            clearInterval(interval);
+          }
+        } catch (error) {
+          console.error("Error polling signature:", error);
+        }
+      }, 2000);
+  
+      return () => clearInterval(interval);
+    }, [showSignature, kode]);
+
+
+    const handlePrintClick = async () => {
+      // 🔴 Sudah pernah print → WAJIB scan ulang
+      if (hasPrinted) {
+        setShowSignature(true);
+        return;
+      }
+    
+      // 🔴 Belum ada TTD → QR
+      if (!po?.signature_url) {
+        setShowSignature(true);
+        return;
+      }
+    
+      // 🟢 Ada TTD & belum pernah print
+      window.print();
+    
+      setHasPrinted(true);
+    
+      // 🔥 reset FE
+      setPo(prev =>
+        prev ? { ...prev, signature_url: null, sign_at: null } : prev
+      );
+    
+      // 🔥 clear backend
+      if (kode) {
+        await clearSignature(kode);
+      }
+    };
+    
 
   if (isLoading) {
     return (
@@ -108,6 +169,35 @@ export default function PurchaseOrderDetail() {
 
   return (
   <WithSidebar>
+               {showSignature && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center print:hidden">
+          <div className="bg-white p-6 rounded-md w-[350px] space-y-4 text-center">
+            <h3 className="font-semibold text-lg">Scan untuk Tanda Tangan</h3>
+
+            <QRCodeCanvas
+              value={`http://10.10.6.175:5173/po-sign/${encodeURIComponent(
+                po.po_kode
+              )}`}
+              size={200}
+              className="mx-auto"
+            />
+
+            <p className="text-sm text-muted-foreground">
+              Setelah tanda tangan, dokumen akan siap di-print
+            </p>
+
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setShowSignature(false)}
+              >
+                Tutup
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     {/* ================= DETAIL PO ================= */}
     <SectionContainer span={12}>
       <SectionHeader>
@@ -130,6 +220,11 @@ export default function PurchaseOrderDetail() {
             <div>
               <Label className="text-sm text-muted-foreground">Status</Label>
               <p className="font-medium">{po.po_status}</p>
+            </div>
+
+             <div>
+              <Label className="text-sm text-muted-foreground">Detail Status</Label>
+              <p className="font-medium">{po.po_detail_status}</p>
             </div>
 
             <div>
@@ -155,12 +250,13 @@ export default function PurchaseOrderDetail() {
         {user?.role === "purchasing" && po.po_status === "pending" && (
             <EditPODialog po={po} refresh={setRefresh} />
           )}
-          <Button
-            variant={"outline"}
-            onClick={() => window.print()}
+             <Button
+            variant="outline"
             className="print:hidden"
+            onClick={handlePrintClick}
           >
-            <Printer />
+            <Printer className="mr-2" />
+            {po.signature_url ? "Print" : "Tanda Tangan & Print"}
           </Button>
       </SectionFooter>
     </SectionContainer>
@@ -174,41 +270,98 @@ export default function PurchaseOrderDetail() {
         <div className="col-span-12">
           <div className="w-full border border-border rounded-sm overflow-x-auto">
             <Table className="w-full">
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[50px] text-center">No</TableHead>
-                  <TableHead>Part Number</TableHead>
-                  <TableHead>Nama</TableHead>
-                  <TableHead className="text-center">Qty</TableHead>
-                </TableRow>
-              </TableHeader>
+<TableHeader>
+  <TableRow className="[&>th]:border">
+    <TableHead className="text-center w-[50px]">No</TableHead>
+    <TableHead>Part Number</TableHead>
+    <TableHead>Nama</TableHead>
+    <TableHead className="text-center">Qty PR</TableHead>
+    <TableHead className="text-center">Qty PO</TableHead>
 
-              <TableBody>
-                {pr?.details?.length ? (
-                  pr.details.map((item, index) => (
-                    <TableRow key={index}>
-                      <TableCell className="text-center">
-                        {index + 1}
-                      </TableCell>
-                      <TableCell>{item.dtl_pr_part_number}</TableCell>
-                      <TableCell>{item.dtl_pr_part_name}</TableCell>
-                      <TableCell className="flex justify-center">
-                        {item.dtl_pr_qty}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell
-                      colSpan={4}
-                      className="text-center text-muted-foreground py-6"
-                    >
-                      Tidak ada barang dalam PR.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
+    {isPurchasing && (
+      <>
+        <TableHead className="text-right">Harga</TableHead>
+        <TableHead>Vendor</TableHead>
+      </>
+    )}
+  </TableRow>
+</TableHeader>
+
+
+
+<TableBody>
+  {pr?.details?.length ? (
+    pr.details.map((item, index) => {
+      const poDetail = po.details?.find(
+        (d) => d.dtl_po_part_number === item.dtl_pr_part_number
+      );
+
+      return (
+        <TableRow key={index} className="[&>td]:border">
+          <TableCell className="text-center">
+            {index + 1}
+          </TableCell>
+
+          <TableCell>{item.dtl_pr_part_number}</TableCell>
+          <TableCell>{item.dtl_pr_part_name}</TableCell>
+
+          <TableCell className="text-center">
+            {item.dtl_pr_qty}
+          </TableCell>
+
+          <TableCell className="text-center">
+            {poDetail?.dtl_po_qty ?? "-"}
+          </TableCell>
+
+          {isPurchasing && (
+            <>
+              <TableCell className="text-right">
+                {poDetail?.dtl_po_harga
+                  ? formatRupiah(poDetail.dtl_po_harga)
+                  : "-"}
+              </TableCell>
+
+              <TableCell>
+                {poDetail?.vendor?.vendor_name ?? "-"}
+              </TableCell>
+            </>
+          )}
+        </TableRow>
+      );
+    })
+  ) : (
+    <TableRow>
+      <TableCell
+        colSpan={isPurchasing ? 7 : 5}
+        className="text-center text-muted-foreground"
+      >
+        Tidak ada barang
+      </TableCell>
+    </TableRow>
+  )}
+</TableBody>
+
             </Table>
+
+               {po.signature_url && (
+                <div className="hidden print:flex mt-16 justify-end px-8 pb-8">
+                  <div className="text-center w-[220px]">
+                    <p className="font-semibold mb-2">Tanda Tangan</p>
+             <img
+  src={`http://10.10.6.175:8000/storage/${po.signature_url}`}
+  alt="signature"
+  className="h-28 mx-auto border-b-2 border-black"
+/>
+
+                    <p className="text-sm mt-2">{user?.nama ?? po.po_pic}</p>
+                    {po.sign_at && (
+                      <p className="text-xs text-muted-foreground">
+                        {formatTanggal(new Date(po.sign_at))}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
           </div>
         </div>
       </SectionBody>

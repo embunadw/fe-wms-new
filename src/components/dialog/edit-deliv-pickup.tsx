@@ -48,7 +48,7 @@ export function SetReadyToPickupDialog({
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button className="bg-yellow-500 hover:bg-yellow-600 text-white">
+        <Button className="bg-blue-500 hover:bg-blue-600 text-white">
           Set Ready to Pickup
         </Button>
       </DialogTrigger>

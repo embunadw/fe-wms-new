@@ -159,7 +159,7 @@ export default function SpbDoPage() {
       </SectionContainer>
 
       {/* ADD PO */}
-      {user?.role === "warehouse" && (
+      {user?.role === "logistik" && (
         <SectionContainer span={12}>
           <SectionHeader>Attach PO ke SPB</SectionHeader>
           <SectionBody>

@@ -20,7 +20,7 @@ import {
 } from "../ui/table";
 import { Button } from "../ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
-import { CheckIcon, ChevronsUpDownIcon, Calculator } from "lucide-react";
+import { CheckIcon, ChevronsUpDownIcon, Pencil } from "lucide-react";
 import {
   Command,
   CommandEmpty,
@@ -49,7 +49,7 @@ interface CreatePOFormProps {
 
 export default function CreateRIForm({ user, setRefresh }: CreatePOFormProps) {
   const [open, setOpen] = useState(false);
-  const [po, setPO] = useState<POReceive[]>([]);
+  const [, setPO] = useState<POReceive[]>([]);
   const [filteredPO, setFilteredPO] = useState<POReceive[]>([]);
   const [selectedPO, setSelectedPO] = useState<POReceive>();
   const [selectedPR, setSelectedPR] = useState<PurchaseRequest>();
@@ -169,12 +169,12 @@ export default function CreateRIForm({ user, setRefresh }: CreatePOFormProps) {
       {/* HEADER */}
       <div className="col-span-12 lg:col-span-6 space-y-4">
         <div>
-          <Label>Kode RI</Label>
+          <Label>Kode RI<span className="text-red-500">*</span></Label>
           <Input name="kode" required />
         </div>
 
         <div>
-          <Label>Receive dari PO</Label>
+          <Label>Receive dari PO<span className="text-red-500">*</span></Label>
           <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
               <Button variant="outline" className="justify-between w-full">
@@ -218,7 +218,7 @@ export default function CreateRIForm({ user, setRefresh }: CreatePOFormProps) {
       {/* LOKASI & TANGGAL */}
       <div className="col-span-12 lg:col-span-6 space-y-4">
         <div>
-          <Label>Gudang</Label>
+          <Label>Gudang<span className="text-red-500">*</span></Label>
           <Select name="penerima" required>
             <SelectTrigger>
               <SelectValue placeholder="Pilih gudang" />
@@ -236,7 +236,7 @@ export default function CreateRIForm({ user, setRefresh }: CreatePOFormProps) {
         </div>
 
         <div>
-          <Label>Tanggal RI</Label>
+          <Label>Tanggal RI<span className="text-red-500">*</span></Label>
           <DatePicker value={tanggal} onChange={setTanggal} />
         </div>
       </div>
@@ -289,14 +289,14 @@ export default function CreateRIForm({ user, setRefresh }: CreatePOFormProps) {
                   <TableCell>
                     <Button
                       size="icon"
-                      variant="outline"
+                      variant="edit"
                       className="text-orange-600 hover:text-orange-700"
                       onClick={() => {
                         setSelectedItem(item);
                         setOpenQtyDialog(true);
                       }}
                     >
-                      <Calculator className="h-4 w-4" />
+                      <Pencil className="h-4 w-4" />
                     </Button>
 
                   </TableCell>
@@ -347,9 +347,8 @@ export default function CreateRIForm({ user, setRefresh }: CreatePOFormProps) {
               />
             </>
           )}
-
           <div className="flex justify-end">
-            <Button onClick={() => setOpenQtyDialog(false)}>Simpan</Button>
+            <Button className="!bg-green-600 hover:!bg-green-700 text-white" onClick={() => setOpenQtyDialog(false)}>Simpan</Button>
           </div>
         </DialogContent>
       </Dialog>

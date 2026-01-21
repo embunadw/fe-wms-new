@@ -33,7 +33,7 @@ import { useAuth } from "@/context/AuthContext";
 import { getAllDelivery, downloadDeliveryExcel } from "@/services/delivery";
 import type { DeliveryReceive} from "@/types";
 import { PagingSize } from "@/types/enum";
-import { Plus,Trash2, FileSpreadsheet, Eye } from "lucide-react";
+import { Plus, FileSpreadsheet, Info, Search, Filter, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
@@ -189,98 +189,107 @@ export default function DeliveryPage() {
       <SectionContainer span={12}>
         <SectionHeader>Daftar Delivery</SectionHeader>
         <SectionBody className="grid grid-cols-12 gap-2">
-          {/* Filtering */}
-          <div className="col-span-12 grid grid-cols-12 gap-4 items-end">
-            <div className="col-span-12 md:col-span-6 lg:col-span-7">
+          {/* FILTER BAR */}
+          <div className="col-span-12 flex flex-wrap items-center gap-2">
+
+            {/* SEARCH */}
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 id="search-kode-it"
                 placeholder="Ketik kode IT untuk memfilter..."
                 value={kodeIt}
                 onChange={(e) => setKodeIt(e.target.value)}
+                className="pl-9"
               />
             </div>
 
-            <div className="col-span-6 md:col-span-3 lg:col-span-3">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full">
-                    Filter Tambahan
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-80 space-y-4">
-                  <div className="space-y-2">
-                    <h4 className="font-medium leading-none">
-                      Filter Lanjutan
-                    </h4>
-                    <p className="text-sm text-muted-foreground">
-                      Saring data pengiriman.
-                    </p>
-                  </div>
-                  <div className="grid gap-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="filter-kode-mr">Kode MR</Label>
-                      <Input
-                        id="filter-kode-mr"
-                        placeholder="Cari kode MR..."
-                        value={kodeMr}
-                        onChange={(e) => setKodeMr(e.target.value)}
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="filter-resi">No. Resi Pengiriman</Label>
-                      <Input
-                        id="filter-resi"
-                        placeholder="Cari no. resi..."
-                        value={resi}
-                        onChange={(e) => setResi(e.target.value)}
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="filter-status">Status</Label>
-                      <Select value={status} onValueChange={setStatus}>
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Pilih Status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pending">Pending</SelectItem>
-                          <SelectItem value="completed">Completed</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="filter-dari-gudang">Dari Gudang</Label>
-                      <Input
-                        id="filter-dari-gudang"
-                        placeholder="Cari gudang asal..."
-                        value={dariGudang}
-                        onChange={(e) => setDariGudang(e.target.value)}
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="filter-ke-gudang">Ke Gudang</Label>
-                      <Input
-                        id="filter-ke-gudang"
-                        placeholder="Cari gudang tujuan..."
-                        value={keGudang}
-                        onChange={(e) => setKeGudang(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                </PopoverContent>
-              </Popover>
-            </div>
+            {/* FILTER POPOVER */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <Filter className="h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
 
-            <div className="col-span-6 md:col-span-3 lg:col-span-2 flex gap-2">
+              <PopoverContent className="w-80 space-y-4">
+                <div className="space-y-1">
+                  <h4 className="font-medium">Filter Lanjutan</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Saring data pengiriman.
+                  </p>
+                </div>
+
+                <div className="grid gap-3">
+                  <div className="grid gap-1">
+                    <Label htmlFor="filter-kode-mr">Kode MR</Label>
+                    <Input
+                      id="filter-kode-mr"
+                      placeholder="Cari kode MR..."
+                      value={kodeMr}
+                      onChange={(e) => setKodeMr(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="grid gap-1">
+                    <Label htmlFor="filter-resi">No. Resi Pengiriman</Label>
+                    <Input
+                      id="filter-resi"
+                      placeholder="Cari no. resi..."
+                      value={resi}
+                      onChange={(e) => setResi(e.target.value)}
+                    />
+                  </div>
+
+                  {/* STATUS — TIDAK DIUBAH */}
+                  <div className="grid gap-1">
+                    <Label htmlFor="filter-status">Status</Label>
+                    <Select value={status} onValueChange={setStatus}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Pilih Status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="ready to pickup">Ready to Pickup</SelectItem>
+                        <SelectItem value="on delivery">On Delivery</SelectItem>
+                        <SelectItem value="delivered">Delivered</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="grid gap-1">
+                    <Label htmlFor="filter-dari-gudang">Dari Gudang</Label>
+                    <Input
+                      id="filter-dari-gudang"
+                      placeholder="Cari gudang asal..."
+                      value={dariGudang}
+                      onChange={(e) => setDariGudang(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="grid gap-1">
+                    <Label htmlFor="filter-ke-gudang">Ke Gudang</Label>
+                    <Input
+                      id="filter-ke-gudang"
+                      placeholder="Cari gudang tujuan..."
+                      value={keGudang}
+                      onChange={(e) => setKeGudang(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+
             {/* RESET FILTER */}
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
-                    variant="destructive"
+                    variant="outline"
                     size="icon"
                     onClick={resetFilters}
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <X className="h-4 w-4 text-red-500" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>Hapus Filter</TooltipContent>
@@ -294,15 +303,14 @@ export default function DeliveryPage() {
                   <Button
                     variant="outline"
                     size="icon"
-                    onClick={() => downloadDeliveryExcel()}
+                    onClick={downloadDeliveryExcel}
                   >
-                    <FileSpreadsheet className="h-4 w-4" />
+                    <FileSpreadsheet className="h-4 w-4 text-green-600" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>Export Excel</TooltipContent>
               </Tooltip>
             </TooltipProvider>
-          </div>
 
           </div>
           <div className="col-span-12 border rounded-sm overflow-x-auto">
@@ -353,7 +361,7 @@ export default function DeliveryPage() {
                         <Button
                           size="icon"
                           variant="outline"
-                          className="text-orange-600 hover:text-orange-700"
+                          className="border-sky-400 text-sky-600 hover:bg-sky-50"
                           asChild
                         >
                           <Link
@@ -361,7 +369,7 @@ export default function DeliveryPage() {
                               deliv.dlv_kode
                             )}`}
                           >
-                            <Eye className="h-4 w-4" />
+                            <Info className="h-4 w-4" />
                           </Link>
                         </Button>
                       </TableCell>
@@ -404,7 +412,7 @@ export default function DeliveryPage() {
           </SectionBody>
           <SectionFooter>
             <Button
-              className="w-full flex gap-4"
+              className="w-full !bg-green-600 hover:!bg-green-700 !text-white flex items-center justify-center gap-2 h-11"
               type="submit"
               form="create-delivery-form">
               Tambah

@@ -7,7 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import WithSidebar from "@/components/layout/WithSidebar";
 import { Button } from "@/components/ui/button";
 import type {MRReceive } from "@/types";
-import { ClipboardPlus } from "lucide-react";
+import { ClipboardPlus, Filter, Info, Search, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import CreateMRForm from "@/components/form/create-mr";
@@ -31,6 +31,13 @@ import {
 } from "@/components/ui/popover";
 import { formatTanggal } from "@/lib/utils";
 import { PagingSize } from "@/types/enum";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
 
 export default function MaterialRequest() {
   const {user} = useAuth()
@@ -167,101 +174,151 @@ export default function MaterialRequest() {
       {/* Data MR */}
       <SectionContainer span={12}>
         <SectionHeader>Daftar Material Request</SectionHeader>
-        <SectionBody className="grid grid-cols-12 gap-2">
-          {/* Filtering */}
-          <div className="col-span-12 grid grid-cols-12 gap-4 items-end">
-            {/* Search by kode */}
-            <div className="col-span-12 md:col-span-4 lg:col-span-5">
-              <Input
-                placeholder="Cari berdasarkan kode"
-                value={kode}
-                onChange={(e) => setKode(e.target.value)}
-              />
-            </div>
+      <SectionBody className="grid grid-cols-12 gap-2">
+        <div className="flex flex-col gap-4 col-span-12">
+  {/* =====================
+      FILTER TOOLBAR MR
+  ====================== */}
+<div className="col-span-12 flex items-end gap-3">
 
-            {/* Search button */}
-            <div className="col-span-12 md:col-span-4 lg:col-span-2">
-              <Button className="w-full" onClick={filterMrs}>
-                Cari
-              </Button>
-            </div>
+  {/* INPUT SEARCH – FLEKSIBEL, MENTOK */}
+  <div className="flex-1">
+      <Input
+        placeholder="Cari berdasarkan kode MR"
+        value={kode}
+        onChange={(e) => setKode(e.target.value)}
+        onKeyDown={(e) => e.key === "Enter" && filterMrs()}
+      />
+    </div>
 
-            {/* Filter popover */}
-            <div className="col-span-12 md:col-span-4 lg:col-span-3">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full">
-                    Filter Tambahan
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-80 space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-1">
-                      Tanggal MR
-                    </label>
-                    <DatePicker value={tanggalMr} onChange={setTanggalMr} />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">
-                      Due Date
-                    </label>
-                    <DatePicker value={dueDate} onChange={setDueDate} />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">
-                      Lokasi
-                    </label>
-                    <Input
-                      placeholder="Lokasi"
-                      value={lokasi}
-                      onChange={(e) => setLokasi(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">
-                      PIC
-                    </label>
-                    <Input
-                      placeholder="PIC"
-                      value={pic}
-                      onChange={(e) => setPic(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">
-                      Status
-                    </label>
-                    <Input
-                      placeholder="Status"
-                      value={status}
-                      onChange={(e) => setStatus(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">
-                      Priority
-                    </label>
-                    <Input
-                      placeholder="Priority"
-                      value={priority}
-                      onChange={(e) => setPriority(e.target.value)}
-                    />
-                  </div>
-                </PopoverContent>
-              </Popover>
-            </div>
+    {/* ACTION BUTTONS */}
+    <div className="col-span-12 md:col-span-3 flex items-center gap-2">
 
-            {/* Clear filter button */}
-            <div className="col-span-12 md:col-span-4 lg:col-span-2">
-              <Button
-                className="w-full"
-                variant={"destructive"}
-                onClick={resetFilters}
-              >
-                Hapus Filter
-              </Button>
-            </div>
+      {/* SEARCH */}
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              size="icon"
+              onClick={filterMrs}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              <Search className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Cari MR</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+
+      {/* FILTER (STABIL) */}
+      <Popover>
+        <TooltipProvider>
+          <Tooltip>
+            <PopoverTrigger asChild>
+              <TooltipTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <Filter className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+            </PopoverTrigger>
+            <TooltipContent>Filter Tambahan</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+
+        <PopoverContent className="w-80 space-y-4">
+
+          {/* TANGGAL MR */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Tanggal MR</label>
+            <DatePicker value={tanggalMr} onChange={setTanggalMr} />
           </div>
+
+          {/* DUE DATE */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Due Date</label>
+            <DatePicker value={dueDate} onChange={setDueDate} />
+          </div>
+
+          {/* LOKASI */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Lokasi</label>
+            <Input
+              placeholder="Lokasi"
+              value={lokasi}
+              onChange={(e) => setLokasi(e.target.value)}
+            />
+          </div>
+
+          {/* PIC */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">PIC</label>
+            <Input
+              placeholder="PIC"
+              value={pic}
+              onChange={(e) => setPic(e.target.value)}
+            />
+          </div>
+
+          {/* STATUS */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Status</label>
+            <Input
+              placeholder="open / partial / closed"
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+            />
+          </div>
+
+          {/* PRIORITY */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Priority</label>
+            <Input
+              placeholder="1 / 2 / 3 / 4"
+              value={priority}
+              onChange={(e) => setPriority(e.target.value)}
+            />
+          </div>
+
+          {/* ACTION */}
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={resetFilters}
+            >
+              Reset
+            </Button>
+            <Button
+              size="sm"
+              onClick={filterMrs}
+            >
+              Terapkan
+            </Button>
+          </div>
+        </PopoverContent>
+      </Popover>
+
+      {/* RESET */}
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={resetFilters}
+              className="border-red-300 text-red-600 hover:bg-red-50"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Reset Filter</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+
+    </div>
+  </div>
+    </div>
+
           <div className="col-span-12 border rounded-sm overflow-x-auto">
             <Table>
               <TableHeader>
@@ -298,17 +355,23 @@ export default function MaterialRequest() {
                         {mr.details?.length || 0}
                       </TableCell>
                       <TableCell className="border p-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="mr-2"
-                          asChild
-                        >
-                          <Link
-                            to={`/mr/kode/${encodeURIComponent(mr.mr_kode)}`}>
-                            Detail
-                          </Link>
-                        </Button>
+                      <TooltipProvider>
+  <Tooltip>
+    <TooltipTrigger asChild>
+      <Button
+        size="icon"
+        variant="outline"
+        className="border-sky-400 text-sky-600 hover:bg-sky-50"
+        asChild
+      >
+        <Link to={`/mr/kode/${encodeURIComponent(mr.mr_kode)}`}>
+          <Info className="h-4 w-4" />
+        </Link>
+      </Button>
+    </TooltipTrigger>
+  </Tooltip>
+</TooltipProvider>
+
                       </TableCell>
                     </TableRow>
                   ))
@@ -349,15 +412,23 @@ export default function MaterialRequest() {
               <CreateMRForm user={user} setRefresh={setRefresh} />
             </div>
           </SectionBody>
-          <SectionFooter>
-            <Button
-              className="w-full flex gap-4"
-              type="submit"
-              form="create-mr-form"
-            >
-              Tambah <ClipboardPlus />
-            </Button>
-          </SectionFooter>
+         <SectionFooter>
+  <TooltipProvider>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          type="submit"
+          form="create-mr-form"
+          className="w-full !bg-green-600 hover:!bg-green-700 !text-white"
+        >
+          <ClipboardPlus className="h-4 w-4" />
+          <span>Tambah MR</span>
+        </Button>
+      </TooltipTrigger>
+    </Tooltip>
+  </TooltipProvider>
+</SectionFooter>
+
         </SectionContainer>
       )}
     </WithSidebar>

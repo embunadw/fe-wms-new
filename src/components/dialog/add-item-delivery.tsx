@@ -131,7 +131,9 @@ export function AddItemDeliveryDialog({
         </div>
 
         <DialogFooter>
-          <Button type="button" onClick={handleSaveItem}>
+          <Button 
+          className="!bg-green-600 hover:!bg-green-700 text-white"
+          type="button" onClick={handleSaveItem}>
             Tambahkan
           </Button>
         </DialogFooter>

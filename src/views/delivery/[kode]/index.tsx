@@ -5,7 +5,7 @@ import SectionContainer, {
 } from "@/components/content-container";
 import WithSidebar from "@/components/layout/WithSidebar";
 import type { DeliveryReceive, MRReceive } from "@/types";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { toast } from "sonner";
 import {
@@ -31,6 +31,7 @@ import { ReceiveDeliveryDialog } from "@/components/dialog/edit-deliv-confirm";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { QRCodeCanvas } from "qrcode.react";
+import { Printer } from "lucide-react";
 
 
 type DeliveryStatus =
@@ -44,17 +45,21 @@ export function DeliveryDetail() {
   
   const { kode } = useParams<{ kode: string }>();
   const { user } = useAuth();
+  const [loadingDelivery, setLoadingDelivery] = useState(true);
+  const [, setLoadingMr] = useState(true);
 
   const [dlvry, setdlvry] = useState<DeliveryReceive | null>(null);
   const [mr, setMr] = useState<MRReceive | null>(null);
   const [refresh, setRefresh] = useState(false);
-  const [loadingDelivery, setLoadingDelivery] = useState(true);
-  const [,setLoadingMr] = useState(true);
+  // const [loadingDelivery, setLoadingDelivery] = useState(true);
+  // const [,setLoadingMr] = useState(true);
 
   const [openReceive, setOpenReceive] = useState(false);
   const [showSignature, setShowSignature] = useState(false);
+  const [, setSignatureConfirmed] = useState(false);
+  const toastShownRef = useRef(false);
 
-  /* ================= FETCH DELIVERY ================= */
+
   useEffect(() => {
     async function fetchDeliveryDetail() {
       setLoadingDelivery(true);
@@ -71,7 +76,6 @@ export function DeliveryDetail() {
     if (kode) fetchDeliveryDetail();
   }, [kode, refresh]);
 
-  /* ================= FETCH MR ================= */
   useEffect(() => {
     async function fetchMrDetail() {
       if (!dlvry?.mr?.mr_kode) return;
@@ -90,28 +94,30 @@ export function DeliveryDetail() {
     fetchMrDetail();
   }, [dlvry]);
 
-  /* ================= POLLING SIGNATURE ================= */
   useEffect(() => {
-    if (!showSignature || !kode) return;
+  if (!showSignature || !kode) return;
 
-    const interval = setInterval(async () => {
-      try {
-        const res = await getDeliveryByKode(kode);
-        if (res?.signed_penerima_sign) {
-          setdlvry(res);
-          setShowSignature(false);
-          toast.success("Tanda tangan diterima! Siap print.");
-          clearInterval(interval);
-        }
-      } catch (err) {
-        console.error(err);
+  const interval = setInterval(async () => {
+    try {
+      const res = await getDeliveryByKode(kode);
+
+      if (res?.signed_penerima_sign && !toastShownRef.current) {
+        toastShownRef.current = true;
+        setdlvry(res);
+        setShowSignature(false);
+        setSignatureConfirmed(true);
+        toast.success("Tanda tangan diterima! Siap print.");
+        clearInterval(interval);
       }
-    }, 2000);
+    } catch (err) {
+      console.error(err);
+    }
+  }, 2000);
 
-    return () => clearInterval(interval);
-  }, [showSignature, kode]);
+  return () => clearInterval(interval);
+}, [showSignature, kode]);
 
-  /* ================= JANGAN DIUBAH ================= */
+
   async function handleUpdateStatus(
     status: DeliveryStatus,
     pickupPlanAt?: string
@@ -133,7 +139,6 @@ export function DeliveryDetail() {
       toast.error(error.message);
     }
   }
-  /* ================= END ================= */
 
   if (loadingDelivery) {
     return (
@@ -162,8 +167,6 @@ export function DeliveryDetail() {
 
   return (
     <WithSidebar>
-
-      {/* ================= QR MODAL (INI YANG KURANG) ================= */}
       {showSignature && dlvry && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center print:hidden">
           <div className="bg-white p-6 rounded-md w-[350px] space-y-4 text-center">
@@ -233,16 +236,16 @@ export function DeliveryDetail() {
             </div>
           </div>
         </SectionBody>
-
-        <SectionFooter className="flex gap-2">
-          {user?.role === "warehouse" &&
-            dlvry.dlv_status === "pending" && (
-              <ConfirmDialog
-                text="Mulai Packing"
-                onClick={() => handleUpdateStatus("packing")}
-              />
-            )}
-
+       <SectionFooter className="flex flex-wrap items-center justify-start gap-3">
+        {/* LEFT ACTIONS */}
+        <div className="flex flex-wrap gap-2">
+          {/* WAREHOUSE */}
+          {user?.role === "warehouse" && dlvry.dlv_status === "pending" && (
+            <ConfirmDialog
+              text="Mulai Packing"
+              onClick={() => handleUpdateStatus("packing")}
+            />
+          )}
           {user?.role === "warehouse" &&
             dlvry.dlv_status === "packing" &&
             !isHandCarry && (
@@ -251,32 +254,15 @@ export function DeliveryDetail() {
                 refresh={() => setRefresh((p) => !p)}
               />
             )}
-
-          {user?.role === "logistik" &&
-            dlvry.dlv_status === "ready to pickup" && (
-              <ConfirmDialog
-                text="Pickup Barang"
-                onClick={() => handleUpdateStatus("on delivery")}
-              />
-            )}
-
-          {user?.role === "user" &&
-            dlvry.dlv_status === "on delivery" && (
-              <Button onClick={() => setOpenReceive(true)}>
-                Konfirmasi Barang Diterima
-              </Button>
-            )}
-
           {user?.role === "warehouse" &&
-            dlvry.dlv_status === "on delivery" &&
+            dlvry.dlv_status === "delivered" &&
+            dlvry.dlv_ke_gudang === user.lokasi &&
             !dlvry.signed_penerima_sign && (
-              <Button
-                variant="outline"
-                onClick={() => setShowSignature(true)}
-              >
+              <Button variant="outline" onClick={() => setShowSignature(true)}>
                 Tanda Tangan
               </Button>
             )}
+          {/* LOGISTIK */}
           {user?.role === "logistik" &&
             dlvry.dlv_status === "ready to pickup" && (
               <ConfirmDialog
@@ -285,22 +271,29 @@ export function DeliveryDetail() {
               />
             )}
 
+          {/* USER */}
           {user?.role === "user" &&
-            dlvry.dlv_status === "on delivery" && 
-            dlvry.dlv_ke_gudang == user.lokasi &&(
+            dlvry.dlv_status === "on delivery" &&
+            dlvry.dlv_ke_gudang === user.lokasi && (
               <Button onClick={() => setOpenReceive(true)}>
                 Konfirmasi Barang Diterima
               </Button>
             )}
-
-          {dlvry.signed_penerima_sign && dlvry.signed_penerima_sign !== "" && (
-            <Button onClick={() => downloadDeliveryPdf(dlvry.dlv_kode)}>
-              Export PDF
-            </Button>
-          )}
-        </SectionFooter>
+        </div>
+        {/* RIGHT ACTIONS */}
+        <div className="flex items-center justify-between">
+        {dlvry.signed_penerima_sign && (
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => downloadDeliveryPdf(dlvry.dlv_kode)}
+          >
+            <Printer className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
+      </SectionFooter>
       </SectionContainer>
-
       <ReceiveDeliveryDialog
         open={openReceive}
         setOpen={setOpenReceive}
@@ -317,16 +310,20 @@ export function DeliveryDetail() {
                 <TableHead>No</TableHead>
                 <TableHead>Part Number</TableHead>
                 <TableHead>Nama Part</TableHead>
-                <TableHead>Qty Received</TableHead>
+                <TableHead>Qty Pending</TableHead>
+                <TableHead>Qty On Delivery</TableHead>
+                <TableHead>Qty Delivered</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {mr?.details?.map((item, i) => (
+              {dlvry?.details?.map((item, i) => (
                 <TableRow key={i}>
                   <TableCell>{i + 1}</TableCell>
-                  <TableCell>{item.dtl_mr_part_number}</TableCell>
-                  <TableCell>{item.dtl_mr_part_name}</TableCell>
-                  <TableCell>{item.dtl_mr_qty_received}</TableCell>
+                  <TableCell>{item.dtl_dlv_part_number}</TableCell>
+                  <TableCell>{item.dtl_dlv_part_name}</TableCell>
+                  <TableCell>{item.qty_pending}</TableCell>
+                  <TableCell>{item.qty_on_delivery}</TableCell>
+                  <TableCell>{item.qty_delivered}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

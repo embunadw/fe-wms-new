@@ -7,10 +7,7 @@ import type { MasterPart, MRDetail, MRReceive, UserComplete, UserDb } from "@/ty
 import { DatePicker } from "../date-picker";
 import {
   Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
+
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
@@ -24,9 +21,9 @@ import {
 } from "../ui/table";
 import { AddItemMRDialog } from "../dialog/add-item-mr";
 import { Button } from "../ui/button";
-import { LokasiList } from "@/types/enum";
+// import { LokasiList } from "@/types/enum";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
-import { CheckIcon, ChevronsUpDownIcon } from "lucide-react";
+import { ChevronsUpDownIcon, ClipboardPlus, Trash2 } from "lucide-react";
 import {
   Command,
   CommandEmpty,
@@ -35,7 +32,7 @@ import {
   CommandItem,
   CommandList,
 } from "../ui/command";
-import { cn } from "@/lib/utils";
+// import { cn } from "@/lib/utils";
 import { getMasterParts } from "@/services/master-part";
 
 
@@ -56,7 +53,7 @@ export default function CreateMRForm({ user, setRefresh }: CreateMRFormProps) {
 
   // Pencarian master part
   const [open, setOpen] = useState<boolean>(false);
-  const [masterParts, setMasterParts] = useState<MasterPart[]>([]);
+  const [, setMasterParts] = useState<MasterPart[]>([]);
   const [filteredParts, setFilteredParts] = useState<MasterPart[]>([]);
   const [selectedPart, setSelectedPart] = useState<MasterPart>();
 
@@ -80,21 +77,21 @@ export default function CreateMRForm({ user, setRefresh }: CreateMRFormProps) {
   }, []);
 
   // Fetch kode MR
-  async function fetchKodeMR() {
-    toast.info("Menghasilkan Kode MR baru...");
-    try {
-      const kode = await generateKodeMR(user.lokasi);
-      setKodeMR(kode);
-      toast.success("Kode MR sudah terbaru.");
-      console.log("KODE MASUK", kode)
-    } catch (error) {
-      if (error instanceof Error) {
-        toast.error(`Gagal menghasilkan Kode MR: ${error.message}`);
-      } else {
-        toast.error("Terjadi kesalahan saat menghasilkan Kode MR.");
-      }
-    }
-  }
+  // async function fetchKodeMR() {
+  //   toast.info("Menghasilkan Kode MR baru...");
+  //   try {
+  //     const kode = await generateKodeMR(user.lokasi);
+  //     setKodeMR(kode);
+  //     toast.success("Kode MR sudah terbaru.");
+  //     console.log("KODE MASUK", kode)
+  //   } catch (error) {
+  //     if (error instanceof Error) {
+  //       toast.error(`Gagal menghasilkan Kode MR: ${error.message}`);
+  //     } else {
+  //       toast.error("Terjadi kesalahan saat menghasilkan Kode MR.");
+  //     }
+  //   }
+  // }
   
   async function fetchKodeMRSilent() {
   try {
@@ -155,17 +152,19 @@ useEffect(() => {
       return;
     }
 
-    const data: MRReceive = {
-      mr_kode: kodeMR,
-      mr_tanggal: toMysqlDatetime(tanggalMR),
-      mr_due_date: toMysqlDatetime(duedate),
-      mr_lokasi: lokasi,
-      mr_pic: user.nama,
-      mr_status: status,
-      details: mrItems,
-      created_at: toMysqlDatetime(new Date()),
-      updated_at: toMysqlDatetime(new Date()),
-    };
+  const data: MRReceive = {
+  mr_kode: kodeMR,
+  mr_tanggal: toMysqlDatetime(tanggalMR),
+  mr_due_date: toMysqlDatetime(duedate),
+  mr_lokasi: lokasi,
+  mr_pic: user.nama,
+  mr_status: status,
+  details: mrItems,
+  created_at: toMysqlDatetime(new Date()),
+  updated_at: toMysqlDatetime(new Date()),
+  mr_last_edit_at: toMysqlDatetime(new Date()),
+  mr_last_edit_by: user.nama,
+};
 
     try {
       const res = await createMR(data);
@@ -222,156 +221,110 @@ useEffect(() => {
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      id="create-mr-form"
-      className="grid grid-cols-12 gap-4"
-    >
-      <div className="flex flex-col col-span-12 lg:col-span-4 gap-4">
-        {/* Kode MR */}
-        <div className="flex flex-col gap-2">
-          <Label>Kode MR</Label>
-          <div className="flex items-center gap-4">
-            <Input
-              name="numberMR"
-              disabled
-              value={kodeMR ?? ""}
-              className="lg:tracking-wider"
-            />
-            <Button
-              variant={"outline"}
-              type="button"
-              onClick={async () => await fetchKodeMRWithToast()}
-            >
-              Refresh
-            </Button>
-          </div>
-        </div>
+<form
+  onSubmit={handleSubmit}
+  id="create-mr-form"
+  className="grid grid-cols-12 gap-6"
+>
+<div className="col-span-12 grid grid-cols-12 gap-4">
+  <div className="col-span-12 md:col-span-4">
+    <Label>Kode MR</Label>
+    <div className="flex gap-2">
+      <Input disabled value={kodeMR ?? ""} />
+      <Button variant="outline" type="button" onClick={fetchKodeMRWithToast}>
+        Refresh
+      </Button>
+    </div>
+  </div>
 
-        {/* Tanggal MR */}
-        <div className="flex flex-col gap-2">
-          <Label>Tanggal MR</Label>
-          <div className="flex items-center">
-            <DatePicker disabled value={tanggalMR} onChange={setTanggalMR} />
-          </div>
-        </div>
-      </div>
+  <div className="col-span-12 md:col-span-4">
+    <Label>Person in Charge</Label>
+    <Input disabled value={user.nama} />
+  </div>
 
-      <div className="flex flex-col col-span-12 lg:col-span-4 gap-4">
-        {/* PIC */}
-        <div className="flex flex-col gap-2">
-          <Label>Person in Charge</Label>
-          <div className="flex items-center">
-            <Input value={user.nama} name="pic" disabled />
-          </div>
-        </div>
+  <div className="col-span-12 md:col-span-4">
+    <Label>Lokasi</Label>
+    <Select disabled>
+      <SelectTrigger>
+        <SelectValue placeholder={user.lokasi} />
+      </SelectTrigger>
+    </Select>
+  </div>
+</div>
+<div className="col-span-12 grid grid-cols-12 gap-4">
+  <div className="col-span-12 md:col-span-4">
+    <Label>Tanggal MR</Label>
+    <DatePicker disabled value={tanggalMR} onChange={setTanggalMR} />
+  </div>
 
-        {/* Tanggal duedate */}
-        <div className="flex flex-col gap-2">
-          <Label>Tanggal due date</Label>
-          <div className="flex items-center">
-            <DatePicker value={duedate ?? undefined} onChange={setDueDate} />
-          </div>
-        </div>
-      </div>
+  <div className="col-span-12 md:col-span-4">
+    <Label>Tanggal Due Date<span className="text-red-500">*</span></Label>
+    <DatePicker value={duedate ?? undefined} onChange={setDueDate} />
+  </div>
 
-      <div className="flex flex-col col-span-12 lg:col-span-4 gap-4">
-        {/* Lokasi */}
-        <div className="flex flex-col gap-2">
-          <Label>Lokasi</Label>
-          <div className="flex items-center">
-            <Select required name="lokasi" disabled>
-              <SelectTrigger className="w-full" name="lokasi" id="lokasi">
-                <SelectValue
-                  placeholder={user.lokasi}
-                  defaultValue={user.lokasi}
-                />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  <SelectLabel>Daftar Lokasi</SelectLabel>
-                  {LokasiList?.map((lokasi) => (
-                    <SelectItem key={lokasi.kode} value={lokasi.nama}>
-                      {lokasi.nama}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-      </div>
+  <div className="col-span-12 md:col-span-4">
+    <Label>Part Number<span className="text-red-500">*</span></Label>
 
-      {/* Tambah Item MR */}
-      <div className="col-span-12 grid grid-cols-12 gap-4">
-        {/* Combobox */}
-        <Popover open={open} onOpenChange={setOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              role="combobox"
-              aria-expanded={open}
-              className={cn("col-span-12 lg:col-span-8 justify-between")}
-            >
-              {selectedPart
-                ? masterParts.find(
-                    (part: MasterPart) =>
-                      part.part_number === selectedPart.part_number
-                  )?.part_number
-                : "Cari part number..."}
-              <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-(--radix-popover-trigger-width) p-0">
-            <Command>
-              <CommandInput placeholder="Cari part number..." />
-              <CommandList>
-                <CommandEmpty>Tidak ada.</CommandEmpty>
-                <CommandGroup>
-                  {filteredParts?.map((part) => (
-                    <CommandItem
-                      key={part.part_number}
-                      value={part.part_number}
-                      onSelect={(currentValue) => {
-                        setSelectedPart(
-                          masterParts.find(
-                            (part) => part.part_number === currentValue
-                          )
-                        );
-                        setOpen(false);
-                      }}
-                    >
-                      <CheckIcon
-                        className={cn(
-                          "mr-2 h-4 w-4",
-                          selectedPart?.part_number === part.part_number
-                            ? "opacity-100"
-                            : "opacity-0"
-                        )}
-                      />
-                      {`${part.part_number} | ${part.part_name}`}
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              </CommandList>
-            </Command>
-          </PopoverContent>
-        </Popover>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+        type="button"  
+          variant="outline"
+          role="combobox"
+          className="w-full justify-between"
+        >
+          {selectedPart
+            ? `${selectedPart.part_number} | ${selectedPart.part_name}`
+            : "Cari part number..."}
+          <ChevronsUpDownIcon className="h-4 w-4 opacity-50" />
+        </Button>
+      </PopoverTrigger>
 
-        <AddItemMRDialog
-          selectedPart={selectedPart}
-          onAddItem={handleAddItem}
-          triggerButton={
-            <Button
-              className="col-span-12 md:col-span-4"
-              variant={"outline"}
-              disabled={!selectedPart}
-            >
-              Tambah Barang
-            </Button>
-          }
-        />
-      </div>
+      <PopoverContent className="w-(--radix-popover-trigger-width) p-0">
+        <Command>
+          <CommandInput placeholder="Cari part number..." />
+          <CommandList>
+            <CommandEmpty>Tidak ada.</CommandEmpty>
+            <CommandGroup>
+              {filteredParts.map((part) => (
+                <CommandItem
+                  key={part.part_number}
+                  value={part.part_number}
+                  onSelect={() => {
+                    setSelectedPart(part);
+                    setOpen(false);
+                  }}
+                >
+                  {part.part_number} | {part.part_name}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  </div>
+</div>
+
+<div className="col-span-12">
+  <AddItemMRDialog
+    selectedPart={selectedPart}
+    onAddItem={handleAddItem}
+    triggerButton={
+      
+      <Button
+  className="w-full !bg-green-600 hover:!bg-green-700 !text-white"
+             
+  disabled={!selectedPart}
+>
+  <ClipboardPlus className="h-4 w-4" />
+  <span>Tambah Barang</span>
+</Button>
+    }
+  />
+</div>
+
+     
 
       <div className="col-span-12">
         <Table>
@@ -409,14 +362,16 @@ useEffect(() => {
                   <TableCell>{item.dtl_mr_qty_request}</TableCell>
                   <TableCell>{item.dtl_mr_prioritas}</TableCell>
                   <TableCell>
-                    <Button
-                      type="button"
-                      size={"sm"}
-                      variant={"outline"}
-                      onClick={() => handleRemoveItem(index)}
-                    >
-                      Hapus
-                    </Button>
+                 <Button
+  type="button"
+  size="sm"
+  variant="delete"
+  onClick={() => handleRemoveItem(index)}
+  className="flex items-center gap-2"
+>
+  <Trash2/>
+</Button>
+
                   </TableCell>
                 </TableRow>
               ))

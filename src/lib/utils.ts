@@ -50,3 +50,38 @@ export function formatDateTime(
     minute: "2-digit",
   });
 }
+
+export function formatRupiah(value: number) {
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    minimumFractionDigits: 2,
+  }).format(value);
+}
+
+// export function formatRupiahInput(value: number | string) {
+//   const number = typeof value === "string"
+//     ? Number(value.replace(/\D/g, ""))
+//     : value;
+
+//   if (!number) return "";
+
+//   return new Intl.NumberFormat("id-ID", {
+//     style: "currency",
+//     currency: "IDR",
+//     minimumFractionDigits: 2,
+//   }).format(number);
+// }
+
+export function parseRupiah(value: string) {
+  return Number(value.replace(/\D/g, ""));
+}
+
+// src/lib/tooltip-variants.ts
+// tooltipVariants.ts
+export const tooltipVariants = {
+  primary: "!bg-blue-600 !text-white !border-blue-600",
+  success: "!bg-emerald-600 !text-white !border-emerald-600",
+  edit: "!bg-orange-500 !text-white !border-orange-500",
+  danger: "!bg-red-600 !text-white !border-red-600",
+};

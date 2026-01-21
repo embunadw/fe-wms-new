@@ -87,7 +87,7 @@ export default function CreateSpbDoForm({ setRefresh }: CreateSpbDoFormProps) {
   >
     {/* ================= ROW 1 ================= */}
     <div className="col-span-12 lg:col-span-4 space-y-2">
-      <Label>Pilih SPB</Label>
+      <Label>Pilih SPB<span className="text-red-500">*</span></Label>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
@@ -134,12 +134,12 @@ export default function CreateSpbDoForm({ setRefresh }: CreateSpbDoFormProps) {
     </div>
 
     <div className="col-span-12 lg:col-span-4 space-y-2">
-      <Label>No DO</Label>
+      <Label>No DO<span className="text-red-500">*</span></Label>
       <Input name="do_no" required />
     </div>
 
     <div className="col-span-12 lg:col-span-4 space-y-2">
-      <Label>Tanggal DO</Label>
+      <Label>Tanggal DO<span className="text-red-500">*</span></Label>
       <Input type="date" name="do_date" required />
     </div>
   </form>

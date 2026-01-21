@@ -1,5 +1,3 @@
-// src/types/index.ts
-
 /* ==========================
    BASIC TYPES
 ========================== */
@@ -24,6 +22,18 @@ export interface UserDb {
   status?: "active" | "inactive";
 }
 
+export interface POHeader {
+  id?: string;
+  kode: string;
+  kode_pr: string;
+  tanggal_estimasi: string;
+    po_detail_status?: string;
+  status: string;
+  pic: string;
+  keterangan?: string;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+}
 export interface UserComplete {
   id: string;
   email: string;
@@ -37,17 +47,11 @@ export interface UserComplete {
   updated_at?: Timestamp;
 }
 
+/* ==========================
+   MATERIAL REQUEST (MR)
+========================== */
 
-export interface MRItem {
-  part_id: string;
-  part_number: string;
-  part_name: string;
-  satuan: string;
-  priority: string;
-  qty: number;
-  qty_delivered: number;
-}
-
+//export type MRStatus = "open" | "partial" | "closed";
 
 export interface MRDetail {
   dtl_mr_id?: string;
@@ -73,6 +77,70 @@ export interface MRDetail {
 //   updated_at: string;
 //   details: MRDetail[];
 // }
+export interface MRReceive {
+  mr_id?: string;
+  mr_kode: string;
+  mr_lokasi: string;
+  mr_pic: string;
+  mr_tanggal: string;
+  mr_due_date: string;
+  mr_status: MRStatus;
+
+  // 🔥 audit dari BE
+  mr_last_edit_at?: string | null;
+  mr_last_edit_by?: string | null;
+
+  created_at: string;
+  updated_at: string;
+  details: MRDetail[];
+
+    // ✅ TAMBAHAN SIGNATURE
+  signature_url?: string | null;
+  sign_at?: string | null;
+}
+
+export type MasterVendor = {
+  vendor_id?: number;
+  vendor_no: string;
+  vendor_name: string;
+  telephone?: string;
+  contact_name?: string;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type MasterCustomer = {
+  customer_id?: number;
+  customer_no: string;
+  customer_name: string;
+  telephone?: string;
+  contact_name?: string;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+};
+
+
+
+/**
+ * Payload khusus update ITEM MR
+ * (dipakai untuk PUT /mr/{id})
+ */
+export interface UpdateMRItemPayload {
+  dtl_mr_id: string;
+  part_id: string;
+  dtl_mr_part_number: string;
+  dtl_mr_part_name: string;
+  dtl_mr_satuan: string;
+  dtl_mr_prioritas: string;
+  dtl_mr_qty_request: number;
+  mr_last_edit_by?: string;
+}
+
+export interface UpdateMRStatusPayload {
+  mr_status: MRStatus;
+}
 
 /* ==========================
    PURCHASE REQUEST (PR)
@@ -96,8 +164,50 @@ export interface PR {
   pic: string;
   created_at: Timestamp;
   updated_at: Timestamp;
-  order_item: PRItem[]; 
+  order_item: PRItem[];
   mrs: string[];
+      // ✅ TAMBAHAN SIGNATURE
+  signature_url?: string | null;
+  sign_at?: string | null;
+}
+
+/* ==========================
+   PURCHASE ORDER (PO)
+========================== */
+
+// export interface PODetail {
+//   po_id?: string;
+//   part_id?: string;
+//   dtl_po_part_number: string;
+//   dtl_po_part_name: string;
+//   dtl_po_satuan: string;
+//   dtl_po_qty: number;
+//   dtl_qty_received?: number;
+//   dtl_po_harga?: number; // 🔥 TAMBAH
+//   vendor?: {
+//     vendor_id?: number | string;
+//     vendor_name: string;
+//   };
+// }
+export interface PODetail {
+  po_id?: string;
+  part_id?: string | number;
+  dtl_po_part_number: string;
+  dtl_po_part_name: string;
+  dtl_po_satuan: string;
+  dtl_po_qty: number;
+  dtl_qty_received?: number;
+
+  // 🔥 WAJIB, BUKAN OPTIONAL
+  dtl_po_harga: number;
+
+  // 🔥 WAJIB DI ROOT
+  vendor_id: number | string;
+
+  // OPTIONAL untuk tampilan
+  vendor?: {
+    vendor_name: string;
+  };
 }
 
 export interface PO {
@@ -108,22 +218,22 @@ export interface PO {
   po_estimasi: string;
   po_status: string;
   po_pic: string;
+  po_detail_status?: string;
   po_keterangan?: string;
   created_at: string;
   updated_at: string;
   details: PODetail[];
 }
 
-
-export interface PODetail {
-  po_id?: string;
-  part_id?: string;
-  dtl_po_part_number: string;
-  dtl_po_part_name: string;
-  dtl_po_satuan: string;
-  dtl_po_qty: number;
-  dtl_qty_received?: number;
-}
+// export interface POReceive {
+//   po_id?: string;
+//   part_id?: string;
+//   dtl_po_part_number: string;
+//   dtl_po_part_name: string;
+//   dtl_po_satuan: string;
+//   dtl_po_qty: number;
+//   dtl_qty_received?: number;
+// }
 
 
 //Diyah Edit
@@ -151,24 +261,58 @@ export interface Part {
   created_at: string;
   updated_at: string;
 }
-
-export interface MasterPart {
-  part_id?: string;
-  part_number: string;
-  part_name: string;
-  part_satuan: string;
+export interface POReceive {
+  po_id?: string;
+  po_kode: string;
+  pr_id: string;
+  po_tanggal: string;
+  po_estimasi: string;
+  po_keterangan: string;
+  po_pic: string | null;
+  po_detail_status?: string;
+  po_status: string;
   created_at: string;
   updated_at: string;
+  purchase_request: PurchaseRequest;
+  details: PODetail[];
+      signature_url?: string | null;
+  sign_at?: string | null;
 }
+// export interface POReceive {
+//   part_id?: string;
+//   part_number: string;
+//   part_name: string;
+//   part_satuan: string;
+//   po_kode: string;
+//   pr_id: string;
+//   po_tanggal: string;
+//   po_estimasi: string;
+//   po_keterangan: string;
+//   po_pic: string | null;
+//   po_detail_status?: string;
+//   po_status: string;
+//   created_at: string;
+//   updated_at: string;
+//   purchase_request: PurchaseRequest;
+//   details: PODetail[];
+//       signature_url?: string | null;
+//   sign_at?: string | null;
+// }
 
-export interface Pic {
-  id?: string;
-  nama: string;
-  email: string;
-  role: string;
-  lokasi: string;
-  created_at: string | null;
-  updated_at: string | null;
+/* ==========================
+   PURCHASE REQUEST RECEIVE
+========================== */
+
+export interface PRItemReceive {
+  part_id?: string;
+  pr_id?: string;
+  dtl_pr_part_number: string;
+  dtl_pr_part_name: string;
+  dtl_pr_satuan: string;
+  mr_id?: string;
+  dtl_pr_qty: number;
+  dtl_mr_qty_request?: number;
+  mr?: MRReceive;
 }
 
 export interface PurchaseRequest {
@@ -181,33 +325,26 @@ export interface PurchaseRequest {
   created_at: string;
   updated_at: string;
   details: PRItemReceive[];
+    signature_url?: string | null;
+  sign_at?: string | null;
 }
 
-export interface POReceive {
-  po_id?: string;
-  po_kode: string;
-  pr_id: string;
-  po_tanggal: string;
-  po_estimasi: string;
-  po_keterangan: string;
-  po_pic: string | null;
-  po_status: string;
+/* ==========================
+   RECEIVING ITEM (RI)
+========================== */
+
+export interface RIDetail {
+  dtl_ri_id?: string;
+  ri_id: number;
+  po_id: number;
+  part_id: number;
+  dtl_ri_part_number: string;
+  dtl_ri_part_name: string;
+  dtl_ri_satuan: string;
+  dtl_ri_qty: number;
   created_at: string;
   updated_at: string;
-  purchase_request: PurchaseRequest;
-  details: PODetail[]
-}
-
-export interface POHeader {
-  id?: string;
-  kode: string;
-  kode_pr: string;
-  tanggal_estimasi: string;
-  status: string;
-  pic: string;
-  keterangan?: string;
-  created_at: Timestamp;
-  updated_at: Timestamp;
+  mr?: MRReceive;
 }
 
 export interface RI {
@@ -342,6 +479,9 @@ export interface DeliveryReceive {
   details: DeliveryDetail[];
   mr?: MRReceive;
 }
+/* ==========================
+   DELIVERY
+========================== */
 
 export interface DeliveryDetail {
   dtl_dlv_id?: string;
@@ -370,6 +510,64 @@ export interface DeliveryDetail {
 //   dtl_mr_qty_request: number;
 //   dtl_mr_qty_received: number;
 // }
+export interface DeliveryReceive {
+  dlv_id?: string;
+  dlv_kode: string;
+  mr_id?: string;
+  dlv_dari_gudang: string;
+  dlv_ke_gudang: string;
+  dlv_ekspedisi: string;
+  dlv_no_resi: string;
+  dlv_jumlah_koli: number;
+  dlv_status: string;
+  dlv_pic: string;
+  created_at: string;
+  updated_at: string;
+  details: DeliveryDetail[];
+  mr?: MRReceive;
+}
+
+/* ==========================
+   STOCK & MASTER
+========================== */
+
+export interface MasterPart {
+  part_id?: string;
+  part_number: string;
+  part_name: string;
+  part_satuan: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Stock {
+  stk_id?: string;
+  part_number: string;
+  part_name: string;
+  part_satuan: string;
+  part_id: string;
+  stk_location: string;
+  stk_qty: number;
+  stk_min: number;
+  stk_max: number;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+  barang: MasterPart;
+}
+
+export interface Pic {
+  id?: string;
+  nama: string;
+  email: string;
+  role: string;
+  lokasi: string;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+/* ==========================
+   DASHBOARD
+========================== */
 
 export interface DashboardSummary {
   total_stock: number;
@@ -393,8 +591,14 @@ export interface DashboardResponse {
   details: DashboardDetails;
 }
 
+/* ==========================
+   UPDATE PAYLOAD
+========================== */
+
 export interface UpdatePOPayload {
   po_status: "pending" | "purchased";
+  // ✅ SUB STATUS PO
+  po_detail_status?: string;
   po_keterangan?: string;
 }
 

@@ -5,7 +5,7 @@ import SectionContainer, {
 } from "@/components/content-container";
 import WithSidebar from "@/components/layout/WithSidebar";
 import type { RI } from "@/types";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { toast } from "sonner";
 import {
@@ -29,8 +29,10 @@ export function ReceiveDetail() {
   const { kode } = useParams<{ kode: string }>();
   const [ri, setRi] = useState<RI | null>(null);
   const [loading, setLoading] = useState(true);
-   const [showSignature, setShowSignature] = useState(false);
-   const { user } = useAuth();
+  const [showSignature, setShowSignature] = useState(false);
+  const { user } = useAuth();
+  const [, setSignatureConfirmed] = useState(false);
+  const toastShownRef = useRef(false);
 
   useEffect(() => {
     async function fetchDetail() {
@@ -48,25 +50,29 @@ export function ReceiveDetail() {
   }, [kode]);
 
 
-  useEffect(() => {
-      if (!showSignature || !kode) return;
   
-      const interval = setInterval(async () => {
-        try {
-          const res = await getRIByKode(kode);
-          if (res?.signed_penerima_sign) {
-            setRi(res);
-            setShowSignature(false);
-            toast.success("Tanda tangan diterima! Siap print.");
-            clearInterval(interval);
-          }
-        } catch (err) {
-          console.error(err);
+    useEffect(() => {
+    if (!showSignature || !kode) return;
+  
+    const interval = setInterval(async () => {
+      try {
+        const res = await getRIByKode(kode);
+  
+        if (res?.signed_penerima_sign && !toastShownRef.current) {
+          toastShownRef.current = true;
+          setRi(res);
+          setShowSignature(false);
+          setSignatureConfirmed(true);
+          toast.success("Tanda tangan diterima! Siap print.");
+          clearInterval(interval);
         }
-      }, 2000);
+      } catch (err) {
+        console.error(err);
+      }
+    }, 2000);
   
-      return () => clearInterval(interval);
-    }, [showSignature, kode]);
+    return () => clearInterval(interval);
+  }, [showSignature, kode]);
 
   if (loading) {
     return (

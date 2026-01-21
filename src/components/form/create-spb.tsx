@@ -206,7 +206,7 @@ export default function CreateSpbForm({
     >
       {/* HEADER */}
       <div className="col-span-12 lg:col-span-4 space-y-2">
-        <Label>No SPB</Label>
+        <Label>No SPB<span className="text-red-500">*</span></Label>
         <div className="flex gap-2">
           <Input value={kodeSpb} disabled />
           <Button type="button" variant="outline" onClick={fetchKodeSpbWithToast}>
@@ -216,12 +216,12 @@ export default function CreateSpbForm({
       </div>
 
       <div className="col-span-12 lg:col-span-4 space-y-2">
-        <Label>Tanggal SPB to PO</Label>
+        <Label>Tanggal SPB to PO<span className="text-red-500">*</span></Label>
         <DatePicker value={tanggalSpb} onChange={setTanggalSpb} />
       </div>
 
       <div className="col-span-12 lg:col-span-4 space-y-2">
-        <Label>Gudang</Label>
+        <Label>Gudang<span className="text-red-500">*</span></Label>
         <Select value={spbGudang} onValueChange={setSpbGudang}>
           <SelectTrigger>
             <SelectValue placeholder="Pilih Gudang" />
@@ -241,43 +241,43 @@ export default function CreateSpbForm({
 
       {/* FORM HEADER LANJUTAN */}
       <div className="col-span-12 lg:col-span-4 space-y-2">
-        <Label>No WO</Label>
+        <Label>No WO<span className="text-red-500">*</span></Label>
         <Input value={spbNoWo} onChange={(e) => setSpbNoWo(e.target.value)} />
       </div>
 
       <div className="col-span-12 lg:col-span-4 space-y-2">
-        <Label>Section</Label>
+        <Label>Section<span className="text-red-500">*</span></Label>
         <Input value={spbSection} onChange={(e) => setSpbSection(e.target.value)} />
       </div>
 
       <div className="col-span-12 lg:col-span-4 space-y-2">
-        <Label>PIC GMI</Label>
+        <Label>PIC GMI<span className="text-red-500">*</span></Label>
         <input type="hidden" name="spb_pic_gmi" value={user.nama} />
         <Input value={user!.nama} onChange={(e) => setSpbPicPpa(e.target.value)} disabled/>
       </div>
 
       <div className="col-span-12 lg:col-span-4 space-y-2">
-        <Label>PIC PPA</Label>
+        <Label>PIC PPA<span className="text-red-500">*</span></Label>
         <Input value={spbPicPpa} onChange={(e) => setSpbPicPpa(e.target.value)}/>
       </div>
 
       <div className="col-span-12 lg:col-span-4 space-y-2">
-        <Label>Kode Unit</Label>
+        <Label>Kode Unit<span className="text-red-500">*</span></Label>
         <Input value={spbKodeUnit} onChange={(e) => setSpbKodeUnit(e.target.value)} />
       </div>
 
       <div className="col-span-12 lg:col-span-4 space-y-2">
-        <Label>Tipe Unit</Label>
+        <Label>Tipe Unit<span className="text-red-500">*</span></Label>
         <Input value={spbTipeUnit} onChange={(e) => setSpbTipeUnit(e.target.value)} />
       </div>
 
       <div className="col-span-12 lg:col-span-4 space-y-2">
-        <Label>Brand</Label>
+        <Label>Brand<span className="text-red-500">*</span></Label>
         <Input value={spbBrand} onChange={(e) => setSpbBrand(e.target.value)} />
       </div>
 
       <div className="col-span-12 lg:col-span-4 space-y-2">
-        <Label>HM</Label>
+        <Label>HM<span className="text-red-500">*</span></Label>
         <Input
           type="number"
           value={spbHm ?? ""}

@@ -69,26 +69,30 @@ export async function getPoById(po_id: number): Promise<PO | null> {
   }
 }
 
+// export async function createPO(data: PO) {
+//   const payload = {
+//     po_kode: data.po_kode,
+//     pr_id: data.pr_id,
+//     po_tanggal: data.po_tanggal,
+//     po_estimasi: data.po_estimasi,
+//     po_keterangan: data.po_keterangan,
+//     po_detail_status: data.po_detail_status,
+//     po_status: data.po_status,
+//     po_pic: data.po_pic,
+
+//     details: data.details.map((d) => ({
+//       part_id: d.part_id,
+//       dtl_po_part_number: d.dtl_po_part_number,
+//       dtl_po_part_name: d.dtl_po_part_name,
+//       dtl_po_satuan: d.dtl_po_satuan,
+//       dtl_po_qty: d.dtl_po_qty,
+//     })),
+//   };
+
+//   return api.post("/po", payload);
+// }
 export async function createPO(data: PO) {
-  const payload = {
-    po_kode: data.po_kode,
-    pr_id: data.pr_id,
-    po_tanggal: data.po_tanggal,
-    po_estimasi: data.po_estimasi,
-    po_keterangan: data.po_keterangan,
-    po_status: data.po_status,
-    po_pic: data.po_pic,
-
-    details: data.details.map((d) => ({
-      part_id: d.part_id,
-      dtl_po_part_number: d.dtl_po_part_number,
-      dtl_po_part_name: d.dtl_po_part_name,
-      dtl_po_satuan: d.dtl_po_satuan,
-      dtl_po_qty: d.dtl_po_qty,
-    })),
-  };
-
-  return api.post("/po", payload);
+  return api.post("/po", data);
 }
 
 export async function updatePO(
@@ -99,3 +103,15 @@ export async function updatePO(
   return res.data?.status === true;
 }
 
+export async function submitSignature(kode: string, signatureBase64: string) {
+  const res = await api.post("/po/sign", {
+    kode,
+    signature: signatureBase64,
+  });
+  return res.data;
+}
+
+// services/purchase-request.ts
+export async function clearSignature(kode: string) {
+  return api.delete(`/po/${encodeURIComponent(kode)}/signature`);
+}

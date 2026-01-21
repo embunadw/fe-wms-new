@@ -2,11 +2,13 @@ import api from "@/lib/axios";
 import type { MasterPart, Part } from "@/types";
 import { getCurrentUser } from "@/services/auth";
 
- const user = await getCurrentUser();
 
 export async function createMasterPart(
   data: MasterPart
 ): Promise<boolean> {
+
+   const user = await getCurrentUser();
+
   const payload = {
     part_number: data.part_number,
     part_name: data.part_name,

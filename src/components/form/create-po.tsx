@@ -6,7 +6,7 @@ import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { Textarea } from "../ui/textarea";
 
-import type { PO, PurchaseRequest, UserComplete, UserDb } from "@/types";
+import type { PO, PurchaseRequest, UserComplete, UserDb, MasterVendor} from "@/types";
 
 import {
   Select,
@@ -38,9 +38,11 @@ import {
 } from "../ui/command";
 
 import { cn } from "@/lib/utils";
-import { getOpenPr, getPr } from "@/services/purchase-request";
+import { getOpenPr } from "@/services/purchase-request";
 import { createPO } from "@/services/purchase-order";
 import { DatePicker } from "../date-picker";
+import { getMasterVendors } from "@/services/vendor";
+import { formatRupiah, parseRupiah } from "@/lib/utils";
 
 interface CreatePOFormProps {
   user: UserComplete | UserDb;
@@ -54,10 +56,35 @@ export default function CreatePOForm({ user, setRefresh }: CreatePOFormProps) {
   const [open, setOpen] = useState(false);
   const [prList, setPrList] = useState<PurchaseRequest[]>([]);
   const [selectedPR, setSelectedPR] = useState<PurchaseRequest | undefined>();
+  type PODetailInput = {
+  part_id?: string | number;
+  part_number: string;
+  part_name: string;
+  satuan: string;
+  qty_pr: number;
+  qty_po: number;
+  harga: number;
+  vendor_id?: string;
+};
+
+const [poDetails, setPoDetails] = useState<PODetailInput[]>([]);
+
   const [estimasi, setEstimasi] = useState<Date | undefined>();
   const [status, setStatus] = useState("pending");
+  const [subStatus, setSubStatus] = useState(""); // Sub status baru
   const [kode, setKode] = useState(""); 
   const [keterangan, setKeterangan] = useState(""); 
+type VendorOption = {
+  vendor_id?: string;   // ✅ optional
+  vendor_name: string;
+};
+
+
+
+const [vendorList, setVendorList] = useState<VendorOption[]>([]);
+const [editingIndex, setEditingIndex] = useState<number | null>(null);
+
+
 
   useEffect(() => {
     async function fetchPR() {
@@ -73,6 +100,30 @@ export default function CreatePOForm({ user, setRefresh }: CreatePOFormProps) {
     }
     fetchPR();
   }, []);
+useEffect(() => {
+  async function fetchVendor() {
+    try {
+      const res: MasterVendor[] = await getMasterVendors();
+
+      const mapped: VendorOption[] = res
+        .filter((v) => v.is_active !== false) // optional
+        .map((v) => ({
+       vendor_id: v.vendor_id?.toString(), // ✅ TANPA ""
+  vendor_name: `${v.vendor_no} - ${v.vendor_name}`,
+        }));
+
+      setVendorList(mapped);
+    } catch (err) {
+      toast.error("Gagal mengambil data vendor");
+    }
+  }
+  fetchVendor();
+}, []);
+
+  // Reset sub status ketika status utama berubah
+  useEffect(() => {
+    setSubStatus("");
+  }, [status]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -92,26 +143,54 @@ export default function CreatePOForm({ user, setRefresh }: CreatePOFormProps) {
       return;
     }
 
-    // ✅ Tidak perlu FormData lagi, ambil dari state
-    const payload: PO = {
-      po_kode: kode.trim(),
-      pr_id: selectedPR.pr_id!,
-      po_tanggal: toMysqlDatetime(new Date()),
-      po_estimasi: toMysqlDatetime(estimasi),
-      po_keterangan: keterangan.trim(),
-      po_status: status,
-      po_pic: user.nama,
+    if (!subStatus) {
+      toast.error("Sub status wajib dipilih");
+      return;
+    }
 
-      details: selectedPR.details.map((d) => ({
-        part_id: d.part_id,
-        dtl_po_part_number: d.dtl_pr_part_number,
-        dtl_po_part_name: d.dtl_pr_part_name,
-        dtl_po_satuan: d.dtl_pr_satuan,
-        dtl_po_qty: d.dtl_pr_qty,
-      })),
-       created_at: toMysqlDatetime(new Date()),
-       updated_at: toMysqlDatetime(new Date()),
-    };
+  const invalidDetail = poDetails.some(
+  (d) => d.qty_po <= 0 || d.harga <= 0 || !d.vendor_id
+);
+
+if (invalidDetail) {
+  toast.error("Qty PO, Harga, dan Vendor wajib diisi");
+  return;
+}
+
+
+
+const payload: PO = {
+  po_kode: kode.trim(),
+  pr_id: selectedPR.pr_id!,
+  po_tanggal: toMysqlDatetime(new Date()),
+  po_estimasi: toMysqlDatetime(estimasi),
+
+  // 🔥 INI YANG DIPERBAIKI
+  po_status: status,
+  po_detail_status: subStatus,
+
+  po_keterangan: keterangan.trim(),
+  po_pic: user.nama,
+
+  
+details: poDetails.map((d) => ({
+  part_id: d.part_id,
+  dtl_po_part_number: d.part_number,
+  dtl_po_part_name: d.part_name,
+  dtl_po_satuan: d.satuan,
+  dtl_po_qty: d.qty_po,
+
+  // 🔥 HARUS ADA
+  dtl_po_harga: Number(d.harga),
+  vendor_id: Number(d.vendor_id),
+})),
+
+
+
+  created_at: toMysqlDatetime(new Date()),
+  updated_at: toMysqlDatetime(new Date()),
+};
+
 
     console.log("📤 Payload yang dikirim:", payload);
 
@@ -119,15 +198,14 @@ export default function CreatePOForm({ user, setRefresh }: CreatePOFormProps) {
       await createPO(payload);
       toast.success("Purchase Order berhasil dibuat");
       
-      // ✅ Reset semua state (tidak pakai e.currentTarget.reset())
       setKode("");
       setKeterangan("");
       setSelectedPR(undefined);
       setEstimasi(undefined);
       setStatus("pending");
+      setSubStatus("");
       setOpen(false);
       
-      // ✅ Refresh tabel setelah reset
       setRefresh((prev) => !prev);
     } catch (err: any) {
       console.error("Error creating PO:", err);
@@ -136,9 +214,6 @@ export default function CreatePOForm({ user, setRefresh }: CreatePOFormProps) {
     }
   }
 
-  // ===============================
-  // RENDER
-  // ===============================
   return (
     <form
       id="create-po-form"
@@ -148,7 +223,7 @@ export default function CreatePOForm({ user, setRefresh }: CreatePOFormProps) {
       {/* KIRI */}
       <div className="col-span-12 lg:col-span-6 flex flex-col gap-4">
         <div className="flex flex-col gap-2">
-          <Label>Kode PO</Label>
+          <Label>Kode PO<span className="text-red-500">*</span></Label>
           <Input 
             name="kode" 
             placeholder="Masukkan kode PO" 
@@ -159,7 +234,7 @@ export default function CreatePOForm({ user, setRefresh }: CreatePOFormProps) {
         </div>
 
         <div className="flex flex-col gap-2">
-          <Label>Referensi PR</Label>
+          <Label>Referensi PR<span className="text-red-500">*</span></Label>
           <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
               <Button
@@ -167,7 +242,6 @@ export default function CreatePOForm({ user, setRefresh }: CreatePOFormProps) {
                 role="combobox"
                 className="justify-between"
               >
-                {/* ✅ Ubah dari selectedPR.kode menjadi selectedPR.pr_kode */}
                 {selectedPR ? selectedPR.pr_kode : "Pilih PR"}
                 <ChevronsUpDownIcon className="h-4 w-4 opacity-50" />
               </Button>
@@ -181,15 +255,32 @@ export default function CreatePOForm({ user, setRefresh }: CreatePOFormProps) {
                   <CommandGroup>
                     {prList.length > 0 ? (
                       prList.map((pr) => (
-                        <CommandItem
-                          key={pr.pr_id || pr.pr_kode}
-                          value={pr.pr_kode}
-                          onSelect={(currentValue) => {
-                            console.log("✅ Selected:", currentValue, pr);
-                            setSelectedPR(pr);
-                            setOpen(false);
-                          }}
-                        >
+                    <CommandItem
+  key={pr.pr_id || pr.pr_kode}
+  value={pr.pr_kode}
+  onSelect={(currentValue) => {
+    console.log("✅ Selected:", currentValue, pr);
+
+    setSelectedPR(pr);
+
+    // 🔥 TAMBAHAN INI
+    setPoDetails(
+      pr.details.map((d) => ({
+        part_id: d.part_id,
+        part_number: d.dtl_pr_part_number,
+        part_name: d.dtl_pr_part_name,
+        satuan: d.dtl_pr_satuan,
+        qty_pr: d.dtl_pr_qty,
+        qty_po: Number(d.dtl_pr_qty), // default isi sama dgn PR
+        harga: 0,
+        vendor_id: undefined,
+      }))
+    );
+
+    setOpen(false);
+  }}
+>
+
                           <CheckIcon
                             className={cn(
                               "mr-2 h-4 w-4",
@@ -217,12 +308,17 @@ export default function CreatePOForm({ user, setRefresh }: CreatePOFormProps) {
             </PopoverContent>
           </Popover>
         </div>
+
+        <div className="flex flex-col gap-2">
+          <Label>Tanggal Estimasi<span className="text-red-500">*</span></Label>
+          <DatePicker value={estimasi} onChange={setEstimasi} />
+        </div>
       </div>
 
       {/* KANAN */}
       <div className="col-span-12 lg:col-span-6 flex flex-col gap-4">
         <div className="flex flex-col gap-2">
-          <Label>Status</Label>
+          <Label>Status Utama<span className="text-red-500">*</span></Label>
           <Select 
             name="status" 
             required 
@@ -241,9 +337,45 @@ export default function CreatePOForm({ user, setRefresh }: CreatePOFormProps) {
           </Select>
         </div>
 
+        {/* Sub Status berdasarkan Status Utama */}
+        {status && (
+          <div className="flex flex-col gap-2">
+            <Label>Detail Status<span className="text-red-500">*</span></Label>
+            <Select 
+              name="subStatus" 
+              required 
+              value={subStatus} 
+              onValueChange={setSubStatus}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Pilih detail status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  {status === "pending" && (
+                    <>
+                      <SelectItem value="OPEN 3A">
+                        OPEN 3A - Barang belum dikirim (No Payment Issue)
+                      </SelectItem>
+                      <SelectItem value="OPEN 3B">
+                        OPEN 3B - Barang belum dikirim (Ada Payment Issue)
+                      </SelectItem>
+                    </>
+                  )}
+                  {status === "purchased" && (
+                    <SelectItem value="OPEN 4">
+                      OPEN 4 - Barang sudah dikirim tapi belum sampai WH
+                    </SelectItem>
+                  )}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
         <div className="flex flex-col gap-2">
-          <Label>Tanggal Estimasi</Label>
-          <DatePicker value={estimasi} onChange={setEstimasi} />
+          <Label>Person in Charge</Label>
+          <Input value={user.nama} disabled />
         </div>
       </div>
 
@@ -261,7 +393,6 @@ export default function CreatePOForm({ user, setRefresh }: CreatePOFormProps) {
       {/* TABLE ITEM PR */}
       <div className="col-span-12">
         <Label className="mb-2 block">
-          {/* ✅ Ubah dari selectedPR.kode */}
           Item dari PR {selectedPR ? `(${selectedPR.pr_kode})` : ""}
         </Label>
         <div className="border rounded-sm overflow-x-auto">
@@ -272,20 +403,98 @@ export default function CreatePOForm({ user, setRefresh }: CreatePOFormProps) {
                 <TableHead className="font-semibold text-center">Part Number</TableHead>
                 <TableHead className="font-semibold text-center">Part Name</TableHead>
                 <TableHead className="font-semibold text-center">Satuan</TableHead>
-                <TableHead className="font-semibold text-center">Qty</TableHead>
+                <TableHead className="font-semibold text-center">Qty PR</TableHead>
+                  <TableHead className="font-semibold text-center">Qty PO</TableHead>
+                  <TableHead className="font-semibold text-center">Input Harga</TableHead>
+                  <TableHead className="font-semibold text-center">Vendor</TableHead>
+
               </TableRow>
             </TableHeader>
             <TableBody>
-              {/* ✅ Ubah dari order_item menjadi details */}
               {selectedPR?.details && selectedPR.details.length > 0 ? (
-                selectedPR.details.map((item, i) => (
+               poDetails.map((item, i) => (
+
                   <TableRow key={i} className="border [&>*]:border">
                     <TableCell className="text-center">{i + 1}</TableCell>
-                    {/* ✅ Sesuaikan field names dengan PurchaseRequest */}
-                    <TableCell className="text-start">{item.dtl_pr_part_number}</TableCell>
-                    <TableCell className="text-start">{item.dtl_pr_part_name}</TableCell>
-                    <TableCell className="text-center">{item.dtl_pr_satuan}</TableCell>
-                    <TableCell className="text-center">{item.dtl_pr_qty}</TableCell>
+                <TableCell className="text-start">{item.part_number}</TableCell>
+<TableCell className="text-start">{item.part_name}</TableCell>
+<TableCell className="text-center">{item.satuan}</TableCell>
+<TableCell className="text-center">{item.qty_pr}</TableCell>
+
+                    <TableCell className="text-center">
+  <Input
+    type="number"
+    min={1}
+    value={item.qty_po}
+    onChange={(e) => {
+      const val = Number(e.target.value);
+      setPoDetails((prev) =>
+        prev.map((d, idx) =>
+          idx === i ? { ...d, qty_po: val } : d
+        )
+      );
+    }}
+    className="text-center"
+  />
+</TableCell>
+
+<TableCell className="text-center">
+<Input
+  type="text"
+  inputMode="numeric"
+  value={
+    editingIndex === i
+      ? item.harga.toString()
+      : formatRupiah(item.harga)
+  }
+  placeholder="Rp 0,00"
+  onFocus={() => setEditingIndex(i)}
+  onBlur={() => setEditingIndex(null)}
+  onChange={(e) => {
+    const raw = parseRupiah(e.target.value);
+
+    setPoDetails((prev) =>
+      prev.map((d, idx) =>
+        idx === i ? { ...d, harga: raw } : d
+      )
+    );
+  }}
+  className="text-right"
+/>
+
+</TableCell>
+<TableCell className="text-center">
+  <Select
+    value={item.vendor_id}
+    onValueChange={(val) => {
+      setPoDetails((prev) =>
+        prev.map((d, idx) =>
+          idx === i ? { ...d, vendor_id: val } : d
+        )
+      );
+    }}
+  >
+    <SelectTrigger>
+      <SelectValue placeholder="Pilih Vendor" />
+    </SelectTrigger>
+    <SelectContent>
+      <SelectGroup>
+  {vendorList
+  .filter((v): v is { vendor_id: string; vendor_name: string } => 
+    v.vendor_id !== undefined
+  )
+  .map((v) => (
+    <SelectItem key={v.vendor_id} value={v.vendor_id}>
+      {v.vendor_name}
+    </SelectItem>
+  ))}
+
+      </SelectGroup>
+    </SelectContent>
+  </Select>
+</TableCell>
+
+
                   </TableRow>
                 ))
               ) : (

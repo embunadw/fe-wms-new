@@ -86,7 +86,7 @@ return (
     {/* ================= ROW 1 ================= */}
     {/* PILIH SPB */}
     <div className="col-span-12 lg:col-span-6 space-y-2">
-      <Label>Pilih SPB</Label>
+      <Label>Pilih SPB<span className="text-red-500">*</span></Label>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
@@ -134,20 +134,20 @@ return (
 
     {/* NO INVOICE */}
     <div className="col-span-12 lg:col-span-6 space-y-2">
-      <Label>No Invoice</Label>
+      <Label>No Invoice<span className="text-red-500">*</span></Label>
       <Input name="invoice_no" required />
     </div>
 
     {/* ================= ROW 2 ================= */}
     {/* TANGGAL INVOICE */}
     <div className="col-span-12 lg:col-span-6 space-y-2">
-      <Label>Tanggal Invoice</Label>
+      <Label>Tanggal Invoice<span className="text-red-500">*</span></Label>
       <Input type="date" name="invoice_date" required />
     </div>
 
     {/* TANGGAL EMAIL INVOICE */}
     <div className="col-span-12 lg:col-span-6 space-y-2">
-      <Label>Tanggal Email Invoice</Label>
+      <Label>Tanggal Email Invoice<span className="text-red-500">*</span></Label>
       <Input type="date" name="invoice_email_date" />
     </div>
   </form>

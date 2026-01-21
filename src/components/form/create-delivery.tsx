@@ -60,11 +60,11 @@ export default function CreateDeliveryForm({
   user,
   setRefresh,
 }: CreateDeliveryFormProps) {
-  const [key, setKey] = useState(+new Date());
+  const [, setKey] = useState(+new Date());
   const [open, setOpen] = useState<boolean>(false);
-  const [tanggalPR, setTanggalPR] = useState<Date | undefined>(new Date());
+  // const [, setTanggalPR] = useState<Date | undefined>(new Date());
 
-  const [mr, setMR] = useState<MRReceive[]>([]);  
+  const [, setMR] = useState<MRReceive[]>([]);  
   const [filteredMr, setFilteredMR] = useState<MRReceive[]>([]);
   const [selectedMr, setSelectedMr] = useState<MRReceive>();
   const [selectedFrom, setSelectedFrom] = useState<string>("");
@@ -247,12 +247,12 @@ export default function CreateDeliveryForm({
       <div className="flex flex-col col-span-12 lg:col-span-6 gap-4">
         <input type="hidden" name="dlv_pic" value={user.nama} />
         <div className="flex flex-col gap-2">
-          <Label>Kode IT</Label>
+          <Label>Kode IT<span className="text-red-500">*</span></Label>
           <Input name="dlv_kode" required />
         </div>
 
         <div className="flex flex-col gap-2">
-          <Label>Delivery untuk MR</Label>
+          <Label>Delivery untuk MR<span className="text-red-500">*</span></Label>
 
           <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
@@ -300,7 +300,7 @@ export default function CreateDeliveryForm({
 
         <div className="flex flex-col gap-2">
           
-          <Label>Pilih Ekspedisi</Label>
+          <Label>Pilih Ekspedisi<span className="text-red-500">*</span></Label>
 
           <Select required name="dlv_ekspedisi">
             <SelectTrigger>
@@ -333,7 +333,7 @@ export default function CreateDeliveryForm({
       <div className="flex flex-col col-span-12 lg:col-span-6 gap-4">
 
         <div className="flex flex-col gap-2">
-          <Label>Dari Gudang</Label>
+          <Label>Dari Gudang<span className="text-red-500">*</span></Label>
 
           <Select required onValueChange={(v) => setSelectedFrom(v)}>
             <SelectTrigger>
@@ -353,7 +353,7 @@ export default function CreateDeliveryForm({
         </div>
 
         <div className="flex flex-col gap-2">
-          <Label>Ke Gudang</Label>
+          <Label>Ke Gudang<span className="text-red-500">*</span></Label>
 
           <Select disabled value={selectedMr?.mr_lokasi ?? ""}>
             <SelectTrigger>
@@ -426,6 +426,7 @@ export default function CreateDeliveryForm({
                       triggerButton={
                         <Button
                           size="sm"
+                          className="w-full !bg-green-600 hover:!bg-green-700 !text-white flex items-center justify-center gap-2 h-11"
                           variant="outline"
                           type="button"
                           disabled={!selectedFrom}

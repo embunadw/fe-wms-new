@@ -20,6 +20,12 @@ const buttonVariants = cva(
         ghost:
           "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
         link: "text-primary underline-offset-4 hover:underline",
+
+          // ⬇️ TAMBAH INI (EDIT / ORANGE)
+edit:
+  "border border-orange-500 text-orange-600 bg-background hover:bg-orange-50 focus-visible:ring-orange-500/30",
+delete:
+      "border border-red-500 text-red-600 bg-background hover:bg-red-50 focus-visible:ring-red-500/30",
       },
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3",

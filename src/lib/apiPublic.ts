@@ -7,5 +7,5 @@ const apiPublic = axios.create({
     Accept: "application/json",
   },
 });
-
 export default apiPublic;
+

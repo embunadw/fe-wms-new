@@ -22,7 +22,7 @@ import { getMasterParts,downloadBarangExcel } from "@/services/master-part";
 import { getAllStocks,downloadStockExcel } from "@/services/stock";
 import type { MasterPart, Stock } from "@/types";
 import { PagingSize } from "@/types/enum";
-import { HousePlus,Trash2, FileSpreadsheet, QrCode } from "lucide-react";
+import { HousePlus, FileSpreadsheet, QrCode, X, Filter, Search } from "lucide-react";
 import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
 import { toast } from "sonner";
 import QRCode from "qrcode";
@@ -32,7 +32,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-
 
 
 export default function BarangDanStok() {
@@ -78,10 +77,6 @@ useEffect(() => {
       {/* Data Master Part */}
       <DataMasterPartSection masterParts={masterParts as MasterPart[]} 
       setRefresh={setRefresh}/>
-
-
-
-
       {/* Tambah */}
       <SectionContainer span={12}>
         <SectionHeader>Tambah Barang</SectionHeader>
@@ -92,7 +87,7 @@ useEffect(() => {
         </SectionBody>
         <SectionFooter>
           <Button
-            className="w-full flex gap-4"
+            className="w-full !bg-green-600 hover:!bg-green-700 !text-white flex items-center justify-center gap-2 h-11"
             type="submit"
             form="create-master-part-form"
           >
@@ -138,7 +133,7 @@ function MasterPartCollumnsGenerator(
           <EditPartDialog refresh={setRefresh} part={row} />
           <Button
             size="icon"
-            variant="outline"
+            variant="edit"
             className="text-orange-600 hover:text-orange-700"
             onClick={async () => {
             const qr = await QRCode.toDataURL(
@@ -328,27 +323,50 @@ function DataMasterPartSection({
     <SectionContainer span={12}>
       <SectionHeader>Daftar Barang</SectionHeader>
       <SectionBody className="grid grid-cols-12 gap-2">
-        <div className="flex flex-col gap-4 col-span-12 rounded-sm text-center">
+        <div className="flex flex-col gap-4 col-span-12">
+          <div className="flex flex-col md:flex-row md:items-end gap-3">
           {/* Filtering */}
-          <div className="col-span-12 grid grid-cols-12 gap-4 items-end">
-            {/* Search by kode */}
-            <div className="col-span-12 md:col-span-4 lg:col-span-5">
+            <div className="flex-1">
               <Input
-                placeholder="Cari berdasarkan part number"
+                placeholder="Cari berdasarkan part number"  
                 value={pn}
                 onChange={(e) => setPn(e.target.value)}
               />
             </div>
 
+          <div className="flex items-center gap-2">
+            {/* Search by kode */}
+            {/* <div className="col-span-12 md:col-span-4 lg:col-span-5">
+              <Input
+                placeholder="Cari berdasarkan part number"
+                value={pn}
+                onChange={(e) => setPn(e.target.value)}
+              />
+            </div> */}
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        size="icon"
+                        onClick={filterMP}
+                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                      >
+                        <Search className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Cari Part</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+
             {/* Search button */}
-            <div className="col-span-12 md:col-span-4 lg:col-span-2">
+            {/* <div className="col-span-12 md:col-span-4 lg:col-span-2">
               <Button className="w-full" onClick={filterMP}>
                 Cari
               </Button>
-            </div>
+            </div> */}
 
             {/* Filter popover */}
-            <div className="col-span-12 md:col-span-4 lg:col-span-3">
+            {/* <div className="col-span-12 md:col-span-4 lg:col-span-3">
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className="w-full">
@@ -378,42 +396,128 @@ function DataMasterPartSection({
                   </div>
                 </PopoverContent>
               </Popover>
-            </div>
+            </div> */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <TooltipProvider>
+                <Tooltip>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <TooltipTrigger asChild>
+                        <Button variant="outline" size="icon">
+                          <Filter className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-80 space-y-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Part Number</label>
+                        <Input
+                          placeholder="Part number"
+                          value={pnm}
+                          onChange={(e) => setPnm(e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Part Name</label>
+                        <Input
+                          placeholder="Part name"
+                          value={pn}
+                          onChange={(e) => setPn(e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Satuan</label>
+                        <Input
+                          placeholder="uom"
+                          value={uom}
+                          onChange={(e) => setUom(e.target.value)}
+                        />
+                      </div>
+                    </PopoverContent>
+                  </Popover>
 
-            {/* Clear filter button */}
-            <div className="col-span-6 md:col-span-3 lg:col-span-2">
-                {/* RESET FILTER */}
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="destructive"
-                    size="icon"
-                    onClick={resetFilters}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Hapus Filter</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+                  <TooltipContent>Filter Tambahan</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </PopoverTrigger>
+              <PopoverContent className="w-80 space-y-4">
+                {/* <div className="space-y-2">
+                  <label className="text-sm font-medium">Nama Customer</label>
+                  <Input
+                    placeholder="Cari nama customer"
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                  />
+                </div> */}
 
-            {/* EXPORT EXCEL */}
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
+                {/* ACTION */}
+                <div className="flex justify-end gap-2 pt-2">
                   <Button
                     variant="outline"
-                    size="icon"
-                    onClick={() => downloadBarangExcel()}
+                    size="sm"
+                    onClick={() => {
+                      setPn("");
+                      setPnm("");
+                      setUom("");
+                      setFilteredMasterParts(masterParts);
+                      setCurrentPage(1);
+                    }}
                   >
-                    <FileSpreadsheet className="h-4 w-4" />
+                    Reset
                   </Button>
-                </TooltipTrigger>
-                <TooltipContent>Export Excel</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      filterMP();
+                    }}
+                  >
+                    Terapkan
+                  </Button>
+                </div>
+              </PopoverContent>
+          </Popover>
+            {/* Clear filter button */}
+            <div className="col-span-6 md:col-span-3 lg:col-span-2">
+              <div className="flex items-center gap-2">
+                
+                {/* RESET FILTER */}
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={resetFilters}
+                        className="border-red-300 text-red-600 hover:bg-red-50"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Reset Filter</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+
+                {/* EXPORT EXCEL */}
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={downloadBarangExcel}
+                      >
+                        {/* icon export */}
+                        <FileSpreadsheet className="h-4 w-4 text-green-600" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Export Excel</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
             </div>
+          </div>
           </div>
           <QuickTable
             data={tableMasterParts}
@@ -586,63 +690,66 @@ function DataStokSection({
   return (
     <SectionContainer span={12}>
       <SectionHeader>Daftar Stok Barang</SectionHeader>
-
       <SectionBody className="grid grid-cols-12 gap-2">
-        <div className="col-span-12 flex flex-col gap-4">
+        <div className="flex flex-col gap-4 col-span-12">
           {/* FILTER */}
-          <div className="grid grid-cols-12 gap-4 items-end">
+        <div className="flex items-center gap-2">
+
+          {/* SEARCH */}
+          <div className="relative flex-1">
             <Input
-              className="col-span-12 md:col-span-4"
               placeholder="Cari Part Number"
               value={pn}
               onChange={(e) => setPn(e.target.value)}
+              className="pr-10"
             />
-
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="col-span-12 md:col-span-3">
-                  Filter Tambahan
-                </Button>
-              </PopoverTrigger>
-              <div className="col-span-6 md:col-span-3 lg:col-span-2">
-            {/* EXPORT EXCEL */}
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => downloadStockExcel()}
-                    >
-                      <FileSpreadsheet className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Export Excel</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-              <PopoverContent className="w-80 space-y-3">
-                <Input
-                  placeholder="Part Name"
-                  value={pnm}
-                  onChange={(e) => setPnm(e.target.value)}
-                />
-                <Input
-                  placeholder="Satuan"
-                  value={uom}
-                  onChange={(e) => setUom(e.target.value)}
-                />
-                <Input
-                  placeholder="Lokasi"
-                  value={lokasiFilter}
-                  onChange={(e) =>
-                    setLokasiFilter(e.target.value)
-                  }
-                />
-              </PopoverContent>
-            </Popover>
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           </div>
 
+          {/* FILTER */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="icon">
+                <Filter className="h-4 w-4" />
+              </Button>
+            </PopoverTrigger>
+
+            <PopoverContent className="w-80 space-y-3">
+              <Input
+                placeholder="Part Name"
+                value={pnm}
+                onChange={(e) => setPnm(e.target.value)}
+              />
+              <Input
+                placeholder="Satuan"
+                value={uom}
+                onChange={(e) => setUom(e.target.value)}
+              />
+              <Input
+                placeholder="Lokasi"
+                value={lokasiFilter}
+                onChange={(e) => setLokasiFilter(e.target.value)}
+              />
+            </PopoverContent>
+          </Popover>
+
+          {/* EXPORT */}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={downloadStockExcel}
+                >
+                  <FileSpreadsheet className="h-4 w-4 text-green-600" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Export Excel</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
+        </div>
           <QuickTable
             data={tableStocks}
             columns={StockColumnsGenerator()}

@@ -27,7 +27,7 @@ import { getPurchasedPO, downloadReceiveExcel } from "@/services/receive-item";
 import { getAllRi } from "@/services/receive-item";
 import type { POReceive, RI } from "@/types";
 import { PagingSize } from "@/types/enum";
-import { Plus,Trash2, FileSpreadsheet, Eye } from "lucide-react";
+import { Plus, FileSpreadsheet, Info, Search, Filter, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
@@ -57,6 +57,7 @@ export default function ReceiveItem() {
   const [kodePoRi, setKodePoRi] = useState<string>(""); 
   const [gudang, setGudang] = useState<string>("");
   const [picRi, setPicRi] = useState<string>("");
+
 
   useEffect(() => {
     async function fetchInitialData() {
@@ -179,60 +180,66 @@ export default function ReceiveItem() {
         <SectionHeader>Daftar PO Purchased (Siap Diterima)</SectionHeader>
         <SectionBody className="grid grid-cols-12 gap-2">
           {/* Filtering PO */}
-          <div className="col-span-12 grid grid-cols-12 gap-4 items-end">
-            <div className="col-span-12 md:col-span-6 lg:col-span-7">
+          <div className="col-span-12 flex items-center gap-2">
+
+            {/* SEARCH */}
+            <div className="relative flex-1">
               <Input
                 id="search-kode-po"
-                placeholder="Ketik kode PO..."
+                placeholder="Cari berdasarkan kode PO"
                 value={kodePo}
                 onChange={(e) => setKodePo(e.target.value)}
+                className="pr-10"
               />
+              <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             </div>
-            <div className="col-span-6 md:col-span-3 lg:col-span-3">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full">
-                    Filter PO
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-80 space-y-4">
-                  <div className="space-y-2">
-                    <h4 className="font-medium leading-none">Filter PO</h4>
-                    <p className="text-sm text-muted-foreground">
-                      Saring PO berdasarkan kriteria.
-                    </p>
+
+            {/* FILTER */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <Filter className="h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+
+              <PopoverContent className="w-80 space-y-4">
+                <div className="space-y-2">
+                  <h4 className="font-medium leading-none">Filter PO</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Saring PO berdasarkan kriteria.
+                  </p>
+                </div>
+
+                <div className="grid gap-4">
+                  <div className="grid gap-2">
+                    <Label>Kode PR</Label>
+                    <Input
+                      placeholder="Cari kode PR..."
+                      value={kodePr}
+                      onChange={(e) => setKodePr(e.target.value)}
+                    />
                   </div>
-                  <div className="grid gap-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="filter-kode-pr">Kode PR</Label>
-                      <Input
-                        id="filter-kode-pr"
-                        placeholder="Cari kode PR..."
-                        value={kodePr}
-                        onChange={(e) => setKodePr(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                </PopoverContent>
-              </Popover>
-            </div>
-             <div className="col-span-6 md:col-span-3 lg:col-span-2 flex gap-2">
-            {/* RESET FILTER */}
+                </div>
+              </PopoverContent>
+            </Popover>
+
+            {/* RESET */}
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
-                    variant="destructive"
+                    variant="outline"
                     size="icon"
                     onClick={resetFiltersPo}
+                    className="border-red-300 text-red-600 hover:bg-red-50"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <X className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>Hapus Filter</TooltipContent>
               </Tooltip>
             </TooltipProvider>
-          </div>
+
           </div>
           {/* Tabel PO */}
           <div className="col-span-12 border rounded-sm overflow-x-auto">
@@ -267,14 +274,14 @@ export default function ReceiveItem() {
                       <TableCell className="p-2 border">
                        <Button
                           size="icon"
-                          variant="outline"
-                          className="text-orange-600 hover:text-orange-700"
+                          variant="edit"
+                          className="border-sky-400 text-sky-600 hover:bg-sky-50"
                           asChild
                         >
                           <Link
                             to={`/po/kode/${encodeURIComponent(po.po_kode)}`}
                           >
-                            <Eye className="h-4 w-4" />
+                            <Info className="h-4 w-4" />
                           </Link>
                         </Button>
                       </TableCell>
@@ -315,7 +322,7 @@ export default function ReceiveItem() {
         </SectionBody>
         <SectionFooter>
           <Button
-            className="w-full flex gap-4"
+            className="w-full !bg-green-600 hover:!bg-green-700 !text-white flex items-center justify-center gap-2 h-11"
             type="submit"
             form="create-ri-form"
           >
@@ -329,96 +336,101 @@ export default function ReceiveItem() {
         <SectionHeader>Daftar History Receive Item</SectionHeader>
         <SectionBody className="grid grid-cols-12 gap-2">
           {/* Filtering RI */}
-          <div className="col-span-12 grid grid-cols-12 gap-4 items-end">
-            <div className="col-span-12 md:col-span-6 lg:col-span-7">
+          <div className="col-span-12 flex items-center gap-2">
+
+            {/* SEARCH */}
+            <div className="relative flex-1">
               <Input
                 id="search-kode-ri"
-                placeholder="Ketik kode RI..."
+                placeholder="Cari berdasarkan part number"
                 value={kodeRi}
                 onChange={(e) => setKodeRi(e.target.value)}
+                className="pr-10"
               />
+              <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             </div>
-            <div className="col-span-6 md:col-span-3 lg:col-span-3">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full">
-                    Filter RI
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-80 space-y-4">
-                  <div className="space-y-2">
-                    <h4 className="font-medium leading-none">
-                      Filter History RI
-                    </h4>
-                    <p className="text-sm text-muted-foreground">
-                      Saring histori berdasarkan kriteria.
-                    </p>
-                  </div>
-                  <div className="grid gap-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="filter-ri-kodepo">Kode PO</Label>
-                      <Input
-                        id="filter-ri-kodepo"
-                        placeholder="Cari kode PO..."
-                        value={kodePoRi}
-                        onChange={(e) => setKodePoRi(e.target.value)}
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="filter-ri-gudang">Gudang Penerima</Label>
-                      <Input
-                        id="filter-ri-gudang"
-                        placeholder="Cari gudang..."
-                        value={gudang}
-                        onChange={(e) => setGudang(e.target.value)}
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="filter-ri-pic">PIC</Label>
-                      <Input
-                        id="filter-ri-pic"
-                        placeholder="Cari PIC..."
-                        value={picRi}
-                        onChange={(e) => setPicRi(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                </PopoverContent>
-              </Popover>
-            </div>
-            <div className="col-span-6 md:col-span-3 lg:col-span-2">
-                {/* RESET FILTER */}
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="destructive"
-                    size="icon"
-                    onClick={resetFiltersRi}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Hapus Filter</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
 
-            {/* EXPORT EXCEL */}
+            {/* FILTER */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <Filter className="h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+
+              <PopoverContent className="w-80 space-y-4">
+                <div className="space-y-2">
+                  <h4 className="font-medium leading-none">
+                    Filter History RI
+                  </h4>
+                  <p className="text-sm text-muted-foreground">
+                    Searching histori berdasarkan kriteria.
+                  </p>
+                </div>
+
+                <div className="grid gap-4">
+                  <div className="grid gap-2">
+                    <Label>Kode PO</Label>
+                    <Input
+                      placeholder="Cari kode PO..."
+                      value={kodePoRi}
+                      onChange={(e) => setKodePoRi(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label>Gudang Penerima</Label>
+                    <Input
+                      placeholder="Cari gudang..."
+                      value={gudang}
+                      onChange={(e) => setGudang(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label>PIC</Label>
+                    <Input
+                      placeholder="Cari PIC..."
+                      value={picRi}
+                      onChange={(e) => setPicRi(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+
+            {/* RESET */}
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
                     variant="outline"
                     size="icon"
-                    onClick={() => downloadReceiveExcel()}
+                    onClick={resetFiltersRi}
+                    className="border-red-300 text-red-600 hover:bg-red-50"
                   >
-                    <FileSpreadsheet className="h-4 w-4" />
+                    <X className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Hapus Filter</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            {/* EXPORT */}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={downloadReceiveExcel}
+                  >
+                    <FileSpreadsheet className="h-4 w-4 text-green-600" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>Export Excel</TooltipContent>
               </Tooltip>
             </TooltipProvider>
-            </div>
           </div>
           {/* Tabel RI */}
           <div className="col-span-12 border rounded-sm overflow-x-auto">
@@ -454,13 +466,13 @@ export default function ReceiveItem() {
                         <Button
                             size="icon"
                             variant="outline"
-                            className="text-orange-600 hover:text-orange-700"
+                            className="border-sky-400 text-sky-600 hover:bg-sky-50"
                             asChild
                           >
                             <Link
                               to={`/receive/kode/${encodeURIComponent(ri.ri_kode)}`}
                             >
-                              <Eye className="h-4 w-4" />
+                              <Info className="h-4 w-4" />
                             </Link>
                           </Button>
                       </TableCell>

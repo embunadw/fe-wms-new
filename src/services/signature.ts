@@ -10,3 +10,18 @@ export async function saveSignature(kode: string, signatureBase64: string) {
     throw error.response?.data || error;
   }
 }
+<<<<<<< HEAD
+=======
+
+export async function saveSignaturePR(kode: string, signatureBase64: string) {
+  try {
+    const response = await api.post(`/pr/sign/${kode}`, {
+      signature: signatureBase64,
+    });
+    return response.data;
+  } catch (error: any) {
+    console.error("Error saving signature:", error);
+    throw error.response?.data || error;
+  }
+}
+>>>>>>> 062c8a2318dc8547e0436ace8405f8eab2ed29f7

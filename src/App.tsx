@@ -22,7 +22,7 @@ import SpbPage from "@/views/spb/pengeluaran/index.tsx";
 import NotFound from "@/views/not-found";
 import { PurchaseRequestDetail } from "./views/purchase-request/[kode]";
 import Setting from "./views/setting/index.tsx";
-import MRSign from "@/views/mr-sign";
+//import MRSign from "@/views/mr-sign";
 import SpbPoPage from "./views/spb/po/index.tsx";
 import SpbDoPage from "./views/spb/do/index.tsx";
 import SpbInvoicePage from "./views/spb/invoice/index.tsx";
@@ -30,6 +30,11 @@ import DeliverySign from "./views/dlv-sign/index.tsx";
 import PrintPartQr from "@/views/barang-dan-stok/print-qr.tsx";
 import ReceiveSign from "./views/ri-sign/index.tsx";
 import { SpbDetail } from "./views/spb/pengeluaran/[kode]/index.tsx";
+import MasterVendorPage from "@/views/vendor";
+import MasterCustomerPage from "@/views/customer";
+import MRSign from "@/views/mr-sign";
+import PRSign from "@/views/pr-sign";
+import POSign from "@/views/po-sign";
 
 
 export default function App() {
@@ -42,7 +47,7 @@ export default function App() {
           <Route path="/register" element={<Register />} />
           {/* <Route path="/verify-email" element={<VerifyEmail />} /> */}
           <Route path="/forgot-password" element={<ForgotPassword />} />
-          
+         
 
           {/* ================= ROOT ================= */}
           <Route
@@ -99,7 +104,7 @@ export default function App() {
             }
           />
           
-          <Route path="/mr-sign/:kode" element={<MRSign />} />
+          {/* //<Route path="/mr-sign/:kode" element={<MRSign />} /> */}
           <Route path="/delivery/sign/:kode" element={<DeliverySign />} />
           <Route path="/receive/sign/:kode" element={<ReceiveSign />} />
           
@@ -155,6 +160,7 @@ export default function App() {
           />
 
 
+<Route path="/mr-sign/:kode" element={<MRSign />} />
 
           {/* ================= RECEIVE ================= */}
           <Route
@@ -230,7 +236,27 @@ export default function App() {
             element={<DeliverySignPage />}
           />
 
+          <Route path="/po-sign/:kode" element={<POSign />} />
+          <Route path="/pr-sign/:kode" element={<PRSign />} />
+   {/* ================= Vendor ================= */}
+          <Route
+            path="/vendors"
+            element={
+              <ProtectedRoute>
+                <MasterVendorPage />
+              </ProtectedRoute>
+            }
+          />
 
+            {/* ================= Customer ================= */}
+          <Route
+            path="/customers"
+            element={
+              <ProtectedRoute>
+                <MasterCustomerPage/>
+              </ProtectedRoute>
+            }
+          />
           {/* ================= USER MANAGEMENT ================= */}
           <Route
             path="/user-management"

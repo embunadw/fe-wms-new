@@ -1,4 +1,3 @@
-
 // pages/material-request/[kode].tsx
 import SectionContainer, {
   SectionBody,
@@ -7,7 +6,8 @@ import SectionContainer, {
 } from "@/components/content-container";
 import WithSidebar from "@/components/layout/WithSidebar";
 import type { MRReceive, Stock } from "@/types";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+
 import { useParams } from "react-router-dom";
 import { toast } from "sonner";
 import {
@@ -23,12 +23,14 @@ import { formatTanggal } from "@/lib/utils";
 import { getMrByKode, clearSignature } from "@/services/material-request";
 import { getAllStocks } from "@/services/stock";
 import { Button } from "@/components/ui/button";
-import { Printer } from "lucide-react";
+import { Printer, PenTool } from "lucide-react";
+
 import { EditMRDetailDialog } from "@/components/dialog/edit-mr";
 import { useAuth } from "@/context/AuthContext";
 // import { Trash2 } from "lucide-react";
 // import { deleteMRDetail } from "@/services/material-request";
 import { QRCodeCanvas } from "qrcode.react";
+import { downloadMrPdf } from "@/services/material-request";
 
 export function MaterialRequestDetail() {
   const { kode } = useParams<{ kode: string }>();
@@ -39,7 +41,10 @@ export function MaterialRequestDetail() {
   const [refresh, setRefresh] = useState<boolean>(false);
   const [showSignature, setShowSignature] = useState(false);
 const [hasPrinted, setHasPrinted] = useState(false);
+const signatureToastShownRef = useRef(false);
+const [isPrinting, setIsPrinting] = useState(false);
 
+// const feBaseUrl = window.location.origin;
 
 
 
@@ -82,27 +87,31 @@ const [hasPrinted, setHasPrinted] = useState(false);
   }, [kode, refresh]);
 
   // 🔥 Polling untuk cek signature dari mobile
-  useEffect(() => {
-    if (!showSignature || !kode) return;
+useEffect(() => {
+  if (!showSignature || !kode) return;
+  if (signatureToastShownRef.current) return;
 
-    const interval = setInterval(async () => {
-      try {
-        const res = await getMrByKode(kode);
+  const interval = setInterval(async () => {
+    try {
+      const res = await getMrByKode(kode);
 
-        if (res?.signature_url) {
-          setMr(res);
-          setHasPrinted(false);
-          setShowSignature(false);
-          toast.success("Tanda tangan diterima! Siap untuk print.");
-          clearInterval(interval);
-        }
-      } catch (error) {
-        console.error("Error polling signature:", error);
+      if (res?.signature_url && !signatureToastShownRef.current) {
+        signatureToastShownRef.current = true; // 🔒 LOCK
+
+        setMr(res);
+        setShowSignature(false);
+
+        toast.success("Tanda tangan diterima! Siap export PDF.");
+
+        clearInterval(interval);
       }
-    }, 2000);
+    } catch (error) {
+      console.error("Error polling signature:", error);
+    }
+  }, 1000); // lebih responsif
 
-    return () => clearInterval(interval);
-  }, [showSignature, kode]);
+  return () => clearInterval(interval);
+}, [showSignature, kode]);
 
 
   
@@ -118,27 +127,24 @@ const [hasPrinted, setHasPrinted] = useState(false);
     };
   };
 
-  // async function handleDeleteDetail(detail: MRDetail) {
-  //   if (!mr) return;
 
-  //   if (detail.dtl_mr_qty_received > 0) {
-  //     toast.error("Barang sudah diterima, tidak bisa dihapus");
-  //     return;
-  //   }
 
-  //   const confirm = window.confirm(
-  //     `Yakin hapus item ${detail.dtl_mr_part_number}?`
-  //   );
-  //   if (!confirm) return;
+const handleDownloadPdf = async () => {
+  if (!mr || !kode || isPrinting) return;
 
-  //   try {
-  //     await deleteMRDetail(detail.dtl_mr_id!);
-  //     toast.success("Detail MR berhasil dihapus");
-  //     setRefresh((prev) => !prev);
-  //   } catch (error) {
-  //     toast.error("Gagal menghapus detail MR");
-  //   }
-  // }
+  try {
+    setIsPrinting(true);
+    downloadMrPdf(mr.mr_kode);
+    await clearSignature(kode);
+    setRefresh((prev) => !prev);
+
+  } catch (error) {
+    toast.error("Gagal mengunduh PDF MR");
+  } finally {
+    setIsPrinting(false);
+  }
+};
+
 
 
 const handlePrintClick = async () => {
@@ -316,16 +322,42 @@ const handlePrintClick = async () => {
             </div>
           </div>
         </SectionBody>
-        <SectionFooter>
-          <Button
-            variant="outline"
-            className="print:hidden"
-            onClick={handlePrintClick}
-          >
-            <Printer className="mr-2" />
-            {mr.signature_url ? "Print" : "Tanda Tangan & Print"}
-          </Button>
-        </SectionFooter>
+<SectionFooter className="flex gap-2">
+  {/* ✍️ TANDA TANGAN */}
+  {!mr.signature_url && (
+    <Button
+  size="icon"
+  variant="outline"
+  onClick={() => {
+    signatureToastShownRef.current = false; // 🔁 reset
+    setShowSignature(true);
+  }}
+  title="Tanda Tangan"
+>
+  <PenTool className="h-4 w-4" />
+</Button>
+
+  )}
+
+  {/* 🖨️ PRINT / EXPORT PDF */}
+  {mr.signature_url && (
+    <Button
+  size="icon"
+  variant="destructive"
+  onClick={handleDownloadPdf}
+  disabled={isPrinting}
+  title="Print / Export PDF"
+>
+  {isPrinting ? (
+    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+  ) : (
+    <Printer className="h-4 w-4" />
+  )}
+</Button>
+
+  )}
+</SectionFooter>
+
       </SectionContainer>
 
       {/* Tabel Detail Barang */}
@@ -352,8 +384,8 @@ const handlePrintClick = async () => {
                   {mr.details && mr.details.length > 0 ? (
                     mr.details.map((item, index) => {
                       const { qty: stockQty } = getStockQty(item.dtl_mr_part_number);
-                      const isEditable =
-                        mr.mr_status === "open" && item.dtl_mr_qty_received === 0;
+                      // const isEditable =
+                      //   mr.mr_status === "open" && item.dtl_mr_qty_received === 0;
 
                       return (
                         <TableRow key={item.dtl_mr_id} className="[&>td]:border">

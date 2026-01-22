@@ -5,7 +5,8 @@ import SectionContainer, {
 } from "@/components/content-container";
 import WithSidebar from "@/components/layout/WithSidebar";
 import type { POReceive, PurchaseRequest } from "@/types";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+
 import { useParams } from "react-router-dom";
 import { toast } from "sonner";
 import {
@@ -22,12 +23,13 @@ import { getPrByKode } from "@/services/purchase-request";
 import { getPoByKode, clearSignature } from "@/services/purchase-order";
 import { EditPODialog } from "@/components/dialog/edit-po";
 import { Button } from "@/components/ui/button";
-import { Printer } from "lucide-react";
+import { PenTool, Printer } from "lucide-react";
 import { getCurrentUser } from "@/services/auth";
 import type {UserComplete } from "@/types";
 import { formatRupiah } from "@/lib/utils";
 import { QRCodeCanvas } from "qrcode.react";
 // import { useAuth } from "@/context/AuthContext";
+import { downloadPoPdf } from "@/services/purchase-order";
 
 
 export default function PurchaseOrderDetail() {
@@ -41,6 +43,9 @@ const [hasPrinted, setHasPrinted] = useState(false);
   const [refresh, setRefresh] = useState(false);
     const [user, setUser] = useState<UserComplete | null>(null);
 const isPurchasing = user?.role === "purchasing";
+const signatureToastShownRef = useRef(false);
+const [isPrinting, setIsPrinting] = useState(false);
+
 
 
   useEffect(() => {
@@ -94,29 +99,47 @@ const isPurchasing = user?.role === "purchasing";
       fetchUser();
     }, []);
 
-   useEffect(() => {
-      if (!showSignature || !kode) return;
-  
-      const interval = setInterval(async () => {
-        try {
-          const res = await getPoByKode(kode);
-  
-          if (res?.signature_url) {
-            setPo(res);
-            setHasPrinted(false);
-            setShowSignature(false);
-            toast.success("Tanda tangan diterima! Siap untuk print.");
-            clearInterval(interval);
-          }
-        } catch (error) {
-          console.error("Error polling signature:", error);
-        }
-      }, 2000);
-  
-      return () => clearInterval(interval);
-    }, [showSignature, kode]);
+useEffect(() => {
+  if (!showSignature || !kode) return;
+  if (signatureToastShownRef.current) return;
 
+  const interval = setInterval(async () => {
+    try {
+      const res = await getPoByKode(kode);
 
+      if (res?.signature_url && !signatureToastShownRef.current) {
+        signatureToastShownRef.current = true; // 🔒 LOCK
+
+      setPo(res);
+        setShowSignature(false);
+
+        toast.success("Tanda tangan diterima! Siap export PDF.");
+
+        clearInterval(interval);
+      }
+    } catch (error) {
+      console.error("Error polling signature:", error);
+    }
+  }, 1000); // lebih responsif
+
+  return () => clearInterval(interval);
+}, [showSignature, kode]);
+
+const handleDownloadPdf = async () => {
+  if (!po || !kode || isPrinting) return;
+
+  try {
+    setIsPrinting(true);
+    downloadPoPdf(po.po_kode);
+    await clearSignature(kode);
+    setRefresh((prev) => !prev);
+
+  } catch (error) {
+    toast.error("Gagal mengunduh PDF PO");
+  } finally {
+    setIsPrinting(false);
+  }
+};
     const handlePrintClick = async () => {
       // 🔴 Sudah pernah print → WAJIB scan ulang
       if (hasPrinted) {
@@ -246,19 +269,44 @@ const isPurchasing = user?.role === "purchasing";
         </div>
       </SectionBody>
 
-      <SectionFooter>
-        {user?.role === "purchasing" && po.po_status === "pending" && (
-            <EditPODialog po={po} refresh={setRefresh} />
+<SectionFooter className="flex gap-2">
+  {user?.role === "purchasing" && po.po_status === "pending" && (
+    <>
+      {/* ✍️ TANDA TANGAN */}
+      {!po.signature_url && (
+        <Button
+          size="icon"
+          variant="outline"
+          onClick={() => {
+            signatureToastShownRef.current = false;
+            setShowSignature(true);
+          }}
+          title="Tanda Tangan"
+        >
+          <PenTool className="h-4 w-4" />
+        </Button>
+      )}
+
+      {/* 🖨️ PRINT / EXPORT PDF */}
+      {po.signature_url && (
+        <Button
+          size="icon"
+          variant="destructive"
+          onClick={handleDownloadPdf}
+          disabled={isPrinting}
+          title="Print / Export PDF"
+        >
+          {isPrinting ? (
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+          ) : (
+            <Printer className="h-4 w-4" />
           )}
-             <Button
-            variant="outline"
-            className="print:hidden"
-            onClick={handlePrintClick}
-          >
-            <Printer className="mr-2" />
-            {po.signature_url ? "Print" : "Tanda Tangan & Print"}
-          </Button>
-      </SectionFooter>
+        </Button>
+      )}
+    </>
+  )}
+</SectionFooter>
+
     </SectionContainer>
 
     <SectionContainer span={12}>

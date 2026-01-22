@@ -42,10 +42,10 @@ export default function CreateVendorForm({
         return;
       }
 
-      if (telephone.length > 13) {
-        toast.error("Nomor telepon maksimal 13 digit");
-        return;
-      }
+       if (telephone.length < 11 || telephone.length > 13) {
+    toast.error("Nomor telepon harus 11-13 digit");
+    return;
+  }
     }
 
     const payload: MasterVendor = {
@@ -58,7 +58,7 @@ export default function CreateVendorForm({
     try {
       await createMasterVendor(payload);
 
-      toast.success("Master vendor berhasil dibuat!");
+      toast.success("Data vendor berhasil dibuat!");
       setRefresh((prev) => !prev);
 
       form.reset();
@@ -74,7 +74,7 @@ export default function CreateVendorForm({
         return;
       }
 
-      toast.error("Gagal membuat master vendor");
+      toast.error("Gagal membuat data vendor");
       console.error(error);
     }
   }

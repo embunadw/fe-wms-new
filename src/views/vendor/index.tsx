@@ -43,12 +43,10 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
-import { useAuth } from "@/context/AuthContext";
 
 export default function MasterVendorPage() {
   const [vendors, setVendors] = useState<MasterVendor[]>([]);
   const [refresh, setRefresh] = useState<boolean>(false);
-  const {user} = useAuth();
 
   useEffect(() => {
     async function fetchVendors() {
@@ -56,7 +54,7 @@ export default function MasterVendorPage() {
         const res = await getMasterVendors();
         if (res) setVendors(res);
       } catch (error) {
-        toast.error("Gagal mengambil data master vendor");
+        toast.error("Gagal mengambil data vendor");
       }
     }
 
@@ -76,7 +74,6 @@ export default function MasterVendorPage() {
       {/* =======================
           TAMBAH VENDOR
       ======================== */}
-       {(user?.role === "purchasing") ? (
       <SectionContainer span={12}>
         <SectionHeader>Tambah Vendor</SectionHeader>
         <SectionBody className="grid grid-cols-12 gap-2">
@@ -91,19 +88,18 @@ export default function MasterVendorPage() {
         <Button
           type="submit"
           form="create-vendor-form"
-          className="w-full !bg-green-600 hover:!bg-green-700 !text-white flex items-center justify-center gap-2 h-11"
+          className="w-full !bg-green-600 hover:!bg-green-700 !text-white "
         >
            <ClipboardPlus className="h-4 w-4" />
           <span>Tambah</span>
         </Button>
       </TooltipTrigger>
-      <TooltipContent>Tambah Vendor</TooltipContent>
+      
     </Tooltip>
   </TooltipProvider>
 </SectionFooter>
 
       </SectionContainer>
-      ) : null}
     </WithSidebar>
   );
 }

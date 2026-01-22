@@ -272,12 +272,20 @@ export function DeliveryDetail() {
             )}
 
           {/* USER */}
-          {user?.role === "user" &&
+          {user?.role === "warehouse" &&
             dlvry.dlv_status === "on delivery" &&
             dlvry.dlv_ke_gudang === user.lokasi && (
               <Button onClick={() => setOpenReceive(true)}>
                 Konfirmasi Barang Diterima
               </Button>
+            )}
+            {user?.role === "warehouse" &&
+              isHandCarry &&
+              dlvry.dlv_status === "packing" &&
+              dlvry.dlv_ke_gudang === user.lokasi && (
+                <Button onClick={() => setOpenReceive(true)}>
+                  Konfirmasi Barang Diterima
+                </Button>
             )}
         </div>
         {/* RIGHT ACTIONS */}

@@ -199,7 +199,7 @@ export default function ReportSpb() {
                             {spb.spb_no_wo}
                           </td>
                           <td className="border px-3 py-2">
-                            {spb.do_created_at || "-"}
+                            {spb.created_at || "-"}
                           </td>
                           <td className="border px-3 py-2">
                             {spb.spb_status}
@@ -214,13 +214,13 @@ export default function ReportSpb() {
                             {spb.so_no ?? "-"}
                           </td>
                           <td className="border px-3 py-2">
-                            {spb.po_created_at ?? "-"}
+                            {spb.created_at ?? "-"}
                           </td>
                           <td className="border px-3 py-2">
                             {spb.do_no ?? "-"}
                           </td>
                           <td className="border px-3 py-2">
-                            {spb.do_created_at ?? "-"}
+                            {spb.created_at ?? "-"}
                           </td>
                           <td className="border px-3 py-2">
                             {spb.invoice_no ?? "-"}

@@ -115,3 +115,23 @@ export async function submitSignature(kode: string, signatureBase64: string) {
 export async function clearSignature(kode: string) {
   return api.delete(`/po/${encodeURIComponent(kode)}/signature`);
 }
+
+export function downloadPoPdf(kode: string) {
+  api
+    .get(`/po/${encodeURIComponent(kode)}/export/pdf`, {
+      responseType: "blob",
+    })
+    .then((res) => {
+      const blob = new Blob([res.data], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `PO_${kode.replace(/\//g, "_")}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    });
+}

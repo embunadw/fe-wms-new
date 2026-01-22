@@ -125,7 +125,7 @@ export default function CreateRIForm({ user, setRefresh }: CreatePOFormProps) {
         dtl_ri_part_number: d.dtl_pr_part_number,
         dtl_ri_part_name: d.dtl_pr_part_name,
         dtl_ri_satuan: d.dtl_pr_satuan,
-        dtl_ri_qty: receiveQty[partId] ?? d.dtl_pr_qty,
+        dtl_ri_qty: receiveQty[partId] ?? 0,
       };
     });
 

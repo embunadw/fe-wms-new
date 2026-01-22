@@ -193,7 +193,7 @@ export function ReceiveDetail() {
           </div>
         </SectionBody>
         <SectionFooter>
-          {ri.ri_lokasi == user!.lokasi && ri.purchase_order.po_status == "purchased" &&(
+          {ri.ri_lokasi == user!.lokasi &&(
             <Button
                 variant="outline"
                 onClick={() => setShowSignature(true)}

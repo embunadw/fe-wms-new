@@ -35,12 +35,17 @@ import MasterCustomerPage from "@/views/customer";
 import MRSign from "@/views/mr-sign";
 import PRSign from "@/views/pr-sign";
 import POSign from "@/views/po-sign";
+import InputLockedBanner from "./components/InputLockedBanner.tsx";
+import { InputLockProvider } from "./context/InputLockContext.tsx";
 
 
 export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <InputLockProvider>
+          {/* 🔴 Banner GLOBAL */}
+          <InputLockedBanner />
         <Routes>
           {/* ================= PUBLIC ================= */}
           <Route path="/login" element={<Login />} />
@@ -271,6 +276,7 @@ export default function App() {
           {/* ================= FALLBACK ================= */}
           <Route path="*" element={<NotFound />} />
         </Routes>
+        </InputLockProvider>
       </AuthProvider>
     </BrowserRouter>
   );

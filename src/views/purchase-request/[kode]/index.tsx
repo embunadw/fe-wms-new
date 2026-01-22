@@ -5,7 +5,8 @@ import SectionContainer, {
 } from "@/components/content-container";
 import WithSidebar from "@/components/layout/WithSidebar";
 import type { PurchaseRequest } from "@/types"; // Pastikan path ini benar
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+
 import { useParams } from "react-router-dom";
 import { toast } from "sonner"; // Import toast for user feedback
 import {
@@ -20,9 +21,10 @@ import { Label } from "@/components/ui/label";
 import { formatTanggal } from "@/lib/utils";
 import { getPrByKode, clearSignature } from "@/services/purchase-request";
 import { Button } from "@/components/ui/button";
-import { Printer } from "lucide-react";
+import { PenTool, Printer } from "lucide-react";
 import { QRCodeCanvas } from "qrcode.react";
 import { useAuth } from "@/context/AuthContext";
+import { downloadPrPdf } from "@/services/purchase-request";
 
 export function PurchaseRequestDetail() {
     const { user } = useAuth();
@@ -32,6 +34,9 @@ export function PurchaseRequestDetail() {
 const [hasPrinted, setHasPrinted] = useState(false);
   // const [refresh, setRefresh] = useState<boolean>(false);
   const [showSignature, setShowSignature] = useState(false);
+   const [refresh, setRefresh] = useState<boolean>(false);
+const signatureToastShownRef = useRef(false);
+const [isPrinting, setIsPrinting] = useState(false);
 
 
   
@@ -68,30 +73,48 @@ const [hasPrinted, setHasPrinted] = useState(false);
     fetchMrDetail();
   }, [kode]);
 
-   useEffect(() => {
-      if (!showSignature || !kode) return;
-  
-      const interval = setInterval(async () => {
-        try {
-          const res = await getPrByKode(kode);
-  
-          if (res?.signature_url) {
-            setPr(res);
-            setHasPrinted(false);
-            setShowSignature(false);
-            toast.success("Tanda tangan diterima! Siap untuk print.");
-            clearInterval(interval);
-          }
-        } catch (error) {
-          console.error("Error polling signature:", error);
-        }
-      }, 2000);
-  
-      return () => clearInterval(interval);
-    }, [showSignature, kode]);
+useEffect(() => {
+  if (!showSignature || !kode) return;
+  if (signatureToastShownRef.current) return;
+
+  const interval = setInterval(async () => {
+    try {
+      const res = await getPrByKode(kode);
+
+      if (res?.signature_url && !signatureToastShownRef.current) {
+        signatureToastShownRef.current = true; // 🔒 LOCK
+
+      setPr(res);
+        setShowSignature(false);
+
+        toast.success("Tanda tangan diterima! Siap export PDF.");
+
+        clearInterval(interval);
+      }
+    } catch (error) {
+      console.error("Error polling signature:", error);
+    }
+  }, 1000); // lebih responsif
+
+  return () => clearInterval(interval);
+}, [showSignature, kode]);
 
 
+const handleDownloadPdf = async () => {
+  if (!pr || !kode || isPrinting) return;
 
+  try {
+    setIsPrinting(true);
+    downloadPrPdf(pr.pr_kode);
+    await clearSignature(kode);
+    setRefresh((prev) => !prev);
+
+  } catch (error) {
+    toast.error("Gagal mengunduh PDF MR");
+  } finally {
+    setIsPrinting(false);
+  }
+};
 const handlePrintClick = async () => {
   // 🔴 Sudah pernah print → WAJIB scan ulang
   if (hasPrinted) {
@@ -239,16 +262,41 @@ const handlePrintClick = async () => {
             </div>
           </div>
         </SectionBody>
-        <SectionFooter>
-         <Button
-            variant="outline"
-            className="print:hidden"
-            onClick={handlePrintClick}
-          >
-            <Printer className="mr-2" />
-            {pr.signature_url ? "Print" : "Tanda Tangan & Print"}
-          </Button>
-        </SectionFooter>
+<SectionFooter className="flex gap-2">
+  {/* ✍️ TANDA TANGAN */}
+  {!pr.signature_url && (
+    <Button
+  size="icon"
+  variant="outline"
+  onClick={() => {
+    signatureToastShownRef.current = false; // 🔁 reset
+    setShowSignature(true);
+  }}
+  title="Tanda Tangan"
+>
+  <PenTool className="h-4 w-4" />
+</Button>
+
+  )}
+
+  {/* 🖨️ PRINT / EXPORT PDF */}
+  {pr.signature_url && (
+    <Button
+  size="icon"
+  variant="destructive"
+  onClick={handleDownloadPdf}
+  disabled={isPrinting}
+  title="Print / Export PDF"
+>
+  {isPrinting ? (
+    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+  ) : (
+    <Printer className="h-4 w-4" />
+  )}
+</Button>
+
+  )}
+</SectionFooter>
       </SectionContainer>
 
       <SectionContainer span={12}>

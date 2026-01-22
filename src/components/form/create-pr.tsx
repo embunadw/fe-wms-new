@@ -61,6 +61,16 @@ const [kodePR, setKodePR] = useState<string>("");
   const [filteredMr, setFilteredMR] = useState<MRReceive[]>([]);
   const [selectedPart, setSelectedPart] = useState<MasterPart>();
   const [selectedMr, setSelectedMr] = useState<MRReceive>();
+// PART YANG TERSEDIA BERDASARKAN MR
+const availableParts: MasterPart[] = selectedMr
+  ? masterParts.filter(
+      (part) =>
+        part.part_id !== undefined &&
+        selectedMr.details?.some(
+          (d) => d.part_id === part.part_id
+        )
+    )
+  : [];
 
   // Fetch master parts
   useEffect(() => {
@@ -155,35 +165,48 @@ const [kodePR, setKodePR] = useState<string>("");
     }
   }
 
-  function handleAddItem(part: MasterPart, qty: number) {
-    if (!part || !qty || qty <= 0 || !selectedMr) {
-      toast.error(
-        "Mohon lengkapi semua detail item dan pastikan kuantitas valid."
-      );
-      return;
-    }
-  // ✅ AMBIL DETAIL MR SESUAI PART
+function handleAddItem(part: MasterPart, qty: number) {
+  if (!selectedMr || !part?.part_id || qty <= 0) {
+    toast.error("MR, Part, dan Qty wajib diisi");
+    return;
+  }
+
+  const isDuplicate = prItems.some(
+    (item) =>
+      item.mr_id === selectedMr.mr_id &&
+      item.part_id === part.part_id
+  );
+
+  if (isDuplicate) {
+    toast.error(
+      `Part ${part.part_number} dari MR ${selectedMr.mr_kode} sudah ditambahkan`
+    );
+    return;
+  }
+
   const mrDetail = selectedMr.details?.find(
     (d) => d.part_id === part.part_id
   );
-    const newItem: PRItemReceive = {
-      part_id: part.part_id,
-      mr_id: selectedMr.mr_id,
-      dtl_pr_part_name: part.part_name,
-      dtl_pr_part_number: part.part_number,
-      dtl_pr_satuan: part.part_satuan,
-      dtl_pr_qty: qty,
-      dtl_mr_qty_request: mrDetail?.dtl_mr_qty_request ?? 0, 
-      mr: selectedMr,
-    };
 
-    setPRItems((prevItems) => [...prevItems, newItem]);
-    setMrIncluded((prev) => [...prev, selectedMr.mr_kode]);
-    setSelectedPart(undefined);
-    setSelectedMr(undefined);
-    setOpen2(false);
-    toast.success("Item berhasil ditambahkan ke daftar.");
-  }
+  const newItem: PRItemReceive = {
+    mr_id: selectedMr.mr_id,
+    part_id: part.part_id,
+    dtl_pr_part_number: part.part_number,
+    dtl_pr_part_name: part.part_name,
+    dtl_pr_satuan: part.part_satuan,
+    dtl_pr_qty: qty,
+    dtl_mr_qty_request: mrDetail?.dtl_mr_qty_request ?? 0,
+    mr: selectedMr,
+  };
+
+  setPRItems((prev) => [...prev, newItem]);
+  setSelectedPart(undefined);
+
+  toast.success("Item berhasil ditambahkan");
+  
+  // JANGAN reset selectedMr, biar bisa add part lain dari MR yang sama
+  // setSelectedMr(undefined); // HAPUS INI jika ada
+}
 
   function handleRemoveItem(index: number) {
     setPRItems((prevItems) => prevItems.filter((_, i) => i !== index));
@@ -318,22 +341,22 @@ const [kodePR, setKodePR] = useState<string>("");
         </Popover>
 
 <AddItemPRDialog
-  selectedPart={selectedPart}
+  parts={availableParts}
   onAddItem={handleAddItem}
   triggerButton={
     <Button
       type="button"
+      disabled={!kodePR.trim() || !selectedMr}
       className="col-span-12 md:col-span-4
-                 !bg-green-600 hover:!bg-green-700 text-white"
-               
-      disabled={!selectedPart || !selectedMr}
+                 !bg-green-600 hover:!bg-green-700 text-white
+                 disabled:opacity-50 disabled:cursor-not-allowed"
     >
-      <ClipboardPlus className="h-4 w-4" />
+      
+       <ClipboardPlus className="h-4 w-4" />
       <span>Tambah Barang</span>
     </Button>
   }
 />
-
 
       </div>
 

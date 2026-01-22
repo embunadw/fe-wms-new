@@ -42,10 +42,10 @@ export default function CreateCustomerForm({
         return;
       }
 
-      if (telephone.length > 13) {
-        toast.error("Nomor telepon maksimal 13 digit");
-        return;
-      }
+         if (telephone.length < 11 || telephone.length > 13) {
+    toast.error("Nomor telepon harus 11-13 digit");
+    return;
+  }
     }
 
     const payload: MasterCustomer = {
@@ -58,7 +58,7 @@ export default function CreateCustomerForm({
     try {
       await createMasterCustomer(payload);
 
-      toast.success("Master customer berhasil dibuat!");
+      toast.success("Data customer berhasil dibuat!");
       setRefresh((prev) => !prev);
 
       form.reset();
@@ -74,7 +74,7 @@ export default function CreateCustomerForm({
         return;
       }
 
-      toast.error("Gagal membuat master customer");
+      toast.error("Gagal membuat data customer");
       console.error(error);
     }
   }
